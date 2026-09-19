@@ -22,7 +22,10 @@ if [[ -z "$(find_win)" ]]; then
   google-chrome --user-data-dir="$PROFILE" --class=toca-do-texugo --app="$URL" \
     --window-position="$X,$Y" --window-size="$W,$H" \
     --no-first-run --no-default-browser-check --password-store=basic \
-    --disable-features=Translate --noerrdialogs --disable-session-crashed-bubble \
+    --noerrdialogs --disable-session-crashed-bubble \
+    --disable-backgrounding-occluded-windows --disable-background-timer-throttling \
+    --disable-renderer-backgrounding \
+    --disable-features=Translate,CalculateNativeWinOcclusion,IntensiveWakeUpThrottling \
     >/dev/null 2>&1 &
   for _ in $(seq 20); do [[ -n "$(find_win)" ]] && break; sleep 0.5; done
 fi
