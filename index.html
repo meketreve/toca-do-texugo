@@ -159,6 +159,15 @@
   .leg .vl { font-variant-numeric: tabular-nums; }
   .leg .fx { grid-column: 2 / -1; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+  /* Mostrador radial: um anel por medida da mesma peca */
+  .gauge { display: grid; gap: 14px; justify-items: center; }
+  .gauge svg { width: 100%; max-width: 260px; height: 200px; }
+  .gauge-leg { display: grid; gap: 7px; width: 100%; }
+  .gl { display: grid; grid-template-columns: 12px 1fr auto; gap: 9px; align-items: center; font-size: 17px; }
+  .gl .sw { width: 10px; height: 10px; border-radius: 50%; }
+  .gl .nm { color: var(--text-2); }
+  .gl .vl { font-variant-numeric: tabular-nums; }
+
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
   .np { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; min-width: 0; }
@@ -467,6 +476,39 @@ function drawMulti(svg, series, maxV) {
   }
   svg.innerHTML = out;
 }
+
+/* Mostrador radial: cada anel e uma medida DA MESMA peca, de fora pra dentro.
+   O arco varre 270 graus (comeca as 7h30 e acaba as 4h30), deixando a base livre pro numero.
+   Medida que nao e porcentagem (temperatura, watts) entra normalizada pelo seu teto, e o teto
+   aparece na legenda: arco sem teto declarado mente sobre o quao perto do limite a peca esta. */
+function arco(cx, cy, r, frac) {
+  const span = 270, ini = 135, fim = ini + span * Math.min(Math.max(frac, 0), 1);
+  const pt = a => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)];
+  const [x0, y0] = pt(ini), [x1, y1] = pt(fim);
+  return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${span * frac > 180 ? 1 : 0} 1 ${x1.toFixed(1)},${y1.toFixed(1)}`;
+}
+function drawGauge(svg, aneis, centro) {
+  const w = svg.clientWidth, h = svg.clientHeight;
+  if (!w || !h) return;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const cx = w / 2, cy = h / 2 + 8, largura = 9, vao = 6;
+  const r0 = Math.min(cx, cy) - largura;
+  let out = "";
+  aneis.forEach((a, i) => {
+    const r = r0 - i * (largura + vao);
+    if (r < largura) return;
+    out += `<path d="${arco(cx, cy, r, 1)}" fill="none" stroke="var(--grid)" stroke-width="${largura}" stroke-linecap="round"/>`;
+    if (a.frac != null) {
+      out += `<path d="${arco(cx, cy, r, a.frac)}" fill="none" stroke="${a.cor}" stroke-width="${largura}" stroke-linecap="round"/>`;
+    }
+  });
+  out += `<text x="${cx}" y="${cy + 2}" text-anchor="middle" fill="var(--text)" font-size="40" font-weight="600">${centro.valor}</text>`;
+  out += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" fill="var(--muted)" font-size="16">${centro.rotulo}</text>`;
+  svg.innerHTML = out;
+}
+
+// Medida que nao e porcentagem vira fracao do proprio teto (0 a 1)
+const norm = (v, teto) => (v == null || !teto) ? null : Math.min(Math.max(v / teto, 0), 1);
 
 // Minima, maxima e valor atual de uma serie, ignorando os buracos
 function faixa(data) {
@@ -882,6 +924,54 @@ regWidget("uso", {
              `<span class="fx">mín ${fmtN(f.min)}% · máx ${fmtN(f.max)}%</span></div>`;
     }).join("");
   },
+});
+
+// Tetos dos arcos que nao sao porcentagem. Os de temperatura sao os mesmos ja usados nos
+// avisos do layout classico, pros dois layouts contarem a mesma historia.
+const TETO = { cpuTemp: 90, gpuTemp: 86 };
+const CORES_ANEL = ["#3987e5", "#d95926", "#199e70", "#9085e9", "#d55181"];
+
+function gaugeWidget(id, nome, montarAneis) {
+  regWidget(id, {
+    nome, col: 3,
+    montar(el) { el.innerHTML = '<div class="gauge"><svg></svg><div class="gauge-leg"></div></div>'; },
+    render(el, s) {
+      const d = montarAneis(s);
+      const aneis = (d.aneis || []).map((a, i) => ({ ...a, cor: CORES_ANEL[i % CORES_ANEL.length] }));
+      drawGauge(el.querySelector("svg"), aneis, d.centro || { valor: "—", rotulo: "" });
+      el.querySelector(".gauge-leg").innerHTML = aneis.map(a =>
+        `<div class="gl"><i class="sw" style="background:${a.cor}"></i><span class="nm">${a.nome}</span><span class="vl">${a.texto}</span></div>`
+      ).join("");
+    },
+  });
+}
+
+gaugeWidget("radial-cpu", "Processador", s => {
+  const c = s.cpu;
+  return {
+    centro: { valor: fmtN(c.pct) + "%", rotulo: fmtN((c.freq || 0) / 1000, 2) + " GHz" },
+    aneis: [
+      { nome: "Uso", frac: norm(c.pct, 100), texto: fmtN(c.pct) + "%" },
+      { nome: "Consumo", frac: norm(c.power, c.tdp), texto: c.power == null ? "sem sensor" : `${fmtN(c.power)} W de ${c.tdp || "?"} W` },
+      { nome: "Temperatura", frac: norm(c.temp, TETO.cpuTemp), texto: `${fmtN(c.temp)} °C de ${TETO.cpuTemp} °C` },
+    ],
+  };
+});
+
+gaugeWidget("radial-gpu", "Placa de vídeo", s => {
+  const g = s.gpu;
+  if (!g) return { centro: { valor: "—", rotulo: "sem leitura" }, aneis: [] };
+  const vp = 100 * g.mem_used / g.mem_total;
+  return {
+    centro: { valor: fmtN(g.util) + "%", rotulo: fmtN(g.clock) + " MHz" },
+    aneis: [
+      { nome: "Uso", frac: norm(g.util, 100), texto: fmtN(g.util) + "%" },
+      { nome: "VRAM", frac: norm(vp, 100), texto: `${fmtN(g.mem_used / 1024, 1)} de ${fmtN(g.mem_total / 1024, 0)} GB` },
+      { nome: "Consumo", frac: norm(g.power, g.power_limit), texto: `${fmtN(g.power)} W de ${fmtN(g.power_limit)} W` },
+      { nome: "Temperatura", frac: norm(g.temp, TETO.gpuTemp), texto: `${fmtN(g.temp)} °C de ${TETO.gpuTemp} °C` },
+      { nome: "Ventoinha", frac: norm(g.fan, 100), texto: fmtN(g.fan) + "%" },
+    ],
+  };
 });
 
 /* ---------- Paginas: painel e atalhos ---------- */
