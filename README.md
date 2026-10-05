@@ -131,6 +131,20 @@ As credenciais ficam em `~/.config/toca-do-texugo/redes.json` (`chmod 600`, **fo
 
 Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.redirect_uri` no `redes.json`.
 
+## Agenda e recados pelo Telegram
+
+Crie um bot com o [@BotFather](https://t.me/BotFather), mande qualquer mensagem pra ele e
+descubra o seu `chat_id` em `https://api.telegram.org/bot<TOKEN>/getUpdates`. Copie o
+`agenda.exemplo.json` pra `~/.config/toca-do-texugo/agenda.json` com os dois valores.
+
+Daí é só mandar mensagem pro bot: o painel entende data e hora no começo do texto
+("amanhã 14h dentista", "sexta comprar ração", "12/10 aniversário"). Mensagem sem data vira
+recado solto. Tocar no item marca como feito.
+
+O bot é público por natureza — qualquer um que descubra o nome dele consegue mandar mensagem.
+Por isso tudo que não vier do `chat_id` configurado é descartado sem nem olhar o texto. O fluxo é
+só de entrada: o painel lê as mensagens e nunca escreve de volta; "feito" é estado local.
+
 ## Arquivos locais (nunca versionados)
 
 | Arquivo | O que é |
@@ -140,6 +154,8 @@ Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.re
 | `~/.config/toca-do-texugo/redes-tokens.json` | tokens renovados (TikTok) |
 | `~/.config/toca-do-texugo/redes-historico.json` | histórico diário pro "+N hoje" e a tendência |
 | `~/.config/toca-do-texugo/atalhos.json` | atalhos da página de atalhos |
+| `~/.config/toca-do-texugo/agenda.json` | token do bot do Telegram e o seu `chat_id` |
+| `~/.config/toca-do-texugo/agenda-itens.json` | itens da agenda e o offset já lido do Telegram |
 | `~/.config/toca-do-texugo/onedrive-cota.json` | última cota lida do OneDrive (cache de 1 h) |
 | `~/.config/toca-do-texugo/chrome/` | perfil do Chrome do painel |
 
@@ -162,8 +178,10 @@ Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.re
 | `GET /api/stats` | métricas do PC, música atual, status do OneDrive e limites do Claude (JSON, 1×/s) |
 | `GET /api/audio` | PCM s16le mono 24 kHz do som do PC (stream) |
 | `GET /api/redes` | números das redes, "+hoje" e histórico |
+| `GET /api/agenda` | compromissos e recados vindos do Telegram |
 | `GET /api/shortcuts` | lista de atalhos (sem os comandos) |
 | `POST /api/run/<id>` | executa um atalho (exige `X-Dash: 1`) |
+| `POST /api/agenda/<id>/feito` | marca um item como feito (exige `X-Dash: 1`) |
 | `GET /api/version` | data do `index.html`, pra recarga automática |
 | `GET /tiktok/login` | inicia a autorização do TikTok |
 

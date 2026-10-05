@@ -11,7 +11,7 @@ active: true
 
 ## Agora
 
-- [ ] Agenda e TODOs pelo Telegram (etapas A1 a A4 mais abaixo)
+- [ ] Ligar a agenda: criar o bot e preencher o `agenda.json` (código todo pronto)
 
 ## Depois
 
@@ -38,11 +38,9 @@ Decidido 2026-10-05: entrada pelo Telegram (sem OAuth, sem Google Cloud); marcar
 pelo toque no painel. O estado de "feito" é local — o Telegram é só entrada, o painel nunca
 escreve de volta.
 
-- [ ] A1 — `agenda.py`: `getUpdates` com offset persistido, **filtro por `chat_id`** (bot é
-      público: qualquer um manda mensagem), parse simples de data, estado em JSON
-- [ ] A2 — rotas `GET /api/agenda` e `POST /api/agenda/<id>/feito` (exige `X-Dash`, como os atalhos)
-- [ ] A3 — widget "agenda": compromissos com hora em cima, recados sem hora embaixo; toque marca feito
-- [ ] A4 — `agenda.exemplo.json` + README (token fica em `~/.config/toca-do-texugo/`, nunca no repo)
+- [x] ~~A1 a A4: `agenda.py`, rotas, widget e documentação~~
+- [ ] Criar o bot no @BotFather e pôr token + `chat_id` em `~/.config/toca-do-texugo/agenda.json`
+      — só isso falta pra ligar (o painel mostra "sem bot configurado" até lá)
 
 ## Ideias / talvez
 

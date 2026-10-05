@@ -20,6 +20,7 @@ from pathlib import Path
 
 import psutil
 
+from agenda import Agenda
 from onedrive import OneDrive
 from redes import Redes
 
@@ -375,6 +376,7 @@ class Collector:
 COLLECTOR = Collector()
 REDES = Redes()
 ONEDRIVE = OneDrive()
+AGENDA = Agenda()
 
 
 def monitor_source():
@@ -412,6 +414,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps({"index": (BASE / "index.html").stat().st_mtime}))
         if self.path == "/api/redes":
             return self._send(200, json.dumps(REDES.data, ensure_ascii=False))
+        if self.path == "/api/agenda":
+            return self._send(200, json.dumps(AGENDA.state, ensure_ascii=False))
         if self.path == "/tiktok/login" or urllib.parse.urlsplit(self.path).path.rstrip("/") == "/tiktok/callback":
             return self._tiktok_auth()
         if self.path == "/api/audio":
@@ -477,6 +481,14 @@ class Handler(BaseHTTPRequestHandler):
         # navegador nao consegue disparar atalhos.
         if not self._host_ok() or self.headers.get("X-Dash") != "1":
             return self._send(403, '{"error":"forbidden"}')
+        # Marcar item da agenda como feito: estado local, nada volta pro Telegram
+        if self.path.startswith("/api/agenda/"):
+            partes = self.path.split("/")
+            if len(partes) != 5 or partes[4] not in ("feito", "desfeito"):
+                return self._send(404, '{"error":"not found"}')
+            if not AGENDA.feito(urllib.parse.unquote(partes[3]), partes[4] == "feito"):
+                return self._send(404, '{"error":"item desconhecido"}')
+            return self._send(200, '{"ok":true}')
         if not self.path.startswith("/api/run/"):
             return self._send(404, '{"error":"not found"}')
         sid = self.path.rsplit("/", 1)[-1]

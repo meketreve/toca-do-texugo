@@ -193,6 +193,19 @@
   /* A lista cresce com os medidores: rola em vez de estourar a pagina */
   .layout-pick:last-child { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
   .cfg-rows { display: grid; gap: 8px; align-content: start; overflow-y: auto; }
+
+  /* Agenda: toque no item marca como feito */
+  .ag { display: grid; gap: 6px; align-content: start; overflow-y: auto; height: 100%; }
+  .ag-item { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: baseline;
+             padding: 7px 8px; border-radius: 10px; cursor: pointer; }
+  .ag-item:active { background: #262625; }
+  .ag-item .bx { font-size: 19px; color: var(--muted); }
+  .ag-item.ok .bx { color: var(--good); }
+  .ag-item.ok .tx { color: var(--muted); text-decoration: line-through; }
+  .ag-item .qd { font-size: 16px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ag-item.hoje .qd { color: var(--accent); }
+  .ag-item.atrasado .qd { color: var(--warning); }
+  .ag-vazio { color: var(--muted); padding: 10px 8px; }
   .cfg {
     display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 10px; align-items: center;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px 8px 16px;
@@ -918,7 +931,7 @@ let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getIt
 const WIDGETS = {};
 const regWidget = (id, def) => { WIDGETS[id] = def; };
 const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia",
-                         "vazao-rede", "vazao-disco", "capacidade"];
+                         "vazao-rede", "vazao-disco", "capacidade", "agenda"];
 // A lista guardada e de objetos {id, col}; aceita tambem a forma antiga, so com os ids.
 const LARGURAS = [3, 4, 6, 12];
 function normaliza(lista) {
@@ -1195,6 +1208,62 @@ regWidget("capacidade", {
       ? row(d.nome, "não montado")
       : meterBlock(d.nome, `${fmtBytes(d.used)} <small>de ${fmtBytes(d.total)}</small>`, d.pct, level(d.pct, 85, 95))
     ).join("");
+  },
+});
+
+/* Agenda e recados vindos do Telegram. O "feito" e estado local do painel: o POST so grava
+   aqui, nada volta pro Telegram. Busca propria, como as redes, por nao estar em /api/stats. */
+let agendaData = { ligado: false };
+async function loadAgenda() {
+  try {
+    agendaData = await (await fetch("/api/agenda", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json();
+  } catch (e) {}
+}
+function fmtQuando(ts) {
+  const d = new Date(ts * 1000), hoje = new Date();
+  const dias = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date(hoje).setHours(0, 0, 0, 0)) / 86400000);
+  const hora = d.getMinutes() ? `${d.getHours()}h${String(d.getMinutes()).padStart(2, "0")}` : `${d.getHours()}h`;
+  if (dias === 0) return "hoje " + hora;
+  if (dias === 1) return "amanhã " + hora;
+  if (dias > 1 && dias < 7) return DIAS[d.getDay()] + " " + hora;
+  return `${d.getDate()}/${d.getMonth() + 1} ${hora}`;
+}
+regWidget("agenda", {
+  nome: "Agenda", col: 4,
+  montar(el) {
+    el.innerHTML = '<div class="ag"></div>';
+    el.addEventListener("click", async ev => {
+      const it = ev.target.closest(".ag-item");
+      if (!it) return;
+      const feito = !it.classList.contains("ok");
+      it.classList.toggle("ok", feito);  // responde ao toque na hora, sem esperar o servidor
+      try {
+        await fetch(`/api/agenda/${encodeURIComponent(it.dataset.id)}/${feito ? "feito" : "desfeito"}`,
+                    { method: "POST", headers: { "X-Dash": "1" } });
+      } catch (e) {}
+      await loadAgenda();
+    });
+  },
+  render(el) {
+    const a = agendaData;
+    const box = el.querySelector(".ag");
+    if (!a.ligado) {
+      box.innerHTML = '<div class="ag-vazio">Sem bot configurado em <b>agenda.json</b>.</div>';
+      return;
+    }
+    const itens = a.itens || [];
+    if (!itens.length) {
+      box.innerHTML = '<div class="ag-vazio">' + (a.erro ? esc(a.erro) : "Nada por enquanto. Mande uma mensagem pro bot.") + "</div>";
+      return;
+    }
+    const agora = Date.now() / 1000;
+    box.innerHTML = itens.map(i => {
+      const cls = [i.feito ? "ok" : "", !i.feito && i.quando && i.quando < agora ? "atrasado"
+                 : i.quando && i.quando - agora < 86400 ? "hoje" : ""].filter(Boolean).join(" ");
+      return `<div class="ag-item ${cls}" data-id="${esc(i.id)}"><span class="bx">${i.feito ? "☑" : "☐"}</span>` +
+             `<span class="tx">${esc(i.texto)}</span>` +
+             `<span class="qd">${i.quando ? fmtQuando(i.quando) : ""}</span></div>`;
+    }).join("");
   },
 });
 
@@ -1640,6 +1709,7 @@ clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);
 loadShortcuts(); setInterval(loadShortcuts, 20000);
 loadRedes(); setInterval(loadRedes, 30000);
+loadAgenda(); setInterval(loadAgenda, 30000);
 let version = null;
 setInterval(async () => {
   try {
