@@ -144,7 +144,8 @@
 
   /* Layout agrupado: grade de medidores montada a partir do registro de widgets */
   #page-dash-b { grid-template-rows: minmax(0, 1fr); }
-  .widgets { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gap); align-content: start; }
+  .widgets { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(150px, auto);
+             gap: var(--gap); align-content: start; }
   .widget { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; }
   .widget > h2 { margin: 0; }
   .w-vazio { color: var(--muted); display: grid; place-items: center; text-align: center; padding: 40px 16px; }
@@ -206,6 +207,33 @@
   .ag-item.hoje .qd { color: var(--accent); }
   .ag-item.atrasado .qd { color: var(--warning); }
   .ag-vazio { color: var(--muted); padding: 10px 8px; }
+
+  /* Editor de grade: catalogo a esquerda, canvas a direita */
+  #page-editor { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .ed { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--gap); min-height: 0; }
+  .ed-cat { display: grid; gap: 8px; align-content: start; overflow-y: auto; }
+  .ed-cat button {
+    font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; text-align: left; cursor: pointer; touch-action: none;
+  }
+  .ed-cat button:active { border-color: var(--accent); background: var(--accent-wash); }
+  .ed-cat button[disabled] { opacity: .35; cursor: default; }
+  .ed-cat .ajuda { color: var(--muted); font-size: 15px; padding: 2px 2px 6px; }
+  .ed-canvas {
+    display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 62px; gap: 8px;
+    border: 1px solid var(--border); border-radius: 12px; padding: 8px; overflow-y: auto; align-content: start;
+  }
+  .ed-cel { border: 1px dashed var(--grid); border-radius: 6px; }
+  .ed-bloco {
+    background: var(--accent-wash); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 8px 10px; display: grid; grid-template-rows: auto 1fr auto; cursor: grab;
+    touch-action: none; overflow: hidden; z-index: 1;
+  }
+  .ed-bloco.arrastando { opacity: .7; cursor: grabbing; }
+  .ed-bloco .tit { font-size: 17px; }
+  .ed-bloco .pe { display: flex; justify-content: space-between; align-items: end; color: var(--muted); font-size: 14px; }
+  .ed-bloco .rz { cursor: nwse-resize; font-size: 18px; padding: 0 2px; touch-action: none; }
+  .ed-bloco .tira { cursor: pointer; font-size: 18px; padding: 0 4px; }
   .cfg {
     display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 10px; align-items: center;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px 8px 16px;
@@ -424,6 +452,18 @@
     <section class="widgets" id="widgets-b"></section>
   </main>
 
+  <main class="page" id="page-editor" hidden>
+    <h2 class="page-title">Editor do layout agrupado</h2>
+    <div class="ed">
+      <div class="ed-cat" id="ed-cat"></div>
+      <div class="ed-canvas" id="ed-canvas"></div>
+    </div>
+    <div class="cfg-pe">
+      <button id="ed-fechar">Concluir</button>
+      <button id="ed-reset">Restaurar o padrão</button>
+    </div>
+  </main>
+
   <main class="page" id="page-redes" hidden>
     <section class="redes" id="redes"></section>
   </main>
@@ -438,7 +478,7 @@
     <section class="layout-pick">
       <h2 class="page-title">Medidores do layout agrupado</h2>
       <div class="cfg-rows" id="cfg-rows"></div>
-      <div class="cfg-pe"><button id="cfg-reset">Restaurar o padrão</button></div>
+      <div class="cfg-pe"><button id="ed-abrir">Editar na grade</button><button id="cfg-reset">Restaurar o padrão</button></div>
     </section>
   </main>
 </div>
@@ -932,12 +972,28 @@ const WIDGETS = {};
 const regWidget = (id, def) => { WIDGETS[id] = def; };
 const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia",
                          "vazao-rede", "vazao-disco", "capacidade", "agenda"];
-// A lista guardada e de objetos {id, col}; aceita tambem a forma antiga, so com os ids.
+/* Posicao na grade de 12 colunas: {id, x, y, w, h}. Com x/y nulos o medidor so se acomoda
+   na ordem, que e como o painel sempre funcionou; com x/y preenchidos ele fica cravado no
+   lugar, que e o que o editor de arrastar vai escrever. Aceita as duas formas antigas (so o
+   id, e {id, col}) pra configuracao ja salva nao virar tela em branco. */
 const LARGURAS = [3, 4, 6, 12];
+const COLS = 12;
+const inteiro = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
 function normaliza(lista) {
-  return (lista || []).map(it => (typeof it === "string" ? { id: it, col: null } : it))
+  return (lista || [])
+    .map(it => (typeof it === "string" ? { id: it } : it))
     .filter(it => it && WIDGETS[it.id])
-    .map(it => ({ id: it.id, col: LARGURAS.includes(it.col) ? it.col : (WIDGETS[it.id].col || 4) }));
+    .map(it => {
+      const w = inteiro(it.w, 1, COLS) || (LARGURAS.includes(it.col) ? it.col : (WIDGETS[it.id].col || 4));
+      const x = inteiro(it.x, 0, COLS - 1);
+      return {
+        id: it.id,
+        w,
+        h: inteiro(it.h, 1, 12) || WIDGETS[it.id].h || 1,
+        x: x != null && x + w <= COLS ? x : null,
+        y: inteiro(it.y, 0, 99),
+      };
+    });
 }
 function layoutB() {
   try {
@@ -960,7 +1016,8 @@ function montarDashB() {
     const w = WIDGETS[it.id];
     const card = document.createElement("div");
     card.className = "card widget"; card.dataset.w = it.id;
-    card.style.gridColumn = `span ${it.col}`;
+    card.style.gridColumn = it.x == null ? `span ${it.w}` : `${it.x + 1} / span ${it.w}`;
+    card.style.gridRow = it.y == null ? `span ${it.h}` : `${it.y + 1} / span ${it.h}`;
     card.innerHTML = `<h2></h2><div class="w-body"></div>`;
     card.querySelector("h2").textContent = w.nome;
     box.appendChild(card);
@@ -1016,12 +1073,12 @@ function renderConfig() {
   lista.forEach((it, i) => {
     const r = document.createElement("div");
     r.className = "cfg";
-    r.innerHTML = `<span class="nm"></span><span class="lg">${it.col} de 12</span>` +
+    r.innerHTML = `<span class="nm"></span><span class="lg">${it.w} de 12${it.x == null ? "" : " · fixo"}</span>` +
       `<button data-a="menos" title="Mais estreito">−</button><button data-a="mais" title="Mais largo">+</button>` +
       `<button data-a="sobe" title="Subir">↑</button><button data-a="desce" title="Descer">↓</button>` +
       `<button data-a="tira" class="on" title="Tirar do painel">✓</button>`;
     r.querySelector(".nm").textContent = WIDGETS[it.id].nome;
-    const li = LARGURAS.indexOf(it.col);
+    const li = LARGURAS.indexOf(it.w);
     if (li <= 0) r.querySelector('[data-a="menos"]').disabled = true;
     if (li >= LARGURAS.length - 1) r.querySelector('[data-a="mais"]').disabled = true;
     if (i === 0) r.querySelector('[data-a="sobe"]').disabled = true;
@@ -1030,8 +1087,9 @@ function renderConfig() {
       const a = ev.target.dataset && ev.target.dataset.a;
       if (!a) return;
       const L = layoutB();
-      if (a === "menos") L[i].col = LARGURAS[Math.max(0, LARGURAS.indexOf(L[i].col) - 1)];
-      if (a === "mais") L[i].col = LARGURAS[Math.min(LARGURAS.length - 1, LARGURAS.indexOf(L[i].col) + 1)];
+      const li = LARGURAS.indexOf(L[i].w);
+      if (a === "menos") L[i].w = LARGURAS[Math.max(0, (li < 0 ? 1 : li) - 1)];
+      if (a === "mais") L[i].w = LARGURAS[Math.min(LARGURAS.length - 1, (li < 0 ? 0 : li) + 1)];
       if (a === "sobe" && i > 0) L.splice(i - 1, 0, L.splice(i, 1)[0]);
       if (a === "desce" && i < L.length - 1) L.splice(i + 1, 0, L.splice(i, 1)[0]);
       if (a === "tira") L.splice(i, 1);
@@ -1048,10 +1106,152 @@ function renderConfig() {
     r.querySelector(".nm").textContent = WIDGETS[id].nome;
     r.addEventListener("click", ev => {
       if (!ev.target.dataset || ev.target.dataset.a !== "poe") return;
-      salvarB([...layoutB(), { id, col: WIDGETS[id].col || 4 }]);
+      salvarB([...layoutB(), { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 1 }]);
     });
     box.appendChild(r);
   }
+}
+
+/* ---------- Editor de grade ----------
+   Catalogo a esquerda, canvas de 12 colunas a direita. Tocar num item do catalogo joga ele
+   na primeira vaga; arrastar poe onde se quer. O bloco ja posto se move arrastando e se
+   redimensiona pelo canto. Nada se sobrepoe: posicao que colide e recusada, o bloco volta
+   pro lugar — e o que evita medidor escondido atras de outro sem o usuario perceber.
+   Tudo em pointerevents, que e o que funciona igual no mouse do PC e no toque do tablet. */
+const ED_LINHAS_EXTRA = 2;  // sobra de linhas vazias no fim, pra ter onde soltar
+let edLista = [];
+let arrasto = null;
+
+const cabe = (it) => it.x >= 0 && it.y >= 0 && it.x + it.w <= COLS && it.h >= 1 && it.w >= 1;
+const bate = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+function livre(it, menos) {
+  return cabe(it) && !edLista.some((o, i) => i !== menos && o.x != null && bate(it, o));
+}
+function primeiraVaga(w, h) {
+  for (let y = 0; y < 50; y++) {
+    for (let x = 0; x + w <= COLS; x++) {
+      if (livre({ x, y, w, h }, -1)) return { x, y };
+    }
+  }
+  return { x: 0, y: 0 };
+}
+// Item sem posicao salva (vindo da configuracao por botoes) ganha uma ao abrir o editor
+function edCarrega() {
+  edLista = [];
+  for (const it of layoutB()) {
+    const p = it.x != null && it.y != null ? it : { ...it, ...primeiraVaga(it.w, it.h) };
+    edLista.push({ ...p });
+  }
+}
+function edLinhas() {
+  return Math.max(4, ...edLista.map(i => i.y + i.h)) + ED_LINHAS_EXTRA;
+}
+function edRender() {
+  const cat = document.getElementById("ed-cat"), cv = document.getElementById("ed-canvas");
+  cat.innerHTML = '<div class="ajuda">Toque para pôr na primeira vaga, ou arraste até o lugar.</div>';
+  for (const [id, w] of Object.entries(WIDGETS)) {
+    const b = document.createElement("button");
+    b.textContent = w.nome;
+    b.dataset.novo = id;
+    if (edLista.some(i => i.id === id)) b.disabled = true;
+    cat.appendChild(b);
+  }
+  const linhas = edLinhas();
+  cv.style.gridTemplateRows = `repeat(${linhas}, 62px)`;
+  let html = "";
+  for (let i = 0; i < linhas * COLS; i++) html += '<div class="ed-cel"></div>';
+  cv.innerHTML = html;
+  edLista.forEach((it, i) => {
+    const d = document.createElement("div");
+    d.className = "ed-bloco" + (arrasto && arrasto.i === i ? " arrastando" : "");
+    d.dataset.i = i;
+    d.style.gridColumn = `${it.x + 1} / span ${it.w}`;
+    d.style.gridRow = `${it.y + 1} / span ${it.h}`;
+    d.innerHTML = '<span class="tit"></span><span></span>' +
+      `<span class="pe"><span class="tira" data-tira="${i}">✕</span><span>${it.w}×${it.h}</span><span class="rz" data-rz="${i}">◢</span></span>`;
+    d.querySelector(".tit").textContent = WIDGETS[it.id].nome;
+    cv.appendChild(d);
+  });
+}
+function edCelula(ev) {
+  const cv = document.getElementById("ed-canvas");
+  const r = cv.getBoundingClientRect();
+  const larg = (r.width - 16 - 11 * 8) / COLS;
+  return {
+    x: Math.max(0, Math.min(COLS - 1, Math.floor((ev.clientX - r.left - 8) / (larg + 8)))),
+    y: Math.max(0, Math.floor((ev.clientY - r.top - 8 + cv.scrollTop) / 70)),
+  };
+}
+function edSalva() {
+  salvarB(edLista.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })));
+  edRender();
+}
+
+function edLiga() {
+  const cv = document.getElementById("ed-canvas"), cat = document.getElementById("ed-cat");
+
+  cat.addEventListener("pointerdown", ev => {
+    const b = ev.target.closest("button[data-novo]");
+    if (!b || b.disabled) return;
+    const id = b.dataset.novo;
+    const novo = { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 2, x: 0, y: 0 };
+    Object.assign(novo, primeiraVaga(novo.w, novo.h));
+    edLista.push(novo);
+    arrasto = { tipo: "move", i: edLista.length - 1, dx: 0, dy: 0, antes: { ...novo } };
+    b.setPointerCapture(ev.pointerId);
+    edRender();
+  });
+
+  cv.addEventListener("pointerdown", ev => {
+    const tira = ev.target.dataset.tira;
+    if (tira != null) { edLista.splice(+tira, 1); return edSalva(); }
+    const bloco = ev.target.closest(".ed-bloco");
+    if (!bloco) return;
+    const i = +bloco.dataset.i, it = edLista[i], c = edCelula(ev);
+    arrasto = ev.target.dataset.rz != null
+      ? { tipo: "tamanho", i, antes: { ...it } }
+      : { tipo: "move", i, dx: c.x - it.x, dy: c.y - it.y, antes: { ...it } };
+    cv.setPointerCapture(ev.pointerId);
+    edRender();
+  });
+
+  const mover = ev => {
+    if (!arrasto) return;
+    const it = edLista[arrasto.i], c = edCelula(ev);
+    const tent = arrasto.tipo === "tamanho"
+      ? { ...it, w: Math.max(1, Math.min(COLS - it.x, c.x - it.x + 1)), h: Math.max(1, c.y - it.y + 1) }
+      : { ...it, x: Math.max(0, Math.min(COLS - it.w, c.x - arrasto.dx)), y: Math.max(0, c.y - arrasto.dy) };
+    if (livre(tent, arrasto.i)) { Object.assign(it, tent); edRender(); }
+  };
+  const soltar = () => {
+    if (!arrasto) return;
+    arrasto = null;
+    edSalva();
+  };
+  document.addEventListener("pointermove", mover);
+  document.addEventListener("pointerup", soltar);
+  document.addEventListener("pointercancel", soltar);
+
+  document.getElementById("ed-abrir").addEventListener("click", edAbre);
+  document.getElementById("ed-fechar").addEventListener("click", () => {
+    document.getElementById("page-editor").hidden = true;
+    document.getElementById("mascot").hidden = false;
+    showPage(ATALHOS);
+  });
+  document.getElementById("ed-reset").addEventListener("click", () => {
+    try { localStorage.removeItem("painel.widgets"); } catch (e) {}
+    montarDashB(); renderConfig(); edCarrega(); edRender();
+  });
+}
+// O editor nao entra no rodizio do botao de pagina: e tela de ajuste, nao de olhar
+function edAbre() {
+  for (const id of PAGES) document.getElementById(id).hidden = true;
+  const el = document.getElementById("page-editor");
+  el.hidden = false;
+  el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
+  document.getElementById("mascot").hidden = true;  // sem chao conhecido nesta pagina
+  clearTimeout(backTimer);
+  edCarrega(); edRender();
 }
 
 /* ---------- Medidores do layout agrupado ---------- */
@@ -1703,7 +1903,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-ocultaLayouts(); montarDashB(); renderPicks(); renderConfig();
+ocultaLayouts(); montarDashB(); renderPicks(); renderConfig(); edLiga();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);

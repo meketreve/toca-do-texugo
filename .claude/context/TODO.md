@@ -27,9 +27,8 @@ canvas, reposicionar e redimensionar no lugar. Substitui os botões da tela de c
 (que foram feitos assim por causa do toque impreciso via Moonlight — **decidir se o editor é só
 pra usar do PC**, com o tablet só exibindo). Junto: mais estilos de exibição por medidor.
 
-- [ ] G1 — grade com posição livre: `{id, x, y, w, h}` no lugar da lista ordenada de hoje
-- [ ] G2 — catálogo lateral e arrastar do catálogo pro canvas
-- [ ] G3 — mover e redimensionar no canvas, com encaixe na grade
+- [x] ~~G1 a G3 — grade `{id, x, y, w, h}`, catálogo lateral, mover e redimensionar no canvas~~
+- [ ] Decidir se a tela de configuração por botões sai, agora que o editor faz o mesmo
 - [ ] G4 — estilos alternativos por medidor (ex.: o mesmo dado como barra, anel ou número)
 
 ## Agenda e TODOs pelo Telegram
