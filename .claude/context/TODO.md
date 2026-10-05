@@ -11,26 +11,26 @@ active: true
 
 ## Agora
 
-- [x] ~~Pôr o slug do canal no `redes.json` e conferir o card~~ (feito; card com número real)
-- [ ] Commitar limites do Claude + troca do Instagram pela Kick (`server.py`, `redes.py`, `index.html`, `README.md`)
+- [ ] Agenda e TODOs pelo Telegram (etapas A1 a A4 mais abaixo)
 
 ## Depois
 
 - [ ] Decidir se atualiza o `docs/painel.png` com a linha do Claude (o print mostra uso real)
 - [ ] Se o `kick.com/api/v2` fechar, decidir o plano B (a API oficial não tem seguidores)
+- [x] ~~Layout "Agrupado" inteiro: 2º layout sem tirar nada do clássico, 8 medidores agrupados por
+      tipo de dado, seletor e tela de configuração~~ (aab47c1…524063e; referências em `DESIGN-REFS.md`)
 
-## Layout alternativo do painel: agrupar por tipo de dado
+## Editor de grade com arrastar e soltar (objetivo maior)
 
-Decidido 2026-10-05: **não substitui nada** — é um 2º layout do painel, escolhido na página de
-atalhos e lembrado no `localStorage`. Gráfico de uso com linhas de 60 s + mín/máx na legenda; um
-radial por peça (CPU e GPU); RAM/VRAM nos dois blocos (% no uso, GB na capacidade). Referências em
-`DESIGN-REFS.md`. Tudo em `index.html`, sem mexer no `server.py` (os dados já existem).
+Catálogo de medidores prontos à esquerda, canvas em grade à direita: arrastar do catálogo pro
+canvas, reposicionar e redimensionar no lugar. Substitui os botões da tela de configuração atual
+(que foram feitos assim por causa do toque impreciso via Moonlight — **decidir se o editor é só
+pra usar do PC**, com o tablet só exibindo). Junto: mais estilos de exibição por medidor.
 
-- [x] ~~Fases 0 a 6: commit das pendências, infra dos layouts, gráfico de uso, radiais,
-      temperaturas e consumo~~ (aab47c1…a62a5ce)
-- [x] ~~Fases 7 e 8 — vazão espelhada (rede e disco) e capacidade (discos + OneDrive)~~
-- [x] ~~Fase 9 — tela de configuração: liga/desliga, ordem e largura de cada medidor~~
-      (layout agrupado completo: 8 medidores, `painel.widgets` no localStorage)
+- [ ] G1 — grade com posição livre: `{id, x, y, w, h}` no lugar da lista ordenada de hoje
+- [ ] G2 — catálogo lateral e arrastar do catálogo pro canvas
+- [ ] G3 — mover e redimensionar no canvas, com encaixe na grade
+- [ ] G4 — estilos alternativos por medidor (ex.: o mesmo dado como barra, anel ou número)
 
 ## Agenda e TODOs pelo Telegram
 
