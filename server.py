@@ -28,6 +28,9 @@ BASE = Path(__file__).resolve().parent
 CONFIG = Path.home() / ".config/toca-do-texugo/atalhos.json"
 SETTINGS_FILE = Path.home() / ".config/toca-do-texugo/config.json"  # coisas da maquina (ver config.exemplo.json)
 ALLOWED_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
+CLAUDE_USAGE = Path.home() / ".config/Claude/plan-usage-history.json"
+CLAUDE_WINDOWS = {"five_hour": ("fh", 5 * 3600), "week": ("sd", 7 * 86400)}
+CLAUDE_GAP = 3600  # buraco entre as duas amostras da virada: acima disso a estimativa nao vale
 AUDIO_RATE = 24000
 MPRIS = "org.mpris.MediaPlayer2"
 
@@ -138,6 +141,64 @@ class RaplReader:
         return de / 1e6 / dt if dt > 0 else None
 
 
+def _claude_reset(samples, key, length, now=None):
+    """Estimativa de quando a janela zera, tirada do historico. None quando nao da pra dizer.
+
+    A janela virou entre duas amostras quando a porcentagem cai (zerou) ou sai do zero
+    (janela nova comecou); o comeco fica entre elas, entao usa o meio das duas e soma a
+    duracao. So vale se as duas estiverem perto: com o app de desktop fechado o historico
+    fica com buracos de horas e o meio nao quer dizer nada.
+    """
+    for i in range(len(samples) - 1, 0, -1):
+        before, after = samples[i - 1]["u"].get(key), samples[i]["u"].get(key)
+        if before is None or after is None:
+            return None
+        if not (after < before or (before == 0 and after > 0)):
+            continue
+        if after == 0:  # zerou e nao teve nada depois: a janela nova ainda nem comecou
+            return None
+        t0, t1 = samples[i - 1]["t"] / 1000, samples[i]["t"] / 1000
+        if t1 - t0 > CLAUDE_GAP:
+            return None
+        reset = (t0 + t1) / 2 + length
+        return reset if reset > (now or time.time()) else None  # ja passou: a virada nao entrou no historico
+    return None
+
+
+class ClaudeUsage:
+    """Uso dos limites do Claude (janela de 5 h e semanal), em %.
+
+    Sai do historico que o app de desktop grava sozinho em ~/.config/Claude: amostras
+    {"t": ms, "u": {"fh": 5h, "sd": semana}} a cada ~15 min enquanto o app esta aberto.
+    Nao tem API publica pra isso, entao o formato pode mudar; se faltar o arquivo ou a
+    leitura falhar, o campo fica None e o painel simplesmente nao mostra nada.
+    """
+
+    def __init__(self):
+        self.latest = None
+        self._mtime = None
+
+    def read(self):
+        try:
+            mtime = CLAUDE_USAGE.stat().st_mtime
+        except OSError:
+            self.latest, self._mtime = None, None
+            return
+        if mtime == self._mtime:
+            return
+        self._mtime = mtime
+        try:
+            samples = json.loads(CLAUDE_USAGE.read_text())["samples"]
+            last = samples[-1]
+            out = {"t": last["t"] / 1000}
+            for name, (key, length) in CLAUDE_WINDOWS.items():
+                out[name] = last["u"].get(key)
+                out[name + "_reset"] = _claude_reset(samples, key, length)
+            self.latest = out
+        except (OSError, ValueError, KeyError, IndexError, TypeError, AttributeError):
+            self.latest = None
+
+
 def _busctl(*args):
     out = subprocess.run(["busctl", "--user", "-j", *args], capture_output=True, text=True, timeout=2)
     return json.loads(out.stdout)["data"] if out.returncode == 0 and out.stdout else None
@@ -184,6 +245,7 @@ class Collector:
     def __init__(self):
         self.gpu = GpuReader()
         self.rapl = RaplReader()
+        self.claude = ClaudeUsage()
         self.stats = {}
         self.procs = []
         self.volume = None
@@ -200,6 +262,8 @@ class Collector:
         while True:
             time.sleep(1)
             tick += 1
+            if tick % 30 == 1:
+                self.claude.read()
             if tick % 2 == 0:
                 self._sample_procs()
                 self._sample_volume()
@@ -264,6 +328,7 @@ class Collector:
             "procs": self.procs,
             "volume": self.volume,
             "media": self.media,
+            "claude": self.claude.latest,
         }
 
     def _sample_procs(self):

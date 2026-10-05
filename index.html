@@ -59,6 +59,7 @@
   header .spacer { flex: 1; }
   header .meta { color: var(--text-2); font-size: 18px; }
   header .meta b { color: var(--text); font-weight: 600; }
+  header .meta.stale, header .meta.stale b { color: var(--muted); }  /* app de desktop fechado: numero parado */
   .conn { font-size: 18px; color: var(--text); display: none; }
   .conn.show { display: inline; }
   .conn::before { content: "⚠ "; color: var(--critical); }
@@ -223,7 +224,9 @@
     <span class="date" id="date"></span>
     <span class="conn" id="conn">sem conexão com o servidor do painel</span>
     <span class="spacer"></span>
-    <span class="meta live" id="live" hidden><i class="dot"></i>AO VIVO na Twitch · <b id="live-v" style="margin-left:6px">0</b>&nbsp;assistindo</span>
+    <span class="meta live" id="live" hidden><i class="dot"></i><span id="live-txt"></span></span>
+    <span class="meta" id="claude" hidden>Claude 5 h <b id="cl-fh">—</b><span id="cl-fh-r" hidden>, reseta <b>—</b></span>
+      · semana <b id="cl-sd">—</b><span id="cl-sd-r" hidden>, reseta <b>—</b></span></span>
     <span class="meta">Volume <b id="vol">—</b></span>
     <span class="meta">Carga <b id="load">—</b></span>
     <span class="meta">Ligado há <b id="uptime">—</b></span>
@@ -533,6 +536,7 @@ function render(s) {
   document.getElementById("vol").textContent = v ? (v.muted ? "mudo" : v.pct + "%") : "—";
 
   renderOneDrive(s.onedrive);
+  renderClaude(s.claude, s.t);
 
   pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
   renderMedia(s.media);
@@ -549,6 +553,41 @@ const OD_STATUS = {
   starting: () => '<span class="i" style="color:var(--muted)">…</span>iniciando',
 };
 const OD_ICON = { up: "↑", down: "↓", del: "✕", new: "+", move: "⇄" };
+// Limites do Claude: so aparece quando o app de desktop esta gravando o historico (ver ClaudeUsage)
+const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+// Horario estimado do reset. O ~ e de verdade: o historico e de 15 em 15 min (erro de ~10 min).
+// Hora com dois digitos de proposito: "~02h25" e hora do relogio, "2h25" pareceria "daqui a 2h25".
+function fmtReset(ts, comDia) {
+  const d = new Date(ts * 1000);
+  const passo = comDia ? 60 : 5;  // na semana, arredonda pra hora cheia; na de 5 h, pra 5 min
+  d.setMinutes(Math.round(d.getMinutes() / passo) * passo, 0, 0);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const hora = d.getMinutes() ? `${hh}h${String(d.getMinutes()).padStart(2, "0")}` : `${hh}h`;
+  if (!comDia) return "~" + hora;
+  const dias = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
+  const dia = dias === 0 ? "" : dias === 1 ? "amanhã " : DIAS[d.getDay()] + " ";
+  return "~" + dia + hora;
+}
+
+function renderClaude(c, now) {
+  const el = document.getElementById("claude");
+  el.hidden = !c;
+  if (!c) return;
+  const stale = now - c.t > 45 * 60;  // amostra velha: mostra apagado em vez de mentir
+  el.classList.toggle("stale", stale);
+  for (const [id, pct, reset, comDia] of [["cl-fh", c.five_hour, c.five_hour_reset, false],
+                                          ["cl-sd", c.week, c.week_reset, true]]) {
+    const b = document.getElementById(id);
+    b.textContent = pct == null ? "—" : pct + "%";
+    const l = level(pct, 75, 90);
+    b.style.color = stale || l === "ok" ? "" : levelColor[l];
+    const r = document.getElementById(id + "-r");
+    r.hidden = reset == null || stale;  // sem virada limpa no historico, nao chuta
+    if (!r.hidden) r.querySelector("b").textContent = fmtReset(reset, comDia);
+  }
+}
+
 function renderOneDrive(o) {
   const card = document.getElementById("od-card");
   card.hidden = !o || !o.installed;
@@ -687,8 +726,8 @@ const REDES = [
     icon: '<rect x="2" y="5" width="18" height="13" rx="4"/><path d="M9.5 8.8v5.4l4.6-2.7z" fill="currentColor"/>' },
   { id: "twitch", nome: "Twitch", seg: "seguidores",
     icon: '<path d="M4 3h15v10l-4 4h-4l-3 3v-3H4z"/><path d="M10 7.5v4M14.5 7.5v4"/>' },
-  { id: "instagram", nome: "Instagram", seg: "seguidores",
-    icon: '<rect x="3" y="3" width="16" height="16" rx="4.5"/><circle cx="11" cy="11" r="3.8"/><circle cx="15.6" cy="6.4" r=".9" fill="currentColor"/>' },
+  { id: "kick", nome: "Kick", seg: "seguidores",
+    icon: '<rect x="3" y="3" width="16" height="16" rx="3"/><path d="M8.2 7v8M8.2 11l3.6-4M8.2 11l3.6 4"/>' },
   { id: "tiktok", nome: "TikTok", seg: "seguidores",
     icon: '<path d="M12.5 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M12.5 3c.4 2.6 2.1 4.2 4.8 4.4"/>' },
 ];
@@ -753,7 +792,7 @@ function renderRedes() {
     f("hero").textContent = has ? fmtN(d.followers) : d.configured ? "…" : "em breve";
     const t = d.today || {};
     f("delta").innerHTML = deltaHtml(t.followers);
-    f("status").innerHTML = r.id === "twitch" && d.live ? '<i class="dot"></i>Ao vivo' : "";
+    f("status").innerHTML = d.live ? '<i class="dot"></i>Ao vivo' : "";
     let stats = "", extra = "";
     if (r.id === "youtube" && has) {
       stats = stat("Views do canal", fmtN(d.views), deltaHtml(t.views)) + stat("Likes nos vídeos", fmtN(d.likes), deltaHtml(t.likes)) + stat("Vídeos", fmtN(d.posts));
@@ -761,11 +800,7 @@ function renderRedes() {
     } else if (r.id === "tiktok" && has) {
       stats = stat("Views nos vídeos", fmtN(d.views), deltaHtml(t.views)) + stat("Likes do perfil", fmtN(d.likes), deltaHtml(t.likes)) + stat("Vídeos", fmtN(d.posts));
       if (d.latest) extra = `Último vídeo: <b>${esc(d.latest.title || "sem título")}</b> · ${fmtN(d.latest.views)} views · ${fmtN(d.latest.likes)} likes`;
-    } else if (r.id === "instagram" && has) {
-      stats = stat("Likes nos posts", fmtN(d.likes), deltaHtml(t.likes)) + stat("Comentários", fmtN(d.comments)) + stat("Posts", fmtN(d.posts));
-      if (d.latest) extra = `Último post: <b>${esc(d.latest.title || "sem legenda")}</b> · ${fmtN(d.latest.likes)} likes · ${fmtN(d.latest.comments)} comentários` +
-                            (d.latest.views != null ? ` · ${fmtN(d.latest.views)} views` : "");
-    } else if (r.id === "twitch" && has) {
+    } else if ((r.id === "twitch" || r.id === "kick") && has) {
       const L = d.live;
       stats = stat("Status", L ? "Ao vivo" : "Offline", L ? "desde " + new Date(L.started).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "")
             + stat("Assistindo agora", L ? fmtN(L.viewers) : "—") + stat("Jogo", L ? esc(L.game) : "—");
@@ -789,9 +824,11 @@ async function loadRedes() {
     if (redesPrev[r.id] != null && n > redesPrev[r.id]) celebrate(`+${n - redesPrev[r.id]} no ${r.nome}!`);
     redesPrev[r.id] = n;
   }
-  const L = redesData.twitch?.live;
-  document.getElementById("live").hidden = !L;
-  if (L) document.getElementById("live-v").textContent = fmtN(L.viewers);
+  // Aviso de live no cabecalho: Twitch tem preferencia se as duas estiverem no ar
+  const aoVivo = REDES.map(r => [r.nome, redesData[r.id]?.live]).find(([, L]) => L);
+  document.getElementById("live").hidden = !aoVivo;
+  // Frase inteira num elemento so: o .live e flex e comeria os espacos entre os pedacos
+  if (aoVivo) document.getElementById("live-txt").innerHTML = `AO VIVO na ${aoVivo[0]} · <b>${fmtN(aoVivo[1].viewers)}</b> assistindo`;
   if (PAGES[page] === "page-redes") renderRedes();
   renderRedesMini();
 }
@@ -805,7 +842,7 @@ function renderRedesMini() {
     const d = redesData[r.id] || {}, t = d.today || {};
     if (d.followers == null) return `<div class="rm">${icon(r)}<span class="n">${r.nome}</span><span class="c s span4">em breve</span></div>`;
     const hoje = t.followers ? `<span class="c h">${deltaHtml(t.followers, "")}</span>` : '<span class="c s">—</span>';
-    const rest = r.id === "twitch" && d.live
+    const rest = d.live
       ? `<span class="c h" style="grid-column: span 2"><i class="dot"></i>ao vivo · ${fmtN(d.live.viewers)} assistindo</span>`
       : `<span class="c">${fmtK(d.views)}</span><span class="c">${fmtK(d.likes)}</span>`;
     return `<div class="rm">${icon(r)}<span class="n">${r.nome}</span><span class="c v">${fmtN(d.followers)}</span>${hoje}${rest}</div>`;

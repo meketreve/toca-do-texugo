@@ -26,14 +26,20 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 **Redes sociais**
 - Card na tela principal com seguidores, "+N hoje", views e likes de cada rede
 - Página de detalhes com o último vídeo/post, os totais e a tendência dos últimos 30 dias
-- Aviso **AO VIVO** no cabeçalho quando tem live na Twitch
+- Aviso **AO VIVO** no cabeçalho quando tem live na Twitch ou na Kick
 
 | Rede | API | Dados |
 |---|---|---|
 | YouTube | Data API v3 (chave de API) | inscritos, views, likes somados, vídeos, último vídeo |
 | Twitch | Helix (client credentials) | seguidores, live, espectadores, jogo |
 | TikTok | Login Kit Desktop + Display API | seguidores, likes do perfil, views somadas, vídeos, último vídeo |
-| Instagram | Instagram API com login do Instagram | seguidores, likes e comentários somados, posts, último post |
+| Kick | endpoint interno `kick.com/api/v2` (sem credencial) | seguidores, live, espectadores, categoria |
+
+**Limites do Claude** (só aparece pra quem usa o app de desktop)
+- Quanto já foi usado da janela de **5 h** e da **semanal**, no cabeçalho, com o horário estimado do reset: `Claude 5 h 42%, reseta ~19h30 · semana 18%, reseta ~qui 09h`
+- Amarelo passando de 75%, vermelho de 90%. Se a última amostra tiver mais de 45 min (app fechado), a linha fica cinza em vez de passar número velho por atual
+- Sai do histórico que o próprio app de desktop grava em `~/.config/Claude/plan-usage-history.json`; o painel só **lê**, e só as porcentagens. Não tem API pública pra isso, então o formato pode mudar: se o arquivo sumir ou não der pra ler, a linha some junto
+- O arquivo não guarda a hora do reset, só as porcentagens. Ela é estimada pelas viradas do histórico (a porcentagem cai, ou sai do zero), que é amostrado de 15 em 15 min — daí o `~`: o erro fica na casa dos 10 min. Se a virada caiu num buraco do histórico (app fechado na hora), o painel mostra a porcentagem e omite o horário
 
 **Texugo** 🦡
 - Anda por cima dos cards (menos a fileira de cima, pra não cobrir o cabeçalho) e pula de um pro outro, inclusive quando a página muda
@@ -112,14 +118,14 @@ As credenciais ficam em `~/.config/toca-do-texugo/redes.json` (`chmod 600`, **fo
 {
   "youtube":   { "handle": "@seu_canal", "api_key": "" },
   "twitch":    { "login": "seu_login", "client_id": "", "client_secret": "" },
-  "instagram": { "usuario": "seu_usuario", "access_token": "" },
+  "kick":      { "usuario": "seu_slug" },
   "tiktok":    { "usuario": "seu_usuario", "client_key": "", "client_secret": "" }
 }
 ```
 
 - **YouTube**: no Google Cloud, ative a *YouTube Data API v3* e crie uma chave de API (de preferência restrita a essa API). Cada leitura gasta cerca de 5 unidades da cota diária de 10.000.
 - **Twitch**: registre um app em dev.twitch.tv (tipo *Confidential*, redirect `http://localhost`) e copie o Client ID e um secret novo. Use um app próprio, pra não invalidar o secret de outros bots.
-- **Instagram**: a conta precisa ser Profissional (Criador ou Empresa). No app da Meta, em *Instagram → API setup with Instagram business login*, gere o token (vale 60 dias). O servidor renova a cada 7 dias.
+- **Kick**: só o slug do canal (o que vem depois de `kick.com/`), sem credencial. Os números saem do endpoint que o próprio site usa (`kick.com/api/v2/channels/<slug>`), que **não é documentado** e pode mudar ou passar a barrar. A API oficial (`api.kick.com`) exige app OAuth e mesmo assim não devolve número de seguidores, só a live — por isso a escolha. O Cloudflare do site recusa o `urllib`, então essa leitura vai por `curl`.
 - **TikTok**: crie um app em developers.tiktok.com e um **Sandbox** com a sua conta como *target user*. Adicione o **Login Kit** com a plataforma **Desktop** e a Redirect URI `http://localhost:8787/tiktok/callback/`, e os escopos `user.info.basic`, `user.info.stats` e `video.list`. Depois abra `http://localhost:8787/tiktok/login` no navegador do PC e autorize. Os tokens se renovam sozinhos, e a autorização vale 1 ano.
   > **Pegadinha do portal:** se a aba **Web** do Login Kit guardar uma URI com `localhost`, o formulário recusa tudo, mesmo com a Web desmarcada. Coloque qualquer URL `https` nela.
 
@@ -131,7 +137,7 @@ Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.re
 |---|---|
 | `~/.config/toca-do-texugo/config.json` | monitor, rede, discos e TDP da máquina |
 | `~/.config/toca-do-texugo/redes.json` | credenciais das redes |
-| `~/.config/toca-do-texugo/redes-tokens.json` | tokens renovados (Instagram, TikTok) |
+| `~/.config/toca-do-texugo/redes-tokens.json` | tokens renovados (TikTok) |
 | `~/.config/toca-do-texugo/redes-historico.json` | histórico diário pro "+N hoje" e a tendência |
 | `~/.config/toca-do-texugo/atalhos.json` | atalhos da página de atalhos |
 | `~/.config/toca-do-texugo/onedrive-cota.json` | última cota lida do OneDrive (cache de 1 h) |
@@ -141,6 +147,7 @@ Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.re
 
 - O servidor só escuta em `127.0.0.1` e confere o cabeçalho `Host`. Os atalhos exigem o cabeçalho `X-Dash`, então outro site aberto no navegador não consegue disparar comandos.
 - Os erros das APIs mostram só a mensagem, nunca a URL, que pode conter a chave.
+- Do histórico do Claude o painel lê só as porcentagens e a hora da amostra. O identificador da organização, que está no mesmo arquivo, não é lido nem servido.
 - O hook `.githooks/pre-commit` bloqueia commit com arquivo privado, formato de chave conhecido ou o **valor real** de alguma credencial local, sem imprimir o valor. Num clone novo, ative com:
 
   ```bash
@@ -152,7 +159,7 @@ Se a URI cadastrada no TikTok for outra, informe o endereço exato em `tiktok.re
 | Rota | Conteúdo |
 |---|---|
 | `GET /` | a página do painel |
-| `GET /api/stats` | métricas do PC, música atual e status do OneDrive (JSON, 1×/s) |
+| `GET /api/stats` | métricas do PC, música atual, status do OneDrive e limites do Claude (JSON, 1×/s) |
 | `GET /api/audio` | PCM s16le mono 24 kHz do som do PC (stream) |
 | `GET /api/redes` | números das redes, "+hoje" e histórico |
 | `GET /api/shortcuts` | lista de atalhos (sem os comandos) |

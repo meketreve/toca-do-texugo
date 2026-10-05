@@ -7,6 +7,7 @@ import datetime
 import hashlib
 import json
 import secrets
+import subprocess
 import threading
 import time
 import urllib.error
@@ -40,6 +41,13 @@ def _get(url, headers=None, data=None):
         raise ApiError(f"HTTP {e.code}" + (f": {msg}" if msg else "")) from None
     except (urllib.error.URLError, TimeoutError) as e:
         raise ApiError(f"sem conexão ({getattr(e, 'reason', e)})") from None
+
+
+def _int(v):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _q(**kw):
@@ -142,6 +150,50 @@ class Twitch:
         }
 
 
+class Kick:
+    """Kick pelo endpoint que o proprio site usa (kick.com/api/v2), sem credencial nenhuma.
+
+    A API oficial (api.kick.com) nao devolve numero de seguidores, so a live; como o card e de
+    seguidores, aqui vai o v2. Nao e documentado: pode mudar ou passar a barrar. O Cloudflare do
+    site recusa o urllib (403), entao a leitura vai por `curl`, que ja e dependencia do projeto.
+    """
+    interval = 60  # rapido pra perceber quando a live comeca, igual a Twitch
+    API = "https://kick.com/api/v2/channels/"
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+
+    def configured(self):
+        return bool(self.cfg.get("usuario"))
+
+    def fetch(self):
+        slug = self.cfg["usuario"].lstrip("@").lower()
+        out = subprocess.run(["curl", "-sS", "--max-time", "15", "--fail", self.API + urllib.parse.quote(slug)],
+                             capture_output=True, text=True)
+        if out.returncode != 0:
+            if "404" in out.stderr:
+                raise ApiError(f"canal {slug} não encontrado")
+            raise ApiError("curl falhou" + (f": {out.stderr.strip()[:80]}" if out.stderr.strip() else ""))
+        try:
+            d = json.loads(out.stdout)
+        except ValueError:
+            raise ApiError("resposta não era JSON (o Kick pode ter mudado o endpoint)") from None
+        live = d.get("livestream") or None
+        cat = (live or {}).get("categories") or []
+        return {
+            "name": (d.get("user") or {}).get("username") or slug,
+            "handle": slug,
+            "followers": _int(d.get("followers_count")),  # o Kick manda como string
+            "live": live and {
+                "title": live.get("session_title"),
+                "game": cat[0].get("name") if cat else None,
+                "viewers": _int(live.get("viewer_count")),
+                # Vem "2026-09-28 13:07:36" em UTC, sem fuso: vira ISO pro painel nao errar 3 h
+                "started": (live.get("start_time") or "").replace(" ", "T") + "Z" if live.get("start_time") else None,
+            },
+        }
+
+
 def _tokens():
     try:
         return json.loads(TOKENS.read_text())
@@ -152,75 +204,6 @@ def _tokens():
 def _save_tokens(data):
     TOKENS.touch(mode=0o600, exist_ok=True)
     TOKENS.write_text(json.dumps(data))
-
-
-class Instagram:
-    """Instagram API com login do Instagram (conta Profissional). Token de 60 dias, renovado aqui."""
-    interval = 900
-    API = "https://graph.instagram.com/v25.0/"
-    REFRESH_EVERY = 7 * 86400
-
-    def __init__(self, cfg):
-        self.cfg = cfg
-
-    def configured(self):
-        return bool(self.cfg.get("access_token"))
-
-    def _token(self):
-        # O token colado no redes.json vale ate ser renovado; a versao renovada fica em redes-tokens.json.
-        # Se o usuario colar um token novo no redes.json, ele passa a valer.
-        base = hashlib.sha256(self.cfg["access_token"].encode()).hexdigest()
-        store = _tokens()
-        cur = store.get("instagram")
-        if not cur or cur.get("base") != base:
-            cur = {"base": base, "token": self.cfg["access_token"], "since": time.time()}
-            store["instagram"] = cur
-            _save_tokens(store)
-        # Renova com >24h de idade (exigencia da API) e depois a cada 7 dias
-        if time.time() - cur["since"] > (self.REFRESH_EVERY if cur.get("refreshed") else 86400):
-            try:
-                r = _get("https://graph.instagram.com/refresh_access_token?" + _q(grant_type="ig_refresh_token", access_token=cur["token"]))
-                cur.update(token=r["access_token"], since=time.time(), refreshed=True)
-                _save_tokens(store)
-            except ApiError:
-                pass  # tenta de novo na proxima leitura; o token atual ainda vale ate vencer
-        return cur["token"]
-
-    def fetch(self):
-        tok = self._token()
-        me = _get(self.API + "me?" + _q(fields="user_id,username,followers_count,media_count", access_token=tok))
-        likes, comments, latest, url, n = 0, 0, None, self.API + "me/media?" + _q(
-            fields="id,caption,like_count,comments_count,timestamp,media_type", limit=50, access_token=tok), 0
-        while url and n < 500:
-            page = _get(url)
-            for m in page.get("data", []):
-                likes += m.get("like_count", 0)
-                comments += m.get("comments_count", 0)
-                latest = latest or m
-                n += 1
-            url = page.get("paging", {}).get("next")
-        views = None
-        if latest:
-            try:  # precisa da permissao de insights; sem ela, so nao mostra
-                ins = _get(self.API + latest["id"] + "/insights?" + _q(metric="views", access_token=tok))
-                views = ins["data"][0]["values"][0]["value"]
-            except (ApiError, KeyError, IndexError):
-                pass
-        return {
-            "name": me.get("username"),
-            "handle": me.get("username") or self.cfg.get("usuario"),
-            "followers": me.get("followers_count", 0),
-            "likes": likes,
-            "comments": comments,
-            "posts": me.get("media_count", 0),
-            "latest": latest and {
-                "title": (latest.get("caption") or "").split("\n")[0][:120],
-                "likes": latest.get("like_count", 0),
-                "comments": latest.get("comments_count", 0),
-                "views": views,
-                "published": latest.get("timestamp"),
-            },
-        }
 
 
 class TikTok:
@@ -315,7 +298,7 @@ class TikTok:
         }
 
 
-PROVIDERS = {"youtube": Youtube, "twitch": Twitch, "instagram": Instagram, "tiktok": TikTok}
+PROVIDERS = {"youtube": Youtube, "twitch": Twitch, "kick": Kick, "tiktok": TikTok}
 
 
 class Redes:
