@@ -38,7 +38,7 @@
   .page.enter { animation: page-in .25s ease-out; }
   @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
   #page-dash { grid-template-rows: auto minmax(0, 1fr) auto; }
-  #page-atalhos { grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+  #page-atalhos { grid-template-rows: auto auto auto; align-content: start; }
   .page-title { margin: 4px 6px 0; font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
 
   /* Botao discreto de trocar pagina */
@@ -126,6 +126,28 @@
   .shortcuts button:active { transform: scale(.97); background: #262625; }
   .shortcuts button.ok { border-color: var(--good); }
   .shortcuts button.err { border-color: var(--critical); }
+
+  /* Escolha de layout do painel (fica abaixo dos atalhos) */
+  .layout-pick { align-content: start; }
+  .picks { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gap); }
+  .picks button {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; min-height: 110px;
+    display: grid; place-items: center; align-content: center; gap: 8px; padding: 12px 10px; cursor: pointer;
+    transition: background .15s, transform .08s, border-color .15s;
+  }
+  .picks button .ic { font-size: 34px; line-height: 1; }
+  .picks button .lb { font-size: 19px; color: var(--text-2); text-align: center; }
+  .picks button:active { transform: scale(.97); background: #262625; }
+  .picks button.sel { border-color: var(--accent); background: var(--accent-wash); }
+  .picks button.sel .lb { color: var(--text); }
+
+  /* Layout agrupado: grade de medidores montada a partir do registro de widgets */
+  #page-dash-b { grid-template-rows: minmax(0, 1fr); }
+  .widgets { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gap); align-content: start; }
+  .widget { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; }
+  .widget > h2 { margin: 0; }
+  .w-vazio { color: var(--muted); display: grid; place-items: center; text-align: center; padding: 40px 16px; }
 
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
@@ -321,6 +343,10 @@
   </section>
   </main>
 
+  <main class="page" id="page-dash-b" hidden>
+    <section class="widgets" id="widgets-b"></section>
+  </main>
+
   <main class="page" id="page-redes" hidden>
     <section class="redes" id="redes"></section>
   </main>
@@ -328,6 +354,10 @@
   <main class="page" id="page-atalhos" hidden>
     <h2 class="page-title">Atalhos</h2>
     <section class="shortcuts" id="shortcuts"></section>
+    <section class="layout-pick">
+      <h2 class="page-title">Layout do painel</h2>
+      <div class="picks" id="picks"></div>
+    </section>
   </main>
 </div>
 
@@ -468,6 +498,21 @@ function render(s) {
   push("gpu", g ? g.util : null); push("vram", g ? 100 * g.mem_used / g.mem_total : null);
   push("rx", s.net.rx); push("tx", s.net.tx);
 
+  // Cabecalho e estado da mascote valem para qualquer layout; o corpo e por layout
+  document.getElementById("load").textContent = s.load.map(v => fmtN(v, 1)).join(" · ");
+  document.getElementById("uptime").textContent = fmtDur(s.uptime);
+  const v = s.volume;
+  document.getElementById("vol").textContent = v ? (v.muted ? "mudo" : v.pct + "%") : "—";
+
+  renderClaude(s.claude, s.t);
+  pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
+  
+  if (layout === "agrupado") renderDashB(s); else renderDashA(s);
+}
+
+/* Layout classico: o painel de sempre, intocado */
+function renderDashA(s) {
+  const c = s.cpu, m = s.mem, g = s.gpu;
   const cl = level(c.pct, 75, 95);
   setTile("t-cpu", `${levelIcon(cl)}${fmtN(c.pct)}<small>%</small>`,
     `${c.threads} threads · ${fmtN((c.freq || 0) / 1000, 2)} GHz · ${fmtN(c.temp)} °C`);
@@ -530,15 +575,7 @@ function render(s) {
   const limit = document.getElementById("procs-card").getBoundingClientRect().bottom - 16;
   while (tbody.lastElementChild && tbody.lastElementChild.getBoundingClientRect().bottom > limit) tbody.lastElementChild.remove();
 
-  document.getElementById("load").textContent = s.load.map(v => fmtN(v, 1)).join(" · ");
-  document.getElementById("uptime").textContent = fmtDur(s.uptime);
-  const v = s.volume;
-  document.getElementById("vol").textContent = v ? (v.muted ? "mudo" : v.pct + "%") : "—";
-
   renderOneDrive(s.onedrive);
-  renderClaude(s.claude, s.t);
-
-  pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
   renderMedia(s.media);
 }
 
@@ -689,8 +726,77 @@ async function loadShortcuts() {
   } catch (e) { if (shortcutsSig === null) box.textContent = "Não consegui carregar os atalhos."; }
 }
 
+/* ---------- Layouts do painel ----------
+   Cada layout e uma pagina propria e nenhuma substitui a outra: a escolha fica na pagina de
+   atalhos e no localStorage, valendo pro proximo boot. O layout "agrupado" nao e HTML fixo: a
+   grade e montada a partir do registro WIDGETS, pra tela de configuracao poder remontar a
+   ordem e o tamanho sem mexer no HTML. */
+const LAYOUTS = {
+  classico: { nome: "Clássico", icone: "▤", pagina: "page-dash" },
+  agrupado: { nome: "Agrupado", icone: "◴", pagina: "page-dash-b" },
+};
+let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getItem("painel.layout") : "classico";
+
+// Registro de medidores: id -> { nome, col (de 12), montar(el), render(el, s) }
+const WIDGETS = {};
+const regWidget = (id, def) => { WIDGETS[id] = def; };
+const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia", "vazao", "capacidade"];
+function layoutB() {
+  try { const v = JSON.parse(localStorage.getItem("painel.widgets")); if (Array.isArray(v)) return v; } catch (e) {}
+  return LAYOUT_B_PADRAO;
+}
+
+const montados = new Map();  // id -> div .w-body ja no DOM
+function montarDashB() {
+  const box = document.getElementById("widgets-b");
+  box.innerHTML = ""; montados.clear();
+  const ids = layoutB().filter(id => WIDGETS[id]);
+  for (const id of ids) {
+    const w = WIDGETS[id];
+    const card = document.createElement("div");
+    card.className = "card widget"; card.dataset.w = id;
+    card.style.gridColumn = `span ${w.col || 4}`;
+    card.innerHTML = `<h2></h2><div class="w-body"></div>`;
+    card.querySelector("h2").textContent = w.nome;
+    box.appendChild(card);
+    const body = card.querySelector(".w-body");
+    if (w.montar) w.montar(body);
+    montados.set(id, body);
+  }
+  if (!ids.length) {
+    box.innerHTML = '<div class="card w-vazio" style="grid-column: span 12">Layout agrupado ainda sem medidores.<br>As próximas fases preenchem esta tela.</div>';
+  }
+}
+function renderDashB(s) {
+  for (const [id, body] of montados) {
+    try { WIDGETS[id].render(body, s); } catch (e) {}  // um medidor quebrado nao derruba os outros
+  }
+}
+function setLayout(id) {
+  if (!LAYOUTS[id]) return;
+  layout = id;
+  try { localStorage.setItem("painel.layout", id); } catch (e) {}
+  for (const L of Object.values(LAYOUTS)) document.getElementById(L.pagina).hidden = true;
+  PAGES[0] = LAYOUTS[id].pagina;
+  renderPicks();
+  showPage(0);
+}
+function renderPicks() {
+  const box = document.getElementById("picks");
+  box.innerHTML = "";
+  for (const [id, L] of Object.entries(LAYOUTS)) {
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="ic"></span><span class="lb"></span>`;
+    b.querySelector(".ic").textContent = L.icone;
+    b.querySelector(".lb").textContent = L.nome;
+    if (id === layout) b.classList.add("sel");
+    b.addEventListener("click", () => setLayout(id));
+    box.appendChild(b);
+  }
+}
+
 /* ---------- Paginas: painel e atalhos ---------- */
-const PAGES = ["page-dash", "page-redes", "page-atalhos"];
+const PAGES = [LAYOUTS[layout].pagina, "page-redes", "page-atalhos"];
 const ATALHOS = 2;
 // O botao mostra o icone da PROXIMA pagina
 const PAGER_ICONS = [
@@ -1007,7 +1113,7 @@ const M = { x: 300, y: -MH, el: null, dir: 1, state: "fall", until: 0, jump: nul
 
 function platforms() {
   // Fileira de cima fica de fora: em cima dela o texugo cobre o cabecalho (volume, carga, uptime)
-  const sel = { "page-dash": "#page-dash .card:not(.tile)", "page-redes": "#page-redes .card", "page-atalhos": "#page-atalhos .shortcuts button" }[PAGES[page]];
+  const sel = { "page-dash": "#page-dash .card:not(.tile)", "page-dash-b": "#page-dash-b .card", "page-redes": "#page-redes .card", "page-atalhos": "#page-atalhos .shortcuts button" }[PAGES[page]];
   return [...document.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > MW + 24);
 }
 function spot(el) {
@@ -1121,6 +1227,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+montarDashB(); renderPicks();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);
