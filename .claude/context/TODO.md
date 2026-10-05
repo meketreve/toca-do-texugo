@@ -26,13 +26,8 @@ atalhos e lembrado no `localStorage`. Gráfico de uso com linhas de 60 s + mín/
 radial por peça (CPU e GPU); RAM/VRAM nos dois blocos (% no uso, GB na capacidade). Referências em
 `DESIGN-REFS.md`. Tudo em `index.html`, sem mexer no `server.py` (os dados já existem).
 
-- [x] ~~Fase 0 — commitar os 4 arquivos pendentes~~ (aab47c1)
-- [x] ~~Fase 1 — infra: `page-dash-b`, registro `WIDGETS`, seletor nos atalhos, `render()` dividido~~
-- [x] ~~Fase 2 — helpers `drawMulti` e `faixa`~~ (`drawGauge`/`norm` ficam pra fase 4, onde são usados)
-- [x] ~~Fase 3 — bloco "Uso": 1 gráfico, 4 linhas (CPU/RAM/GPU/VRAM)~~
-- [x] ~~Fase 4 — radiais de CPU e GPU~~ (encoder ficou de fora: 6 anéis não cabem legíveis)
-- [x] ~~Fase 5 — temperaturas juntas numa escala 0–100 °C~~
-- [x] ~~Fase 6 — potência: barra empilhada CPU+GPU~~
+- [x] ~~Fases 0 a 6: commit das pendências, infra dos layouts, gráfico de uso, radiais,
+      temperaturas e consumo~~ (aab47c1…a62a5ce)
 - [ ] Fase 7 — vazão: rede e disco em gráfico espelhado, escalas separadas
 - [ ] Fase 8 — capacidade: discos + OneDrive em barras usado/total
 - [ ] Fase 9 — tela de configuração: escolher quais medidores entram, ordem e largura
