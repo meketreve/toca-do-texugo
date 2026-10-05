@@ -168,6 +168,20 @@
   .gl .nm { color: var(--text-2); }
   .gl .vl { font-variant-numeric: tabular-nums; }
 
+  /* Temperaturas na mesma escala e potencia empilhada */
+  .tp { display: grid; gap: 15px; align-content: center; height: 100%; }
+  .tp-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; }
+  .tp-row .nm { color: var(--text-2); }
+  .tp-row .vl { font-variant-numeric: tabular-nums; }
+  .tp-bar { grid-column: 1 / -1; position: relative; height: 12px; border-radius: 6px; background: var(--grid); overflow: hidden; }
+  .tp-bar i { display: block; height: 100%; border-radius: 6px; }
+  .tp-bar u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--muted); opacity: .7; }
+  .tp-esc { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; }
+  .pot-total { font-size: 38px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
+  .pot-total small { font-size: 17px; font-weight: 400; color: var(--muted); }
+  .pot-bar { display: flex; gap: 2px; height: 16px; border-radius: 8px; background: var(--grid); overflow: hidden; }
+  .pot-bar i { display: block; height: 100%; }
+
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
   .np { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; min-width: 0; }
@@ -972,6 +986,54 @@ gaugeWidget("radial-gpu", "Placa de vídeo", s => {
       { nome: "Ventoinha", frac: norm(g.fan, 100), texto: fmtN(g.fan) + "%" },
     ],
   };
+});
+
+// Cor por entidade, nao por posicao: a CPU e azul e a GPU verde-agua em todo medidor que
+// compara as duas, pra leitura nao mudar de significado de um card pro outro.
+const COR_CPU = "#3987e5", COR_GPU = "#199e70";
+
+// Escala unica pras tres temperaturas: comparar so vale se o eixo for o mesmo.
+const TEMP_MAX = 100;
+regWidget("temperaturas", {
+  nome: "Temperaturas", col: 4,
+  montar(el) { el.innerHTML = '<div class="tp"></div>'; },
+  render(el, s) {
+    const itens = [
+      { nome: "CPU", v: s.cpu.temp, warn: 80, crit: TETO.cpuTemp },
+      { nome: "GPU", v: s.gpu ? s.gpu.temp : null, warn: 78, crit: TETO.gpuTemp },
+      { nome: "SSD NVMe", v: s.nvme_temp, warn: 65, crit: 75 },
+    ];
+    el.querySelector(".tp").innerHTML = itens.map(t => {
+      const l = level(t.v, t.warn, t.crit);
+      const pct = Math.min(Math.max(t.v ?? 0, 0) / TEMP_MAX, 1) * 100;
+      return `<div class="tp-row"><span class="nm">${t.nome}</span>` +
+             `<span class="vl">${levelIcon(l)}${fmtN(t.v)} °C${levelWord[l]}</span>` +
+             `<div class="tp-bar"><i style="width:${pct.toFixed(1)}%;background:${levelColor[l]}"></i>` +
+             `<u style="left:${(100 * t.warn / TEMP_MAX).toFixed(1)}%"></u></div></div>`;
+    }).join("") + `<div class="tp-esc"><span>0 °C</span><span>${TEMP_MAX} °C</span></div>`;
+  },
+});
+
+// Potencia: uma barra so, as duas pecas empilhadas, teto = TDP da CPU + limite da GPU
+regWidget("potencia", {
+  nome: "Consumo", col: 4,
+  montar(el) { el.innerHTML = '<div class="tp"><div class="pot-total"></div><div class="pot-bar"></div><div class="gauge-leg"></div></div>'; },
+  render(el, s) {
+    const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
+    const teto = (s.cpu.tdp || 0) + (s.gpu ? s.gpu.power_limit : 0);
+    const total = (cp || 0) + (gp || 0);
+    el.querySelector(".pot-total").innerHTML = (cp == null && gp == null)
+      ? '<small>sem acesso ao sensor</small>'
+      : `${fmtN(total)} W <small>de ${fmtN(teto)} W</small>`;
+    const larg = v => teto ? `${(100 * (v || 0) / teto).toFixed(1)}%` : "0%";
+    el.querySelector(".pot-bar").innerHTML =
+      `<i style="width:${larg(cp)};background:${COR_CPU}"></i><i style="width:${larg(gp)};background:${COR_GPU}"></i>`;
+    el.querySelector(".gauge-leg").innerHTML =
+      `<div class="gl"><i class="sw" style="background:${COR_CPU}"></i><span class="nm">CPU</span>` +
+      `<span class="vl">${cp == null ? "sem sensor" : `${fmtN(cp)} W de ${s.cpu.tdp || "?"} W`}</span></div>` +
+      (s.gpu ? `<div class="gl"><i class="sw" style="background:${COR_GPU}"></i><span class="nm">GPU</span>` +
+      `<span class="vl">${fmtN(gp)} W de ${fmtN(s.gpu.power_limit)} W</span></div>` : "");
+  },
 });
 
 /* ---------- Paginas: painel e atalhos ---------- */

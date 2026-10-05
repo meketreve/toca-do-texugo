@@ -31,12 +31,24 @@ radial por peça (CPU e GPU); RAM/VRAM nos dois blocos (% no uso, GB na capacida
 - [x] ~~Fase 2 — helpers `drawMulti` e `faixa`~~ (`drawGauge`/`norm` ficam pra fase 4, onde são usados)
 - [x] ~~Fase 3 — bloco "Uso": 1 gráfico, 4 linhas (CPU/RAM/GPU/VRAM)~~
 - [x] ~~Fase 4 — radiais de CPU e GPU~~ (encoder ficou de fora: 6 anéis não cabem legíveis)
-- [ ] Fase 5 — temperaturas juntas numa escala 0–100 °C com zonas
-- [ ] Fase 6 — potência: barra empilhada CPU+GPU, teto = TDP + limite
+- [x] ~~Fase 5 — temperaturas juntas numa escala 0–100 °C~~
+- [x] ~~Fase 6 — potência: barra empilhada CPU+GPU~~
 - [ ] Fase 7 — vazão: rede e disco em gráfico espelhado, escalas separadas
 - [ ] Fase 8 — capacidade: discos + OneDrive em barras usado/total
 - [ ] Fase 9 — tela de configuração: escolher quais medidores entram, ordem e largura
       (edita `painel.widgets` no localStorage; o registro `WIDGETS` já foi feito pra isso)
+
+## Agenda e TODOs pelo Telegram
+
+Decidido 2026-10-05: entrada pelo Telegram (sem OAuth, sem Google Cloud); marcar como feito
+pelo toque no painel. O estado de "feito" é local — o Telegram é só entrada, o painel nunca
+escreve de volta.
+
+- [ ] A1 — `agenda.py`: `getUpdates` com offset persistido, **filtro por `chat_id`** (bot é
+      público: qualquer um manda mensagem), parse simples de data, estado em JSON
+- [ ] A2 — rotas `GET /api/agenda` e `POST /api/agenda/<id>/feito` (exige `X-Dash`, como os atalhos)
+- [ ] A3 — widget "agenda": compromissos com hora em cima, recados sem hora embaixo; toque marca feito
+- [ ] A4 — `agenda.exemplo.json` + README (token fica em `~/.config/toca-do-texugo/`, nunca no repo)
 
 ## Ideias / talvez
 
