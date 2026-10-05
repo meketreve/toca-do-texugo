@@ -144,15 +144,18 @@
 
   /* Layout agrupado: grade de medidores montada a partir do registro de widgets */
   #page-dash-b { grid-template-rows: minmax(0, 1fr); }
-  .widgets { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(150px, auto);
+  /* Linha de altura fixa: o tamanho na grade e o tamanho de verdade, sem card esticando
+     por causa do conteudo e empurrando o resto da fileira. */
+  .widgets { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 150px;
              gap: var(--gap); align-content: start; }
-  .widget { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; }
+  .widget { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; overflow: hidden; }
+  .w-body { min-height: 0; overflow: hidden; }
   .widget > h2 { margin: 0; }
   .w-vazio { color: var(--muted); display: grid; place-items: center; text-align: center; padding: 40px 16px; }
 
   /* Bloco "Uso": um grafico com as quatro series e a legenda ao lado */
-  .uso { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; }
-  .uso-g { width: 100%; height: 240px; }
+  .uso { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; height: 100%; min-height: 0; }
+  .uso-g { width: 100%; height: 100%; min-height: 0; }
   .uso-leg { display: grid; align-content: center; gap: 14px; min-width: 190px; }
   .leg { display: grid; grid-template-columns: 14px 1fr auto; gap: 1px 9px; align-items: baseline; }
   .leg .sw { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
@@ -161,8 +164,8 @@
   .leg .fx { grid-column: 2 / -1; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   /* Mostrador radial: um anel por medida da mesma peca */
-  .gauge { display: grid; gap: 14px; justify-items: center; }
-  .gauge svg { width: 100%; max-width: 260px; height: 200px; }
+  .gauge { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; justify-items: center; height: 100%; }
+  .gauge svg { width: 100%; max-width: 260px; height: 100%; min-height: 0; }
   .gauge-leg { display: grid; gap: 7px; width: 100%; }
   .gl { display: grid; grid-template-columns: 12px 1fr auto; gap: 9px; align-items: center; font-size: 17px; }
   .gl .sw { width: 10px; height: 10px; border-radius: 50%; }
@@ -184,8 +187,8 @@
   .pot-bar i { display: block; height: 100%; }
 
   /* Vazao espelhada e capacidade */
-  .vz { display: grid; gap: 10px; }
-  .vz svg { width: 100%; height: 150px; }
+  .vz { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; height: 100%; }
+  .vz svg { width: 100%; height: 100%; min-height: 0; }
   .vz-leg { display: flex; justify-content: space-between; font-size: 16px; }
   .vz-leg b { font-variant-numeric: tabular-nums; }
   .cap { display: grid; gap: 14px; align-content: center; height: 100%; }
@@ -605,8 +608,9 @@ function drawGauge(svg, aneis, centro) {
       out += `<path d="${arco(cx, cy, r, a.frac)}" fill="none" stroke="${a.cor}" stroke-width="${largura}" stroke-linecap="round"/>`;
     }
   });
-  out += `<text x="${cx}" y="${cy + 2}" text-anchor="middle" fill="var(--text)" font-size="40" font-weight="600">${centro.valor}</text>`;
-  out += `<text x="${cx}" y="${cy + 28}" text-anchor="middle" fill="var(--muted)" font-size="16">${centro.rotulo}</text>`;
+  const fv = Math.max(22, Math.min(40, r0 * 0.42));  // numero acompanha o raio, pra nao cobrir os aneis
+  out += `<text x="${cx}" y="${cy + fv * 0.05}" text-anchor="middle" fill="var(--text)" font-size="${fv.toFixed(0)}" font-weight="600">${centro.valor}</text>`;
+  out += `<text x="${cx}" y="${(cy + fv * 0.75).toFixed(0)}" text-anchor="middle" fill="var(--muted)" font-size="${Math.max(13, fv * 0.4).toFixed(0)}">${centro.rotulo}</text>`;
   svg.innerHTML = out;
 }
 
@@ -978,18 +982,23 @@ const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "pot
    id, e {id, col}) pra configuracao ja salva nao virar tela em branco. */
 const LARGURAS = [3, 4, 6, 12];
 const COLS = 12;
+// Abaixo do minimo o medidor ainda desenha, mas o dado fica ilegivel: o minimo e lei
+const minW = id => WIDGETS[id].minW || 3;
+const minH = id => WIDGETS[id].minH || 1;
 const inteiro = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
 function normaliza(lista) {
   return (lista || [])
     .map(it => (typeof it === "string" ? { id: it } : it))
     .filter(it => it && WIDGETS[it.id])
     .map(it => {
-      const w = inteiro(it.w, 1, COLS) || (LARGURAS.includes(it.col) ? it.col : (WIDGETS[it.id].col || 4));
+      const d = WIDGETS[it.id];
+      const w = Math.max(minW(it.id),
+        inteiro(it.w, 1, COLS) || (LARGURAS.includes(it.col) ? it.col : (d.col || 4)));
       const x = inteiro(it.x, 0, COLS - 1);
       return {
         id: it.id,
         w,
-        h: inteiro(it.h, 1, 12) || WIDGETS[it.id].h || 1,
+        h: Math.max(minH(it.id), inteiro(it.h, 1, 12) || d.h || 1),
         x: x != null && x + w <= COLS ? x : null,
         y: inteiro(it.y, 0, 99),
       };
@@ -1106,7 +1115,7 @@ function renderConfig() {
     r.querySelector(".nm").textContent = WIDGETS[id].nome;
     r.addEventListener("click", ev => {
       if (!ev.target.dataset || ev.target.dataset.a !== "poe") return;
-      salvarB([...layoutB(), { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 1 }]);
+      salvarB([...layoutB(), { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 2 }]);
     });
     box.appendChild(r);
   }
@@ -1168,7 +1177,7 @@ function edRender() {
     d.style.gridColumn = `${it.x + 1} / span ${it.w}`;
     d.style.gridRow = `${it.y + 1} / span ${it.h}`;
     d.innerHTML = '<span class="tit"></span><span></span>' +
-      `<span class="pe"><span class="tira" data-tira="${i}">✕</span><span>${it.w}×${it.h}</span><span class="rz" data-rz="${i}">◢</span></span>`;
+      `<span class="pe"><span class="tira" data-tira="${i}">✕</span><span>${it.w}×${it.h} <small>mín ${minW(it.id)}×${minH(it.id)}</small></span><span class="rz" data-rz="${i}">◢</span></span>`;
     d.querySelector(".tit").textContent = WIDGETS[it.id].nome;
     cv.appendChild(d);
   });
@@ -1194,7 +1203,7 @@ function edLiga() {
     const b = ev.target.closest("button[data-novo]");
     if (!b || b.disabled) return;
     const id = b.dataset.novo;
-    const novo = { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 2, x: 0, y: 0 };
+    const novo = { id, w: Math.max(minW(id), WIDGETS[id].col || 4), h: Math.max(minH(id), WIDGETS[id].h || 2), x: 0, y: 0 };
     Object.assign(novo, primeiraVaga(novo.w, novo.h));
     edLista.push(novo);
     arrasto = { tipo: "move", i: edLista.length - 1, dx: 0, dy: 0, antes: { ...novo } };
@@ -1219,7 +1228,8 @@ function edLiga() {
     if (!arrasto) return;
     const it = edLista[arrasto.i], c = edCelula(ev);
     const tent = arrasto.tipo === "tamanho"
-      ? { ...it, w: Math.max(1, Math.min(COLS - it.x, c.x - it.x + 1)), h: Math.max(1, c.y - it.y + 1) }
+      ? { ...it, w: Math.max(minW(it.id), Math.min(COLS - it.x, c.x - it.x + 1)),
+               h: Math.max(minH(it.id), c.y - it.y + 1) }
       : { ...it, x: Math.max(0, Math.min(COLS - it.w, c.x - arrasto.dx)), y: Math.max(0, c.y - arrasto.dy) };
     if (livre(tent, arrasto.i)) { Object.assign(it, tent); edRender(); }
   };
@@ -1265,7 +1275,7 @@ const SERIES_USO = [
 ];
 
 regWidget("uso", {
-  nome: "Uso", col: 6,
+  nome: "Uso", col: 6, h: 2, minW: 5, minH: 2,
   montar(el) { el.innerHTML = '<div class="uso"><svg class="uso-g"></svg><div class="uso-leg"></div></div>'; },
   render(el) {
     const series = SERIES_USO.map(d => ({ ...d, data: hist[d.key] }));
@@ -1284,9 +1294,9 @@ regWidget("uso", {
 const TETO = { cpuTemp: 90, gpuTemp: 86 };
 const CORES_ANEL = ["#3987e5", "#d95926", "#199e70", "#9085e9", "#d55181"];
 
-function gaugeWidget(id, nome, montarAneis) {
+function gaugeWidget(id, nome, minH, montarAneis) {
   regWidget(id, {
-    nome, col: 3,
+    nome, col: 3, h: minH, minW: 3, minH,
     montar(el) { el.innerHTML = '<div class="gauge"><svg></svg><div class="gauge-leg"></div></div>'; },
     render(el, s) {
       const d = montarAneis(s);
@@ -1299,7 +1309,7 @@ function gaugeWidget(id, nome, montarAneis) {
   });
 }
 
-gaugeWidget("radial-cpu", "Processador", s => {
+gaugeWidget("radial-cpu", "Processador", 2, s => {
   const c = s.cpu;
   return {
     centro: { valor: fmtN(c.pct) + "%", rotulo: fmtN((c.freq || 0) / 1000, 2) + " GHz" },
@@ -1311,7 +1321,7 @@ gaugeWidget("radial-cpu", "Processador", s => {
   };
 });
 
-gaugeWidget("radial-gpu", "Placa de vídeo", s => {
+gaugeWidget("radial-gpu", "Placa de vídeo", 3, s => {
   const g = s.gpu;
   if (!g) return { centro: { valor: "—", rotulo: "sem leitura" }, aneis: [] };
   const vp = 100 * g.mem_used / g.mem_total;
@@ -1337,7 +1347,7 @@ const COR_ENTRA = "#3987e5", COR_SAI = "#d95926";
 // Escala unica pras tres temperaturas: comparar so vale se o eixo for o mesmo.
 const TEMP_MAX = 100;
 regWidget("temperaturas", {
-  nome: "Temperaturas", col: 4,
+  nome: "Temperaturas", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) { el.innerHTML = '<div class="tp"></div>'; },
   render(el, s) {
     const itens = [
@@ -1358,7 +1368,7 @@ regWidget("temperaturas", {
 
 // Potencia: uma barra so, as duas pecas empilhadas, teto = TDP da CPU + limite da GPU
 regWidget("potencia", {
-  nome: "Consumo", col: 4,
+  nome: "Consumo", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) { el.innerHTML = '<div class="tp"><div class="pot-total"></div><div class="pot-bar"></div><div class="gauge-leg"></div></div>'; },
   render(el, s) {
     const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
@@ -1382,7 +1392,7 @@ regWidget("potencia", {
 // esmagariam a rede, que e ordens de grandeza mais lenta que o NVMe.
 function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
   regWidget(id, {
-    nome, col: 4,
+    nome, col: 4, h: 2, minW: 3, minH: 2,
     montar(el) { el.innerHTML = '<div class="vz"><svg></svg><div class="vz-leg"></div></div>'; },
     render(el) {
       drawMirror(el.querySelector("svg"), hist[kCima], hist[kBaixo], [COR_ENTRA, COR_SAI]);
@@ -1398,7 +1408,7 @@ vazaoWidget("vazao-disco", "Disco", "dr", "dw", "Leitura", "Escrita");
 
 // Capacidade: tudo que e "usado de um total" na mesma lista, discos e nuvem juntos
 regWidget("capacidade", {
-  nome: "Armazenamento", col: 4,
+  nome: "Armazenamento", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) { el.innerHTML = '<div class="cap"></div>'; },
   render(el, s) {
     const itens = s.disks.map(d => ({ nome: d.label, used: d.used, total: d.total, pct: d.pct }));
@@ -1429,7 +1439,7 @@ function fmtQuando(ts) {
   return `${d.getDate()}/${d.getMonth() + 1} ${hora}`;
 }
 regWidget("agenda", {
-  nome: "Agenda", col: 4,
+  nome: "Agenda", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) {
     el.innerHTML = '<div class="ag"></div>';
     el.addEventListener("click", async ev => {
