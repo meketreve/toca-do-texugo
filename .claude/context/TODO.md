@@ -29,8 +29,8 @@ radial por peça (CPU e GPU); RAM/VRAM nos dois blocos (% no uso, GB na capacida
 - [x] ~~Fases 0 a 6: commit das pendências, infra dos layouts, gráfico de uso, radiais,
       temperaturas e consumo~~ (aab47c1…a62a5ce)
 - [x] ~~Fases 7 e 8 — vazão espelhada (rede e disco) e capacidade (discos + OneDrive)~~
-- [ ] Fase 9 — tela de configuração: escolher quais medidores entram, ordem e largura
-      (edita `painel.widgets` no localStorage; o registro `WIDGETS` já foi feito pra isso)
+- [x] ~~Fase 9 — tela de configuração: liga/desliga, ordem e largura de cada medidor~~
+      (layout agrupado completo: 8 medidores, `painel.widgets` no localStorage)
 
 ## Agenda e TODOs pelo Telegram
 

@@ -38,7 +38,7 @@
   .page.enter { animation: page-in .25s ease-out; }
   @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
   #page-dash { grid-template-rows: auto minmax(0, 1fr) auto; }
-  #page-atalhos { grid-template-rows: auto auto auto; align-content: start; }
+  #page-atalhos { grid-template-rows: auto auto auto minmax(0, 1fr); align-content: start; }
   .page-title { margin: 4px 6px 0; font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
 
   /* Botao discreto de trocar pagina */
@@ -188,6 +188,30 @@
   .vz-leg { display: flex; justify-content: space-between; font-size: 16px; }
   .vz-leg b { font-variant-numeric: tabular-nums; }
   .cap { display: grid; gap: 14px; align-content: center; height: 100%; }
+
+  /* Configuracao dos medidores (pagina de atalhos) */
+  /* A lista cresce com os medidores: rola em vez de estourar a pagina */
+  .layout-pick:last-child { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+  .cfg-rows { display: grid; gap: 8px; align-content: start; overflow-y: auto; }
+  .cfg {
+    display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 10px; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px 8px 16px;
+  }
+  .cfg.off { opacity: .45; }
+  .cfg .nm { font-size: 20px; }
+  .cfg .lg { color: var(--muted); font-size: 16px; min-width: 86px; text-align: right; font-variant-numeric: tabular-nums; }
+  .cfg button {
+    font: inherit; color: var(--text); background: #262625; border: 1px solid var(--border);
+    border-radius: 10px; min-width: 50px; min-height: 46px; font-size: 22px; cursor: pointer;
+  }
+  .cfg button:active { transform: scale(.95); }
+  .cfg button[disabled] { opacity: .3; }
+  .cfg button.on { border-color: var(--accent); background: var(--accent-wash); }
+  .cfg-pe { display: flex; gap: var(--gap); margin-top: 12px; }
+  .cfg-pe button {
+    font: inherit; color: var(--text-2); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 20px; min-height: 52px; cursor: pointer;
+  }
 
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
@@ -397,6 +421,11 @@
     <section class="layout-pick">
       <h2 class="page-title">Layout do painel</h2>
       <div class="picks" id="picks"></div>
+    </section>
+    <section class="layout-pick">
+      <h2 class="page-title">Medidores do layout agrupado</h2>
+      <div class="cfg-rows" id="cfg-rows"></div>
+      <div class="cfg-pe"><button id="cfg-reset">Restaurar o padrão</button></div>
     </section>
   </main>
 </div>
@@ -890,29 +919,43 @@ const WIDGETS = {};
 const regWidget = (id, def) => { WIDGETS[id] = def; };
 const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia",
                          "vazao-rede", "vazao-disco", "capacidade"];
+// A lista guardada e de objetos {id, col}; aceita tambem a forma antiga, so com os ids.
+const LARGURAS = [3, 4, 6, 12];
+function normaliza(lista) {
+  return (lista || []).map(it => (typeof it === "string" ? { id: it, col: null } : it))
+    .filter(it => it && WIDGETS[it.id])
+    .map(it => ({ id: it.id, col: LARGURAS.includes(it.col) ? it.col : (WIDGETS[it.id].col || 4) }));
+}
 function layoutB() {
-  try { const v = JSON.parse(localStorage.getItem("painel.widgets")); if (Array.isArray(v)) return v; } catch (e) {}
-  return LAYOUT_B_PADRAO;
+  try {
+    const v = JSON.parse(localStorage.getItem("painel.widgets"));
+    if (Array.isArray(v)) return normaliza(v);
+  } catch (e) {}
+  return normaliza(LAYOUT_B_PADRAO);
+}
+function salvarB(lista) {
+  try { localStorage.setItem("painel.widgets", JSON.stringify(lista)); } catch (e) {}
+  montarDashB(); renderConfig();
 }
 
 const montados = new Map();  // id -> div .w-body ja no DOM
 function montarDashB() {
   const box = document.getElementById("widgets-b");
   box.innerHTML = ""; montados.clear();
-  const ids = layoutB().filter(id => WIDGETS[id]);
-  for (const id of ids) {
-    const w = WIDGETS[id];
+  const itens = layoutB();
+  for (const it of itens) {
+    const w = WIDGETS[it.id];
     const card = document.createElement("div");
-    card.className = "card widget"; card.dataset.w = id;
-    card.style.gridColumn = `span ${w.col || 4}`;
+    card.className = "card widget"; card.dataset.w = it.id;
+    card.style.gridColumn = `span ${it.col}`;
     card.innerHTML = `<h2></h2><div class="w-body"></div>`;
     card.querySelector("h2").textContent = w.nome;
     box.appendChild(card);
     const body = card.querySelector(".w-body");
     if (w.montar) w.montar(body);
-    montados.set(id, body);
+    montados.set(it.id, body);
   }
-  if (!ids.length) {
+  if (!itens.length) {
     box.innerHTML = '<div class="card w-vazio" style="grid-column: span 12">Layout agrupado ainda sem medidores.<br>As próximas fases preenchem esta tela.</div>';
   }
 }
@@ -921,12 +964,16 @@ function renderDashB(s) {
     try { WIDGETS[id].render(body, s); } catch (e) {}  // um medidor quebrado nao derruba os outros
   }
 }
+// A pagina do layout inativo nao esta em PAGES, entao ninguem a esconde: e aqui que isso acontece
+function ocultaLayouts() {
+  for (const L of Object.values(LAYOUTS)) document.getElementById(L.pagina).hidden = L.pagina !== PAGES[0];
+}
 function setLayout(id) {
   if (!LAYOUTS[id]) return;
   layout = id;
   try { localStorage.setItem("painel.layout", id); } catch (e) {}
-  for (const L of Object.values(LAYOUTS)) document.getElementById(L.pagina).hidden = true;
   PAGES[0] = LAYOUTS[id].pagina;
+  ocultaLayouts();
   renderPicks();
   showPage(0);
 }
@@ -941,6 +988,56 @@ function renderPicks() {
     if (id === layout) b.classList.add("sel");
     b.addEventListener("click", () => setLayout(id));
     box.appendChild(b);
+  }
+}
+
+/* Configuracao: liga/desliga, ordem e largura de cada medidor. Botao em vez de arrastar
+   porque o painel e tocado pelo tablet via Moonlight, onde arrastar e impreciso. */
+function renderConfig() {
+  const box = document.getElementById("cfg-rows");
+  if (!box) return;
+  const lista = layoutB();
+  const fora = Object.keys(WIDGETS).filter(id => !lista.some(it => it.id === id));
+  box.innerHTML = "";
+
+  lista.forEach((it, i) => {
+    const r = document.createElement("div");
+    r.className = "cfg";
+    r.innerHTML = `<span class="nm"></span><span class="lg">${it.col} de 12</span>` +
+      `<button data-a="menos" title="Mais estreito">−</button><button data-a="mais" title="Mais largo">+</button>` +
+      `<button data-a="sobe" title="Subir">↑</button><button data-a="desce" title="Descer">↓</button>` +
+      `<button data-a="tira" class="on" title="Tirar do painel">✓</button>`;
+    r.querySelector(".nm").textContent = WIDGETS[it.id].nome;
+    const li = LARGURAS.indexOf(it.col);
+    if (li <= 0) r.querySelector('[data-a="menos"]').disabled = true;
+    if (li >= LARGURAS.length - 1) r.querySelector('[data-a="mais"]').disabled = true;
+    if (i === 0) r.querySelector('[data-a="sobe"]').disabled = true;
+    if (i === lista.length - 1) r.querySelector('[data-a="desce"]').disabled = true;
+    r.addEventListener("click", ev => {
+      const a = ev.target.dataset && ev.target.dataset.a;
+      if (!a) return;
+      const L = layoutB();
+      if (a === "menos") L[i].col = LARGURAS[Math.max(0, LARGURAS.indexOf(L[i].col) - 1)];
+      if (a === "mais") L[i].col = LARGURAS[Math.min(LARGURAS.length - 1, LARGURAS.indexOf(L[i].col) + 1)];
+      if (a === "sobe" && i > 0) L.splice(i - 1, 0, L.splice(i, 1)[0]);
+      if (a === "desce" && i < L.length - 1) L.splice(i + 1, 0, L.splice(i, 1)[0]);
+      if (a === "tira") L.splice(i, 1);
+      salvarB(L);
+    });
+    box.appendChild(r);
+  });
+
+  for (const id of fora) {
+    const r = document.createElement("div");
+    r.className = "cfg off";
+    r.innerHTML = '<span class="nm"></span><span class="lg">fora do painel</span>' +
+      '<span></span><span></span><span></span><span></span><button data-a="poe" title="Pôr no painel">+</button>';
+    r.querySelector(".nm").textContent = WIDGETS[id].nome;
+    r.addEventListener("click", ev => {
+      if (!ev.target.dataset || ev.target.dataset.a !== "poe") return;
+      salvarB([...layoutB(), { id, col: WIDGETS[id].col || 4 }]);
+    });
+    box.appendChild(r);
   }
 }
 
@@ -1263,6 +1360,10 @@ function renderRedesMini() {
 document.getElementById("redes-mini").addEventListener("click", () => showPage(PAGES.indexOf("page-redes")));
 document.getElementById("pager").addEventListener("click", () => showPage((page + 1) % PAGES.length));
 document.getElementById("page-atalhos").addEventListener("pointerdown", armBack);
+document.getElementById("cfg-reset").addEventListener("click", () => {
+  try { localStorage.removeItem("painel.widgets"); } catch (e) {}
+  montarDashB(); renderConfig();
+});
 
 /* ---------- Audio: PCM do servidor -> FFT -> barras ---------- */
 const AUDIO_RATE = 24000, FFT_N = 2048, BARS = 64;
@@ -1533,7 +1634,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-montarDashB(); renderPicks();
+ocultaLayouts(); montarDashB(); renderPicks(); renderConfig();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);
