@@ -182,6 +182,13 @@
   .pot-bar { display: flex; gap: 2px; height: 16px; border-radius: 8px; background: var(--grid); overflow: hidden; }
   .pot-bar i { display: block; height: 100%; }
 
+  /* Vazao espelhada e capacidade */
+  .vz { display: grid; gap: 10px; }
+  .vz svg { width: 100%; height: 150px; }
+  .vz-leg { display: flex; justify-content: space-between; font-size: 16px; }
+  .vz-leg b { font-variant-numeric: tabular-nums; }
+  .cap { display: grid; gap: 14px; align-content: center; height: 100%; }
+
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
   .np { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; min-width: 0; }
@@ -400,7 +407,7 @@
 <script>
 const HISTORY = 90; // segundos de historico nos graficos
 // Toda requisicao curta tem tempo limite: uma conexao pendurada (ex.: servidor reiniciando) nao pode travar o painel
-const hist = { cpu: [], ram: [], gpu: [], vram: [], rx: [], tx: [] };
+const hist = { cpu: [], ram: [], gpu: [], vram: [], rx: [], tx: [], dr: [], dw: [] };
 const fmtN = (v, d = 0) => v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const GiB = 1024 ** 3;
 const fmtBytes = b => {
@@ -524,6 +531,26 @@ function drawGauge(svg, aneis, centro) {
 // Medida que nao e porcentagem vira fracao do proprio teto (0 a 1)
 const norm = (v, teto) => (v == null || !teto) ? null : Math.min(Math.max(v / teto, 0), 1);
 
+/* Grafico espelhado: entrada acima do eixo, saida abaixo. A escala e comum aos dois lados
+   (senao a comparacao mente) e automatica, com piso pra linha nao ficar tremendo em repouso. */
+function drawMirror(svg, cima, baixo, cores) {
+  const w = svg.clientWidth, h = svg.clientHeight;
+  if (!w || !h) return;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const pad = 6, n = HISTORY, meio = h / 2;
+  const max = Math.max(64 * 1024, ...cima.filter(v => v != null), ...baixo.filter(v => v != null)) * 1.15;
+  const x = (i, len) => pad + (w - 2 * pad) * (i + (n - len)) / (n - 1);
+  const alt = v => (meio - pad) * Math.min(Math.max(v ?? 0, 0) / max, 1);
+  const area = (data, sinal) => {
+    if (data.filter(v => v != null).length < 2) return "";
+    const pts = data.map((v, i) => `${x(i, data.length).toFixed(1)},${(meio - sinal * alt(v)).toFixed(1)}`);
+    return `<path d="M${x(0, data.length).toFixed(1)},${meio} L${pts.join(" L")} L${x(data.length - 1, data.length).toFixed(1)},${meio}Z" fill="${sinal > 0 ? cores[0] : cores[1]}" fill-opacity=".18"/>` +
+           `<polyline points="${pts.join(" ")}" fill="none" stroke="${sinal > 0 ? cores[0] : cores[1]}" stroke-width="2" stroke-linejoin="round"/>`;
+  };
+  svg.innerHTML = area(cima, 1) + area(baixo, -1) +
+    `<line x1="${pad}" x2="${w - pad}" y1="${meio}" y2="${meio}" stroke="var(--axis)" stroke-width="1"/>`;
+}
+
 // Minima, maxima e valor atual de uma serie, ignorando os buracos
 function faixa(data) {
   const v = (data || []).filter(x => x != null);
@@ -617,6 +644,7 @@ function render(s) {
   push("cpu", c.pct); push("ram", m.pct);
   push("gpu", g ? g.util : null); push("vram", g ? 100 * g.mem_used / g.mem_total : null);
   push("rx", s.net.rx); push("tx", s.net.tx);
+  push("dr", s.diskio.read); push("dw", s.diskio.write);
 
   // Cabecalho e estado da mascote valem para qualquer layout; o corpo e por layout
   document.getElementById("load").textContent = s.load.map(v => fmtN(v, 1)).join(" · ");
@@ -860,7 +888,8 @@ let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getIt
 // Registro de medidores: id -> { nome, col (de 12), montar(el), render(el, s) }
 const WIDGETS = {};
 const regWidget = (id, def) => { WIDGETS[id] = def; };
-const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia", "vazao", "capacidade"];
+const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia",
+                         "vazao-rede", "vazao-disco", "capacidade"];
 function layoutB() {
   try { const v = JSON.parse(localStorage.getItem("painel.widgets")); if (Array.isArray(v)) return v; } catch (e) {}
   return LAYOUT_B_PADRAO;
@@ -991,6 +1020,9 @@ gaugeWidget("radial-gpu", "Placa de vídeo", s => {
 // Cor por entidade, nao por posicao: a CPU e azul e a GPU verde-agua em todo medidor que
 // compara as duas, pra leitura nao mudar de significado de um card pro outro.
 const COR_CPU = "#3987e5", COR_GPU = "#199e70";
+// No grafico espelhado a cor nao identifica peca, e sim o sentido do fluxo; a posicao
+// (acima/abaixo do eixo) e o triangulo do rotulo dizem o mesmo, pra nao depender da cor.
+const COR_ENTRA = "#3987e5", COR_SAI = "#d95926";
 
 // Escala unica pras tres temperaturas: comparar so vale se o eixo for o mesmo.
 const TEMP_MAX = 100;
@@ -1033,6 +1065,39 @@ regWidget("potencia", {
       `<span class="vl">${cp == null ? "sem sensor" : `${fmtN(cp)} W de ${s.cpu.tdp || "?"} W`}</span></div>` +
       (s.gpu ? `<div class="gl"><i class="sw" style="background:${COR_GPU}"></i><span class="nm">GPU</span>` +
       `<span class="vl">${fmtN(gp)} W de ${fmtN(s.gpu.power_limit)} W</span></div>` : "");
+  },
+});
+
+// Vazao: um card por assunto, cada um com a propria escala. Rede e disco no mesmo eixo
+// esmagariam a rede, que e ordens de grandeza mais lenta que o NVMe.
+function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
+  regWidget(id, {
+    nome, col: 4,
+    montar(el) { el.innerHTML = '<div class="vz"><svg></svg><div class="vz-leg"></div></div>'; },
+    render(el) {
+      drawMirror(el.querySelector("svg"), hist[kCima], hist[kBaixo], [COR_ENTRA, COR_SAI]);
+      const a = faixa(hist[kCima]), b = faixa(hist[kBaixo]);
+      el.querySelector(".vz-leg").innerHTML =
+        `<span style="color:${COR_ENTRA}">▲ ${rotCima} <b>${fmtRate(a.atual)}</b> <small>pico ${fmtRate(a.max)}</small></span>` +
+        `<span style="color:${COR_SAI}">▼ ${rotBaixo} <b>${fmtRate(b.atual)}</b> <small>pico ${fmtRate(b.max)}</small></span>`;
+    },
+  });
+}
+vazaoWidget("vazao-rede", "Rede", "rx", "tx", "Download", "Upload");
+vazaoWidget("vazao-disco", "Disco", "dr", "dw", "Leitura", "Escrita");
+
+// Capacidade: tudo que e "usado de um total" na mesma lista, discos e nuvem juntos
+regWidget("capacidade", {
+  nome: "Armazenamento", col: 4,
+  montar(el) { el.innerHTML = '<div class="cap"></div>'; },
+  render(el, s) {
+    const itens = s.disks.map(d => ({ nome: d.label, used: d.used, total: d.total, pct: d.pct }));
+    const q = s.onedrive && s.onedrive.quota;
+    if (q) itens.push({ nome: "OneDrive", used: q.used, total: q.total, pct: 100 * q.used / q.total });
+    el.querySelector(".cap").innerHTML = itens.map(d => d.pct == null
+      ? row(d.nome, "não montado")
+      : meterBlock(d.nome, `${fmtBytes(d.used)} <small>de ${fmtBytes(d.total)}</small>`, d.pct, level(d.pct, 85, 95))
+    ).join("");
   },
 });
 
