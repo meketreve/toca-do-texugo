@@ -211,6 +211,15 @@
   .ag-item.atrasado .qd { color: var(--warning); }
   .ag-vazio { color: var(--muted); padding: 10px 8px; }
 
+  /* Estilos alternativos: os mesmos dados como numero ou barra */
+  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 10px 18px; align-content: center; height: 100%; }
+  .num { display: grid; gap: 1px; min-width: 0; }
+  .num .v { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .num .v small { font-size: 16px; font-weight: 400; color: var(--muted); }
+  .num .k { color: var(--text-2); font-size: 16px; }
+  .num .f { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
   /* Editor de grade: catalogo a esquerda, canvas a direita */
   #page-editor { grid-template-rows: auto minmax(0, 1fr) auto; }
   .ed { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--gap); min-height: 0; }
@@ -236,6 +245,7 @@
   .ed-bloco .tit { font-size: 17px; }
   .ed-bloco .pe { display: flex; justify-content: space-between; align-items: end; color: var(--muted); font-size: 14px; }
   .ed-bloco .rz { cursor: nwse-resize; font-size: 18px; padding: 0 2px; touch-action: none; }
+  .ed-bloco .est { cursor: pointer; padding: 0 6px; color: var(--text-2); }
   .ed-bloco .tira { cursor: pointer; font-size: 18px; padding: 0 4px; }
   .cfg {
     display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 10px; align-items: center;
@@ -972,8 +982,20 @@ const LAYOUTS = {
 let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getItem("painel.layout") : "classico";
 
 // Registro de medidores: id -> { nome, col (de 12), montar(el), render(el, s) }
+/* Cada medidor tem um ou mais estilos de exibicao do MESMO dado (linhas, barras, aneis,
+   numero). O jeito atual de desenhar vira o estilo padrao e os outros entram por addEstilo,
+   cada um com o proprio tamanho minimo: barra legivel em 3x1 nao quer dizer grafico legivel
+   no mesmo espaco. */
 const WIDGETS = {};
-const regWidget = (id, def) => { WIDGETS[id] = def; };
+function regWidget(id, def) {
+  const { montar, render, minW, minH, ...resto } = def;
+  WIDGETS[id] = { ...resto, estilos: [{ id: "padrao", nome: def.estiloNome || "Padrão", montar, render, minW, minH }] };
+}
+function addEstilo(id, estilo) { WIDGETS[id].estilos.push(estilo); }
+const estiloDe = it => {
+  const es = WIDGETS[it.id].estilos;
+  return es.find(e => e.id === it.estilo) || es[0];
+};
 const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "potencia",
                          "vazao-rede", "vazao-disco", "capacidade", "agenda"];
 /* Posicao na grade de 12 colunas: {id, x, y, w, h}. Com x/y nulos o medidor so se acomoda
@@ -983,8 +1005,8 @@ const LAYOUT_B_PADRAO = ["uso", "radial-cpu", "radial-gpu", "temperaturas", "pot
 const LARGURAS = [3, 4, 6, 12];
 const COLS = 12;
 // Abaixo do minimo o medidor ainda desenha, mas o dado fica ilegivel: o minimo e lei
-const minW = id => WIDGETS[id].minW || 3;
-const minH = id => WIDGETS[id].minH || 1;
+const minW = it => estiloDe(it).minW || 3;
+const minH = it => estiloDe(it).minH || 1;
 const inteiro = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
 function normaliza(lista) {
   return (lista || [])
@@ -992,13 +1014,15 @@ function normaliza(lista) {
     .filter(it => it && WIDGETS[it.id])
     .map(it => {
       const d = WIDGETS[it.id];
-      const w = Math.max(minW(it.id),
+      const estilo = estiloDe(it).id;
+      const base = { id: it.id, estilo };
+      const w = Math.max(minW(base),
         inteiro(it.w, 1, COLS) || (LARGURAS.includes(it.col) ? it.col : (d.col || 4)));
       const x = inteiro(it.x, 0, COLS - 1);
       return {
-        id: it.id,
+        ...base,
         w,
-        h: Math.max(minH(it.id), inteiro(it.h, 1, 12) || d.h || 1),
+        h: Math.max(minH(base), inteiro(it.h, 1, 12) || d.h || 1),
         x: x != null && x + w <= COLS ? x : null,
         y: inteiro(it.y, 0, 99),
       };
@@ -1022,25 +1046,25 @@ function montarDashB() {
   box.innerHTML = ""; montados.clear();
   const itens = layoutB();
   for (const it of itens) {
-    const w = WIDGETS[it.id];
+    const w = WIDGETS[it.id], e = estiloDe(it);
     const card = document.createElement("div");
-    card.className = "card widget"; card.dataset.w = it.id;
+    card.className = "card widget"; card.dataset.w = it.id; card.dataset.estilo = e.id;
     card.style.gridColumn = it.x == null ? `span ${it.w}` : `${it.x + 1} / span ${it.w}`;
     card.style.gridRow = it.y == null ? `span ${it.h}` : `${it.y + 1} / span ${it.h}`;
     card.innerHTML = `<h2></h2><div class="w-body"></div>`;
     card.querySelector("h2").textContent = w.nome;
     box.appendChild(card);
     const body = card.querySelector(".w-body");
-    if (w.montar) w.montar(body);
-    montados.set(it.id, body);
+    if (e.montar) e.montar(body);
+    montados.set(it.id, { body, e });
   }
   if (!itens.length) {
     box.innerHTML = '<div class="card w-vazio" style="grid-column: span 12">Layout agrupado ainda sem medidores.<br>As próximas fases preenchem esta tela.</div>';
   }
 }
 function renderDashB(s) {
-  for (const [id, body] of montados) {
-    try { WIDGETS[id].render(body, s); } catch (e) {}  // um medidor quebrado nao derruba os outros
+  for (const [, m] of montados) {
+    try { m.e.render(m.body, s); } catch (e) {}  // um medidor quebrado nao derruba os outros
   }
 }
 // A pagina do layout inativo nao esta em PAGES, entao ninguem a esconde: e aqui que isso acontece
@@ -1115,7 +1139,7 @@ function renderConfig() {
     r.querySelector(".nm").textContent = WIDGETS[id].nome;
     r.addEventListener("click", ev => {
       if (!ev.target.dataset || ev.target.dataset.a !== "poe") return;
-      salvarB([...layoutB(), { id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 2 }]);
+      salvarB([...layoutB(), { id, estilo: WIDGETS[id].estilos[0].id, w: WIDGETS[id].col || 4, h: WIDGETS[id].h || 2 }]);
     });
     box.appendChild(r);
   }
@@ -1177,7 +1201,9 @@ function edRender() {
     d.style.gridColumn = `${it.x + 1} / span ${it.w}`;
     d.style.gridRow = `${it.y + 1} / span ${it.h}`;
     d.innerHTML = '<span class="tit"></span><span></span>' +
-      `<span class="pe"><span class="tira" data-tira="${i}">✕</span><span>${it.w}×${it.h} <small>mín ${minW(it.id)}×${minH(it.id)}</small></span><span class="rz" data-rz="${i}">◢</span></span>`;
+      `<span class="pe"><span class="tira" data-tira="${i}">✕</span>` +
+      `<span class="est" data-est="${i}">⟳ ${estiloDe(it).nome}</span>` +
+      `<span>${it.w}×${it.h}</span><span class="rz" data-rz="${i}">◢</span></span>`;
     d.querySelector(".tit").textContent = WIDGETS[it.id].nome;
     cv.appendChild(d);
   });
@@ -1192,7 +1218,7 @@ function edCelula(ev) {
   };
 }
 function edSalva() {
-  salvarB(edLista.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })));
+  salvarB(edLista.map(i => ({ id: i.id, estilo: i.estilo, x: i.x, y: i.y, w: i.w, h: i.h })));
   edRender();
 }
 
@@ -1203,7 +1229,8 @@ function edLiga() {
     const b = ev.target.closest("button[data-novo]");
     if (!b || b.disabled) return;
     const id = b.dataset.novo;
-    const novo = { id, w: Math.max(minW(id), WIDGETS[id].col || 4), h: Math.max(minH(id), WIDGETS[id].h || 2), x: 0, y: 0 };
+    const base = { id, estilo: WIDGETS[id].estilos[0].id };
+    const novo = { ...base, w: Math.max(minW(base), WIDGETS[id].col || 4), h: Math.max(minH(base), WIDGETS[id].h || 2), x: 0, y: 0 };
     Object.assign(novo, primeiraVaga(novo.w, novo.h));
     edLista.push(novo);
     arrasto = { tipo: "move", i: edLista.length - 1, dx: 0, dy: 0, antes: { ...novo } };
@@ -1214,6 +1241,16 @@ function edLiga() {
   cv.addEventListener("pointerdown", ev => {
     const tira = ev.target.dataset.tira;
     if (tira != null) { edLista.splice(+tira, 1); return edSalva(); }
+    const est = ev.target.dataset.est;
+    if (est != null) {
+      const it = edLista[+est], es = WIDGETS[it.id].estilos;
+      const prox = es[(es.findIndex(e => e.id === estiloDe(it).id) + 1) % es.length];
+      const tent = { ...it, estilo: prox.id };
+      tent.w = Math.max(minW(tent), tent.w); tent.h = Math.max(minH(tent), tent.h);
+      tent.x = Math.min(tent.x, COLS - tent.w);
+      if (livre(tent, +est)) { Object.assign(it, tent); return edSalva(); }
+      return;  // nao cabe no espaco atual: deixa como esta em vez de empurrar os vizinhos
+    }
     const bloco = ev.target.closest(".ed-bloco");
     if (!bloco) return;
     const i = +bloco.dataset.i, it = edLista[i], c = edCelula(ev);
@@ -1228,8 +1265,8 @@ function edLiga() {
     if (!arrasto) return;
     const it = edLista[arrasto.i], c = edCelula(ev);
     const tent = arrasto.tipo === "tamanho"
-      ? { ...it, w: Math.max(minW(it.id), Math.min(COLS - it.x, c.x - it.x + 1)),
-               h: Math.max(minH(it.id), c.y - it.y + 1) }
+      ? { ...it, w: Math.max(minW(it), Math.min(COLS - it.x, c.x - it.x + 1)),
+               h: Math.max(minH(it), c.y - it.y + 1) }
       : { ...it, x: Math.max(0, Math.min(COLS - it.w, c.x - arrasto.dx)), y: Math.max(0, c.y - arrasto.dy) };
     if (livre(tent, arrasto.i)) { Object.assign(it, tent); edRender(); }
   };
@@ -1289,12 +1326,34 @@ regWidget("uso", {
   },
 });
 
+addEstilo("uso", {
+  id: "barras", nome: "Barras", minW: 3, minH: 2,
+  montar(el) { el.innerHTML = '<div class="tp"></div>'; },
+  render(el) {
+    caixa(el, "tp", SERIES_USO.map(d => {
+      const f = faixa(hist[d.key]);
+      return barraHtml(d.nome, `${fmtN(f.atual)}%`, f.atual, d.cor);
+    }).join(""));
+  },
+});
+addEstilo("uso", {
+  id: "numeros", nome: "Números", minW: 4, minH: 1,
+  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+  render(el) {
+    caixa(el, "nums", SERIES_USO.map(d => {
+      const f = faixa(hist[d.key]);
+      return numHtml(d.nome, `${fmtN(f.atual)}<small>%</small>`, `mín ${fmtN(f.min)} · máx ${fmtN(f.max)}`);
+    }).join(""));
+  },
+});
+
 // Tetos dos arcos que nao sao porcentagem. Os de temperatura sao os mesmos ja usados nos
 // avisos do layout classico, pros dois layouts contarem a mesma historia.
 const TETO = { cpuTemp: 90, gpuTemp: 86 };
 const CORES_ANEL = ["#3987e5", "#d95926", "#199e70", "#9085e9", "#d55181"];
 
-function gaugeWidget(id, nome, minH, montarAneis) {
+function gaugeWidget(id, nome, n, montarAneis) {
+  const minH = n <= 3 ? 2 : 3;
   regWidget(id, {
     nome, col: 3, h: minH, minW: 3, minH,
     montar(el) { el.innerHTML = '<div class="gauge"><svg></svg><div class="gauge-leg"></div></div>'; },
@@ -1307,9 +1366,31 @@ function gaugeWidget(id, nome, minH, montarAneis) {
       ).join("");
     },
   });
+  gaugeEstilos(id, montarAneis, n);
 }
 
-gaugeWidget("radial-cpu", "Processador", 2, s => {
+// Os estilos alternativos do radial leem os MESMOS aneis: muda so o desenho
+function gaugeEstilos(id, montarAneis, n) {
+  addEstilo(id, {
+    id: "barras", nome: "Barras", minW: 3, minH: n <= 3 ? 2 : 3,
+    montar(el) { el.innerHTML = '<div class="tp"></div>'; },
+    render(el, s) {
+      const d = montarAneis(s);
+      caixa(el, "tp", (d.aneis || []).map((a, i) =>
+        barraHtml(a.nome, a.texto, (a.frac || 0) * 100, CORES_ANEL[i % CORES_ANEL.length])).join(""));
+    },
+  });
+  addEstilo(id, {
+    id: "numero", nome: "Número", minW: n <= 3 ? 3 : 4, minH: n <= 3 ? 1 : 2,
+    montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+    render(el, s) {
+      const d = montarAneis(s);
+      caixa(el, "nums", (d.aneis || []).map(a => numHtml(a.nome, a.texto)).join(""));
+    },
+  });
+}
+
+gaugeWidget("radial-cpu", "Processador", 3, s => {
   const c = s.cpu;
   return {
     centro: { valor: fmtN(c.pct) + "%", rotulo: fmtN((c.freq || 0) / 1000, 2) + " GHz" },
@@ -1321,7 +1402,7 @@ gaugeWidget("radial-cpu", "Processador", 2, s => {
   };
 });
 
-gaugeWidget("radial-gpu", "Placa de vídeo", 3, s => {
+gaugeWidget("radial-gpu", "Placa de vídeo", 5, s => {
   const g = s.gpu;
   if (!g) return { centro: { valor: "—", rotulo: "sem leitura" }, aneis: [] };
   const vp = 100 * g.mem_used / g.mem_total;
@@ -1336,6 +1417,15 @@ gaugeWidget("radial-gpu", "Placa de vídeo", 3, s => {
     ],
   };
 });
+
+// Pecas que os estilos alternativos compartilham
+function barraHtml(nome, valorHtml, pct, cor) {
+  return `<div class="tp-row"><span class="nm">${nome}</span><span class="vl">${valorHtml}</span>` +
+         `<div class="tp-bar"><i style="width:${Math.min(Math.max(pct || 0, 0), 100).toFixed(1)}%;background:${cor}"></i></div></div>`;
+}
+const numHtml = (k, v, f) => `<div class="num"><span class="v">${v}</span><span class="k">${k}</span>` +
+                             (f ? `<span class="f">${f}</span>` : "") + "</div>";
+const caixa = (el, cls, html) => { el.querySelector("." + cls).innerHTML = html; };
 
 // Cor por entidade, nao por posicao: a CPU e azul e a GPU verde-agua em todo medidor que
 // compara as duas, pra leitura nao mudar de significado de um card pro outro.
@@ -1402,6 +1492,15 @@ function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
         `<span style="color:${COR_SAI}">▼ ${rotBaixo} <b>${fmtRate(b.atual)}</b> <small>pico ${fmtRate(b.max)}</small></span>`;
     },
   });
+  addEstilo(id, {
+    id: "numeros", nome: "Números", minW: 3, minH: 1,
+    montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+    render(el) {
+      const a = faixa(hist[kCima]), b = faixa(hist[kBaixo]);
+      caixa(el, "nums", numHtml("▲ " + rotCima, fmtRate(a.atual), "pico " + fmtRate(a.max)) +
+                        numHtml("▼ " + rotBaixo, fmtRate(b.atual), "pico " + fmtRate(b.max)));
+    },
+  });
 }
 vazaoWidget("vazao-rede", "Rede", "rx", "tx", "Download", "Upload");
 vazaoWidget("vazao-disco", "Disco", "dr", "dw", "Leitura", "Escrita");
@@ -1418,6 +1517,41 @@ regWidget("capacidade", {
       ? row(d.nome, "não montado")
       : meterBlock(d.nome, `${fmtBytes(d.used)} <small>de ${fmtBytes(d.total)}</small>`, d.pct, level(d.pct, 85, 95))
     ).join("");
+  },
+});
+
+addEstilo("temperaturas", {
+  id: "numeros", nome: "Números", minW: 3, minH: 1,
+  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+  render(el, s) {
+    const itens = [
+      { nome: "CPU", v: s.cpu.temp, warn: 80 },
+      { nome: "GPU", v: s.gpu ? s.gpu.temp : null, warn: 78 },
+      { nome: "NVMe", v: s.nvme_temp, warn: 65 },
+    ];
+    caixa(el, "nums", itens.map(t => numHtml(t.nome, `${fmtN(t.v)}<small>°C</small>`, `aviso em ${t.warn} °C`)).join(""));
+  },
+});
+
+addEstilo("potencia", {
+  id: "numero", nome: "Número", minW: 2, minH: 1,
+  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+  render(el, s) {
+    const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
+    caixa(el, "nums", numHtml("CPU + GPU", `${fmtN((cp || 0) + (gp || 0))}<small>W</small>`,
+      `${cp == null ? "—" : fmtN(cp)} W + ${gp == null ? "—" : fmtN(gp)} W`));
+  },
+});
+
+addEstilo("capacidade", {
+  id: "numeros", nome: "Números", minW: 4, minH: 1,
+  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+  render(el, s) {
+    const itens = s.disks.filter(d => d.pct != null)
+      .map(d => numHtml(d.label, `${fmtN(d.pct)}<small>%</small>`, `${fmtBytes(d.used)} de ${fmtBytes(d.total)}`));
+    const q = s.onedrive && s.onedrive.quota;
+    if (q) itens.push(numHtml("OneDrive", `${fmtN(100 * q.used / q.total)}<small>%</small>`, `${fmtBytes(q.used)} de ${fmtBytes(q.total)}`));
+    caixa(el, "nums", itens.join(""));
   },
 });
 

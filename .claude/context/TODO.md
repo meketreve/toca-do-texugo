@@ -29,7 +29,7 @@ pra usar do PC**, com o tablet só exibindo). Junto: mais estilos de exibição 
 
 - [x] ~~G1 a G3 — grade `{id, x, y, w, h}`, catálogo lateral, mover e redimensionar no canvas~~
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor faz o mesmo
-- [ ] G4 — estilos alternativos por medidor (ex.: o mesmo dado como barra, anel ou número)
+- [x] ~~G4 — estilos alternativos por medidor (linhas/anéis, barras, números)~~
 
 ## Agenda e TODOs pelo Telegram
 
