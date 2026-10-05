@@ -28,8 +28,8 @@ radial por peça (CPU e GPU); RAM/VRAM nos dois blocos (% no uso, GB na capacida
 
 - [x] ~~Fase 0 — commitar os 4 arquivos pendentes~~ (aab47c1)
 - [x] ~~Fase 1 — infra: `page-dash-b`, registro `WIDGETS`, seletor nos atalhos, `render()` dividido~~
-- [ ] Fase 2 — helpers: `drawMulti`, `drawGauge`, `norm(valor, teto)`, `faixa(hist)`
-- [ ] Fase 3 — bloco "Uso": 1 gráfico, 4 linhas (CPU/RAM/GPU/VRAM)
+- [x] ~~Fase 2 — helpers `drawMulti` e `faixa`~~ (`drawGauge`/`norm` ficam pra fase 4, onde são usados)
+- [x] ~~Fase 3 — bloco "Uso": 1 gráfico, 4 linhas (CPU/RAM/GPU/VRAM)~~
 - [ ] Fase 4 — radiais de CPU e GPU (arcos: uso, potência, temperatura, ventoinha, encoder)
 - [ ] Fase 5 — temperaturas juntas numa escala 0–100 °C com zonas
 - [ ] Fase 6 — potência: barra empilhada CPU+GPU, teto = TDP + limite

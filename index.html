@@ -149,6 +149,16 @@
   .widget > h2 { margin: 0; }
   .w-vazio { color: var(--muted); display: grid; place-items: center; text-align: center; padding: 40px 16px; }
 
+  /* Bloco "Uso": um grafico com as quatro series e a legenda ao lado */
+  .uso { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; }
+  .uso-g { width: 100%; height: 240px; }
+  .uso-leg { display: grid; align-content: center; gap: 14px; min-width: 190px; }
+  .leg { display: grid; grid-template-columns: 14px 1fr auto; gap: 1px 9px; align-items: baseline; }
+  .leg .sw { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
+  .leg .nm { color: var(--text-2); }
+  .leg .vl { font-variant-numeric: tabular-nums; }
+  .leg .fx { grid-column: 2 / -1; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
   /* Tocando agora + visualizador */
   .player { display: grid; grid-template-columns: 460px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 28px; height: 136px; padding: 14px 20px; }
   .np { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; min-width: 0; }
@@ -408,6 +418,60 @@ function drawSpark(svg, data, maxV) {
     `<polyline points="${pts.join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
     `<circle cx="${x(last)}" cy="${y(data[last])}" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>` +
     `<line class="xh" y1="${pad}" y2="${h - pad}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
+}
+
+/* Varias series na mesma escala, uma cor cada (paleta conferida com o validador do skill
+   dataviz: passa nos 5 testes contra o fundo #1a1a19). A identidade nunca depende so da cor:
+   cada serie tem o proprio tracejado e o nome na ponta da linha, que e o que salva o par
+   azul/violeta para quem tem daltonismo. Buraco no historico (GPU sem leitura) vira corte
+   na linha, nao zero. */
+function drawMulti(svg, series, maxV) {
+  const w = svg.clientWidth, h = svg.clientHeight;
+  if (!w || !h) return;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const pad = 10, padR = 62, n = HISTORY;
+  const x = (i, len) => pad + (w - pad - padR) * (i + (n - len)) / (n - 1);
+  const y = v => h - pad - (h - 2 * pad) * Math.min(Math.max(v ?? 0, 0) / maxV, 1);
+
+  let out = "";
+  for (const p of [25, 50, 75]) {
+    out += `<line x1="${pad}" x2="${w - padR}" y1="${y(maxV * p / 100).toFixed(1)}" y2="${y(maxV * p / 100).toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>`;
+  }
+  out += `<line x1="${pad}" x2="${w - padR}" y1="${h - pad}" y2="${h - pad}" stroke="var(--axis)" stroke-width="1"/>`;
+
+  const rotulos = [];
+  for (const s of series) {
+    const d = s.data || [];
+    if (d.filter(v => v != null).length < 2) continue;
+    let path = "", pen = false, last = -1;
+    d.forEach((v, i) => {
+      if (v == null) { pen = false; return; }
+      path += (pen ? " L" : " M") + `${x(i, d.length).toFixed(1)},${y(v).toFixed(1)}`;
+      pen = true; last = i;
+    });
+    out += `<path d="${path}" fill="none" stroke="${s.cor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.traco ? ` stroke-dasharray="${s.traco}"` : ""}/>`;
+    if (last >= 0) {
+      const cx = x(last, d.length), cy = y(d[last]);
+      out += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4" fill="${s.cor}" stroke="var(--surface)" stroke-width="2"/>`;
+      rotulos.push({ y: cy, cor: s.cor, nome: s.nome });
+    }
+  }
+  // Rotulo na ponta: separa os que ficariam por cima um do outro
+  rotulos.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < rotulos.length; i++) {
+    if (rotulos[i].y - rotulos[i - 1].y < 20) rotulos[i].y = rotulos[i - 1].y + 20;
+  }
+  for (const r of rotulos) {
+    const ry = Math.min(Math.max(r.y, pad + 6), h - pad);
+    out += `<text x="${w - padR + 10}" y="${ry.toFixed(1)}" fill="${r.cor}" font-size="16" dominant-baseline="middle">${r.nome}</text>`;
+  }
+  svg.innerHTML = out;
+}
+
+// Minima, maxima e valor atual de uma serie, ignorando os buracos
+function faixa(data) {
+  const v = (data || []).filter(x => x != null);
+  return v.length ? { min: Math.min(...v), max: Math.max(...v), atual: v[v.length - 1] } : {};
 }
 
 /* Leitura no toque/hover do grafico (crosshair + valor) */
@@ -794,6 +858,31 @@ function renderPicks() {
     box.appendChild(b);
   }
 }
+
+/* ---------- Medidores do layout agrupado ---------- */
+
+// Ordem fixa das cores (nunca ciclada): azul, laranja, verde-agua, violeta.
+const SERIES_USO = [
+  { key: "cpu",  nome: "CPU",  cor: "#3987e5", traco: "" },
+  { key: "ram",  nome: "RAM",  cor: "#d95926", traco: "7 4" },
+  { key: "gpu",  nome: "GPU",  cor: "#199e70", traco: "2 4" },
+  { key: "vram", nome: "VRAM", cor: "#9085e9", traco: "10 4 2 4" },
+];
+
+regWidget("uso", {
+  nome: "Uso", col: 6,
+  montar(el) { el.innerHTML = '<div class="uso"><svg class="uso-g"></svg><div class="uso-leg"></div></div>'; },
+  render(el) {
+    const series = SERIES_USO.map(d => ({ ...d, data: hist[d.key] }));
+    drawMulti(el.querySelector(".uso-g"), series, 100);
+    el.querySelector(".uso-leg").innerHTML = series.map(d => {
+      const f = faixa(d.data);
+      return `<div class="leg"><i class="sw" style="background:${d.cor}"></i><span class="nm">${d.nome}</span>` +
+             `<b class="vl">${fmtN(f.atual)}%</b>` +
+             `<span class="fx">mín ${fmtN(f.min)}% · máx ${fmtN(f.max)}%</span></div>`;
+    }).join("");
+  },
+});
 
 /* ---------- Paginas: painel e atalhos ---------- */
 const PAGES = [LAYOUTS[layout].pagina, "page-redes", "page-atalhos"];
