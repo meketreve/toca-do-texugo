@@ -1,50 +1,36 @@
 ---
-updated: 2026-10-05
+updated: 2026-10-12
 tier: 2
 active: true
 ---
 
 # TODO
 
-<!-- TETO: 60 linhas fora de blocos auto. Riscar o que terminou; o `git log` guarda o resto. -->
-<!-- Importado só enquanto active: true. Ao terminar a tarefa, voltar p/ false. -->
-
 ## Agora
 
-- [ ] Ligar a agenda: criar o bot e preencher o `agenda.json` (código todo pronto)
+- [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo
+      (e se o editor é só pra usar do PC, com o tablet só exibindo)
 
 ## Depois
 
-- [ ] Decidir se atualiza o `docs/painel.png` com a linha do Claude (o print mostra uso real)
+- [ ] Decidir se atualiza o `docs/painel.png` com a linha do Claude e os layouts novos
+      (o print mostra uso real)
 - [ ] Se o `kick.com/api/v2` fechar, decidir o plano B (a API oficial não tem seguidores)
-- [x] ~~Layout "Agrupado" inteiro: 2º layout sem tirar nada do clássico, 8 medidores agrupados por
-      tipo de dado, seletor e tela de configuração~~ (aab47c1…524063e; referências em `DESIGN-REFS.md`)
+- [ ] Decidir se o `AGENTS.md` (cópia do `CLAUDE.md`) fica versionado ou vai pro `.gitignore`
 
-## Editor de grade com arrastar e soltar (objetivo maior)
+## Concluído
 
-Catálogo de medidores prontos à esquerda, canvas em grade à direita: arrastar do catálogo pro
-canvas, reposicionar e redimensionar no lugar. Substitui os botões da tela de configuração atual
-(que foram feitos assim por causa do toque impreciso via Moonlight — **decidir se o editor é só
-pra usar do PC**, com o tablet só exibindo). Junto: mais estilos de exibição por medidor.
-
-- [x] ~~G1 a G3 — grade `{id, x, y, w, h}`, catálogo lateral, mover e redimensionar no canvas~~
-- [ ] Decidir se a tela de configuração por botões sai, agora que o editor faz o mesmo
-- [x] ~~G4 — estilos alternativos por medidor (linhas/anéis, barras, números)~~
-
-## Agenda e TODOs pelo Telegram
-
-Decidido 2026-10-05: entrada pelo Telegram (sem OAuth, sem Google Cloud); marcar como feito
-pelo toque no painel. O estado de "feito" é local — o Telegram é só entrada, o painel nunca
-escreve de volta.
-
-- [x] ~~A1 a A4: `agenda.py`, rotas, widget e documentação~~
-- [ ] Criar o bot no @BotFather e pôr token + `chat_id` em `~/.config/toca-do-texugo/agenda.json`
-      — só isso falta pra ligar (o painel mostra "sem bot configurado" até lá)
+- [x] ~~Editor de grade G1 a G4: grade `{id, x, y, w, h}`, catálogo lateral, mover, redimensionar,
+      tamanho mínimo, estilos alternativos e limite da tela~~ (2a99716…bc507f0)
+- [x] ~~Agenda e TODOs pelo Telegram, A1 a A4 + bot criado e `agenda.json` preenchido~~ (07c9eb9)
+- [x] ~~Layout "Agrupado" inteiro, com seletor e tela de configuração~~ (aab47c1…524063e;
+      referências em `DESIGN-REFS.md`)
 
 ## Ideias / talvez
 
 - Cravar o minuto do reset do Claude lendo o horário das mensagens em `~/.claude/projects/*.jsonl`
   em vez do meio entre duas amostras (ganho de ~5 min; não pega uso feito pelo app/web)
-- Automatizar o destravamento do congelamento por composição (toggle de tela cheia do `wmctrl`)
+- Automatizar o destravamento do congelamento por composição (hoje é `bash abrir-painel.sh`)
 - Fazer modelos (temas/layouts) de dashboard com inspiração em fotos do Pinterest
   (catálogo das referências em `.claude/context/DESIGN-REFS.md`)
+

@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-05
+updated: 2026-10-12
 tier: 2
 ---
 
@@ -26,6 +26,9 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-12] [mudanca-de-pasta] o repo não tem caminho absoluto, mas 3 arquivos FORA dele apontam pra pasta do projeto: `~/.config/systemd/user/toca-do-texugo.service` (`ExecStart`), `~/.config/autostart/toca-do-texugo.desktop` (login) e `~/.local/share/applications/toca-do-texugo.desktop` (menu) — mudou de pasta, corrigir os três + `daemon-reload`; na mudança de 2026-10-11 o do menu passou batido e ficou quebrado
+- [2026-10-12] [mudanca-de-pasta] `core.hooksPath .githooks` é por clone e **não** viaja na cópia — depois de mover/clonar, reconfigurar, senão o `pre-commit` que barra credencial em repo público não roda
+- [2026-10-12] [chrome] painel "travado" também pode ser a janela do Chrome morta (o serviço segue 200): confere com `wmctrl -lx | awk '$3 ~ /toca-do-texugo$/'` e resolve com `bash abrir-painel.sh`, que reabre ou só reposiciona se já existir — cuidado que o jogo El Texugo da Steam também casa com "texugo" na busca por título
 - [2026-10-01] [chrome] painel "travado" nem sempre é a página: se o servidor segue recebendo requisição, parou a composição do Chrome — destrava com o toggle de tela cheia do `wmctrl` (diagnóstico em `BUGS.md`)
 - [2026-09-28] [css] `.live` (AO VIVO no cabeçalho) é `inline-flex`: texto quebrado em vários elementos perde os espaços — montar a frase num elemento só e trocar o `innerHTML`
 - [2026-09-28] [rede] não servir na rede: o servidor só escuta em `127.0.0.1` e confere o `Host` — o tablet vê o painel pelo vídeo do Sunshine, não por HTTP
