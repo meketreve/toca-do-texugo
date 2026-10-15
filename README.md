@@ -12,6 +12,12 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - Discos, leitura e escrita, rede e os processos mais pesados (a lista se ajusta ao espaço)
 - Volume, carga e uptime no cabeçalho
 
+**Cérebro do texugo** (rede de spike com STDP)
+- O mascote não tem uma tabela de "se acontecer X, faça Y": quem escolhe o comportamento é uma rede de neurônios com disparo e plasticidade sináptica, que aprende sozinha qual sinal do painel puxa qual reação
+- 16 sensores (CPU, GPU, calor, rede, disco, música, hora do dia, picos e eventos) viram trens de spike; 6 neurônios de saída disputam o comando por inibição lateral
+- Aprende o tempo todo, desde que o serviço sobe, e guarda o que aprendeu em disco — a personalidade se forma ao longo de dias
+- Medidor **Cérebro** mostra os pesos se formando ao vivo, e a chave troca entre o cérebro e o instinto antigo
+
 **OneDrive** (cliente [abraunegg/onedrive](https://github.com/abraunegg/onedrive))
 - Estado da sincronização em tempo real (sincronizado há X, sincronizando, erro, sem conexão, serviço parado), lido do journal do serviço
 - Cota da nuvem (`onedrive --display-quota`, 1× por hora), tamanho e número de arquivos da pasta local
@@ -56,6 +62,7 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 │   ├─ /api/stats   psutil, nvidia-smi, RAPL  │  monitor  │  Moonlight │
 │   ├─ /api/audio   parec (monitor do som)    │  virtual  │            │
 │   ├─ /api/redes   redes.py (APIs)           ├─ DP-0 ───►│            │
+│   ├─ /api/texugo  texugo.py (rede de spike) │           │            │
 │   └─ /api/version recarga automática        │ Sunshine  │            │
 └─────────────────────────────────────────────┘           └────────────┘
 ```
@@ -64,6 +71,7 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - `index.html` é a página inteira (HTML, CSS e JS, sem dependências): gráficos em SVG, visualizador e mascote em canvas
 - `onedrive.py` acompanha o journal do serviço `onedrive` e lê a cota; nunca mexe no token do cliente
 - `redes.py` busca os números das redes em segundo plano, guarda o histórico diário e renova os tokens sozinho
+- `texugo.py` roda a rede de spike numa thread a 100 Hz e escolhe o comportamento do mascote
 - `abrir-painel.sh` sobe o serviço e abre o Chrome em modo app, em tela cheia no `DP-0`
 - O painel se recarrega sozinho quando o `index.html` muda
 
@@ -145,6 +153,46 @@ O bot é público por natureza — qualquer um que descubra o nome dele consegue
 Por isso tudo que não vier do `chat_id` configurado é descartado sem nem olhar o texto. O fluxo é
 só de entrada: o painel lê as mensagens e nunca escreve de volta; "feito" é estado local.
 
+## O cérebro do texugo
+
+Inspirado no [DeskBuddy](https://www.tiktok.com/@jackyfernandess/video/7368840300162190597), de
+[@jackyfernandess](https://www.tiktok.com/@jackyfernandess): em vez de um LLM, ou de uma regra
+escrita à mão pra cada reação, o mascote é comandado por uma rede de neurônios com spike que
+aprende por **STDP** (plasticidade dependente do tempo de disparo).
+
+```
+16 sensores do painel          6 comportamentos
+  CPU, GPU, calor, memória  ┐   ┌ andar
+  rede, disco, música       ├──►├ pular, parar
+  volume, Claude, noite     │   ├ sentar, dormir
+  picos e eventos           ┘   └ dançar
+     (Poisson, 2 a 60 Hz)        (LIF, limiar adaptativo)
+```
+
+A cada passo de 10 ms:
+
+| Mecanismo | O que faz |
+|---|---|
+| **STDP** | no instante do disparo, o sensor que estava ativo fortalece a sinapse; o que estava quieto, enfraquece |
+| **Covariância** | cada sensor é comparado com a **própria média** — o que vive ligado (volume) fica neutro, e quem ensina é o "ligado agora, normalmente não" |
+| **Inibição lateral** | quem dispara cala os outros por ~1,5 s e segue no comando enquanto a situação durar: é daí que sai a especialização |
+| **Normalização** | a soma dos pesos que chegam num neurônio é constante, então os sensores competem entre si |
+| **Homeostase** | o limiar sobe em quem dispara demais e desce em quem dispara de menos — nenhum comportamento morre nem domina pra sempre |
+
+Não há recompensa nem supervisão: afagar o texugo **não** treina nada, de propósito. A escolha do
+comportamento não é "quem disparou mais", e sim quem está disparando mais que o próprio normal
+(desvio em unidades de ruído), pra neurônio barulhento não vencer em qualquer situação.
+
+**Ligando:** o cérebro nasce desligado — adicione o medidor **Cérebro** pelo editor de grade e
+toque em `cérebro`. Ele aprende desde o boot nos dois modos; o modo só decide quem comanda o
+mascote. `instinto` volta pro comportamento sorteado de antes, e `esquecer` zera os pesos.
+
+Pra ver a rede se organizando sem subir o painel (situações sintéticas, aprendizado acelerado):
+
+```bash
+python3 texugo.py 12 6
+```
+
 ## Arquivos locais (nunca versionados)
 
 | Arquivo | O que é |
@@ -156,6 +204,7 @@ só de entrada: o painel lê as mensagens e nunca escreve de volta; "feito" é e
 | `~/.config/toca-do-texugo/atalhos.json` | atalhos da página de atalhos |
 | `~/.config/toca-do-texugo/agenda.json` | token do bot do Telegram e o seu `chat_id` |
 | `~/.config/toca-do-texugo/agenda-itens.json` | itens da agenda e o offset já lido do Telegram |
+| `~/.config/toca-do-texugo/texugo-cerebro.json` | pesos, limiares e idade do cérebro do texugo |
 | `~/.config/toca-do-texugo/onedrive-cota.json` | última cota lida do OneDrive (cache de 1 h) |
 | `~/.config/toca-do-texugo/chrome/` | perfil do Chrome do painel |
 
@@ -179,9 +228,12 @@ só de entrada: o painel lê as mensagens e nunca escreve de volta; "feito" é e
 | `GET /api/audio` | PCM s16le mono 24 kHz do som do PC (stream) |
 | `GET /api/redes` | números das redes, "+hoje" e histórico |
 | `GET /api/agenda` | compromissos e recados vindos do Telegram |
+| `GET /api/texugo` | estado do cérebro: comportamento, sensores, neurônios e pesos |
 | `GET /api/shortcuts` | lista de atalhos (sem os comandos) |
 | `POST /api/run/<id>` | executa um atalho (exige `X-Dash: 1`) |
 | `POST /api/agenda/<id>/feito` | marca um item como feito (exige `X-Dash: 1`) |
+| `POST /api/texugo/modo` | troca entre `cerebro` e `instinto` (exige `X-Dash: 1`) |
+| `POST /api/texugo/esquecer` | zera o que o cérebro aprendeu (exige `X-Dash: 1`) |
 | `GET /api/version` | data do `index.html`, pra recarga automática |
 | `GET /tiktok/login` | inicia a autorização do TikTok |
 

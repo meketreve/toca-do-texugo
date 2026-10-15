@@ -6,6 +6,7 @@ OneDrive: campo "onedrive" do /api/stats (ver onedrive.py).
 Redes:    /api/redes, contadores do YouTube/Twitch/... (ver redes.py).
 Audio:    /api/audio, PCM s16le mono 24 kHz do monitor da saida padrao (o navegador faz a FFT).
 Atalhos:  POST /api/run/<id>, somente ids definidos em ~/.config/toca-do-texugo/atalhos.json.
+Texugo:   /api/texugo, rede de spike com STDP que escolhe o comportamento do mascote (ver texugo.py).
 """
 import json
 import os
@@ -23,6 +24,7 @@ import psutil
 from agenda import Agenda
 from onedrive import OneDrive
 from redes import Redes
+from texugo import Texugo
 
 HOST, PORT = "127.0.0.1", 8787
 BASE = Path(__file__).resolve().parent
@@ -379,6 +381,16 @@ ONEDRIVE = OneDrive()
 AGENDA = Agenda()
 
 
+def _sentidos():
+    """O que o cerebro do texugo recebe: os stats mais dois sinais que nao estao neles."""
+    itens = (AGENDA.state.get("itens") or []) if AGENDA.state.get("ligado") else []
+    live = any((r or {}).get("live") for r in (REDES.data or {}).values())
+    return COLLECTOR.stats, {"agenda_itens": len(itens), "live": 1 if live else 0}
+
+
+TEXUGO = Texugo(_sentidos)
+
+
 def monitor_source():
     sink = subprocess.run(["pactl", "get-default-sink"], capture_output=True, text=True, timeout=2).stdout.strip()
     return sink + ".monitor" if sink else "@DEFAULT_MONITOR@"
@@ -416,6 +428,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(REDES.data, ensure_ascii=False))
         if self.path == "/api/agenda":
             return self._send(200, json.dumps(AGENDA.state, ensure_ascii=False))
+        if self.path == "/api/texugo":
+            return self._send(200, json.dumps(TEXUGO.state, ensure_ascii=False))
         if self.path == "/tiktok/login" or urllib.parse.urlsplit(self.path).path.rstrip("/") == "/tiktok/callback":
             return self._tiktok_auth()
         if self.path == "/api/audio":
@@ -488,6 +502,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(404, '{"error":"not found"}')
             if not AGENDA.feito(urllib.parse.unquote(partes[3]), partes[4] == "feito"):
                 return self._send(404, '{"error":"item desconhecido"}')
+            return self._send(200, '{"ok":true}')
+        # Cerebro do texugo: trocar de modo e mandar esquecer o que aprendeu
+        if self.path == "/api/texugo/modo":
+            tam = int(self.headers.get("Content-Length") or 0)
+            corpo = self.rfile.read(min(tam, 200)).decode("utf-8", "replace") if tam else ""
+            try:
+                modo = (json.loads(corpo) or {}).get("modo")
+            except ValueError:
+                return self._send(400, '{"error":"json"}')
+            if modo not in ("cerebro", "instinto"):
+                return self._send(400, '{"error":"modo"}')
+            return self._send(200, json.dumps({"modo": TEXUGO.set_modo(modo)}))
+        if self.path == "/api/texugo/esquecer":
+            TEXUGO.esquecer()
             return self._send(200, '{"ok":true}')
         if not self.path.startswith("/api/run/"):
             return self._send(404, '{"error":"not found"}')

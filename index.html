@@ -216,6 +216,29 @@
   .ag-item.hoje .qd { color: var(--accent); }
   .ag-item.atrasado .qd { color: var(--warning); }
   .ag-vazio { color: var(--muted); padding: 10px 8px; }
+  /* Cerebro do texugo: sensores a esquerda, neuronios a direita, pesos no meio */
+  .cb { display: grid; grid-template-rows: auto 1fr; gap: 8px; height: 100%; overflow: hidden; }
+  .cb-topo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .cb-comp { font-size: 22px; font-weight: 600; text-transform: capitalize; }
+  .cb-idade { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .cb-modo { margin-left: auto; display: flex; gap: 4px; }
+  .cb-modo button { font: inherit; font-size: 14px; padding: 3px 9px; border-radius: 6px;
+                    border: 1px solid #3a3a38; background: #1d1d1c; color: var(--muted); }
+  .cb-modo button.on { background: var(--accent); border-color: var(--accent); color: #11110f; }
+  .cb-corpo { display: grid; grid-template-columns: minmax(96px, auto) 1fr; gap: 3px 10px;
+              align-content: start; overflow-y: auto; font-size: 14px; }
+  .cb-lin { display: contents; }
+  .cb-nome { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+             border-left: 3px solid transparent; padding-left: 6px; }
+  .cb-nome.forte { color: var(--fg); border-left-color: #6b6b74; }
+  .cb-pesos { display: flex; gap: 3px; align-items: center; }
+  .cb-cel { flex: 1; height: 14px; border-radius: 3px; background: #242423; position: relative; }
+  .cb-cel i { position: absolute; inset: 0; border-radius: 3px; background: var(--accent); }
+  .cb-cel.topo { box-shadow: 0 0 0 1px var(--accent); }
+  .cb-cab { color: var(--muted); font-size: 12px; }
+  .cb-cab .cb-cel { background: none; text-align: center; overflow: hidden; height: auto;
+                    text-overflow: ellipsis; white-space: nowrap; }
+  .cb-cab .cb-cel.ativo { box-shadow: none; color: var(--accent); font-weight: 600; }
 
   /* Estilos alternativos: os mesmos dados como numero ou barra */
   .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -1631,6 +1654,93 @@ function fmtQuando(ts) {
   if (dias > 1 && dias < 7) return DIAS[d.getDay()] + " " + hora;
   return `${d.getDate()}/${d.getMonth() + 1} ${hora}`;
 }
+/* Cerebro do texugo (texugo.py): a rede de spike escolhe o comportamento do mascote. O painel
+   nao decide nada aqui, so pergunta e desenha -- e no modo "instinto" nem pergunta. */
+let texugoData = {}, texugoT = 0;
+async function loadTexugo() {
+  try {
+    texugoData = await (await fetch("/api/texugo", { cache: "no-store", signal: AbortSignal.timeout(4000) })).json();
+    texugoT = performance.now();
+  } catch (e) {}
+}
+// Escolha do cerebro, ou null pra cair no instinto (modo instinto, sem dado ou dado velho)
+function cerebroEscolha() {
+  const d = texugoData;
+  if (!d || d.modo !== "cerebro" || !d.comportamento) return null;
+  if (performance.now() - texugoT > 15000) return null;  // servidor calado: nao insiste
+  return d;
+}
+async function texugoModo(modo) {
+  try {
+    await fetch("/api/texugo/modo", { method: "POST", headers: { "X-Dash": "1", "Content-Type": "application/json" },
+                                      body: JSON.stringify({ modo }) });
+  } catch (e) {}
+  await loadTexugo();
+}
+
+regWidget("cerebro", {
+  nome: "Cérebro", col: 6, h: 3, minW: 4, minH: 2,
+  montar(el) {
+    el.innerHTML = '<div class="cb"><div class="cb-topo">' +
+      '<span class="cb-comp"></span><span class="cb-idade"></span>' +
+      '<span class="cb-modo"><button data-modo="cerebro">cérebro</button>' +
+      '<button data-modo="instinto">instinto</button>' +
+      '<button data-acao="esquecer">esquecer</button></span>' +
+      '</div><div class="cb-corpo"></div></div>';
+    el.addEventListener("click", async ev => {
+      const b = ev.target.closest(".cb-modo button");
+      if (!b) return;
+      if (b.dataset.acao === "esquecer") {
+        try { await fetch("/api/texugo/esquecer", { method: "POST", headers: { "X-Dash": "1" } }); } catch (e) {}
+        return loadTexugo();
+      }
+      texugoModo(b.dataset.modo);
+    });
+  },
+  // A grade e montada UMA vez e depois so tem estilo trocado. Refazer 96 celulas com innerHTML a
+  // cada segundo fazia o alvo do toque sumir debaixo do dedo (o painel e tela de toque) e
+  // repintava o card inteiro no video do Moonlight.
+  render(el, s) {
+    const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
+    if (!d.neuronios) {
+      if (!cb._grade) corpo.innerHTML = '<div class="ag-vazio">Lendo o cérebro…</div>';
+      return;
+    }
+    if (!cb._grade) {
+      corpo.innerHTML =
+        '<div class="cb-lin cb-cab"><div class="cb-nome">sensor</div><div class="cb-pesos">' +
+        d.neuronios.map(n => `<div class="cb-cel">${esc(n.nome)}</div>`).join("") + "</div></div>" +
+        d.sensores.map(sv =>
+          `<div class="cb-lin"><div class="cb-nome">${esc(sv.rotulo)}</div><div class="cb-pesos">` +
+          d.neuronios.map(() => '<div class="cb-cel"><i></i></div>').join("") +
+          "</div></div>").join("");
+      cb._grade = {
+        cab: [...corpo.querySelectorAll(".cb-cab .cb-cel")],
+        nomes: [...corpo.querySelectorAll(".cb-lin:not(.cb-cab) .cb-nome")],
+        linhas: [...corpo.querySelectorAll(".cb-lin:not(.cb-cab) .cb-pesos")].map(p => [...p.children]),
+        botoes: [...el.querySelectorAll(".cb-modo button")],
+      };
+    }
+    const g = cb._grade, h = Math.floor(d.idade / 3600), m = Math.floor((d.idade % 3600) / 60);
+    el.querySelector(".cb-comp").textContent = d.comportamento;
+    el.querySelector(".cb-idade").textContent =
+      (d.modo === "cerebro" ? `conf ${Math.round(d.confianca * 100)}% · ` : "só observando · ") +
+      `aprendendo há ${h ? h + " h " : ""}${m} min · ${d.spikes} spikes`;
+    g.botoes.forEach(b => b.classList.toggle("on", b.dataset.modo === d.modo));
+    g.cab.forEach((c, i) => c.classList.toggle("ativo", d.neuronios[i].nome === d.comportamento));
+    d.sensores.forEach((sv, j) => {
+      g.nomes[j].classList.toggle("forte", sv.valor > 0.35);
+      g.nomes[j].title = `${sv.rotulo}: ${Math.round(sv.valor * 100)}% (${sv.taxa} Hz)`;
+      const pesos = d.neuronios.map((n, i) => (d.pesos[i] || [])[j] || 0);
+      const forte = Math.max(...pesos);
+      g.linhas[j].forEach((cel, i) => {
+        cel.firstChild.style.opacity = (0.08 + pesos[i] * 0.92).toFixed(2);
+        cel.classList.toggle("topo", pesos[i] === forte && pesos[i] > 0.25);
+      });
+    });
+  },
+});
+
 regWidget("agenda", {
   nome: "Agenda", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) {
@@ -1988,7 +2098,7 @@ function drawSprite(frame, eyesClosed) {
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const M = { x: 300, y: -MH, el: null, dir: 1, state: "fall", until: 0, jump: null, lastBeat: 0, nextFx: 0, blinkUntil: 0, nextBlink: 0, nextSweat: 0 };
+const M = { x: 300, y: -MH, el: null, dir: 1, state: "fall", until: 0, jump: null, lastBeat: 0, nextFx: 0, blinkUntil: 0, nextBlink: 0, nextSweat: 0, cerebroAtual: null, cerebroDesde: 0 };
 
 function platforms() {
   // Fileira de cima fica de fora: em cima dela o texugo cobre o cabecalho (volume, carga, uptime)
@@ -2010,7 +2120,26 @@ function jumpTo(el, now, tx) {
   setState("jump", now);
 }
 function randomJump(now) { const ps = platforms().filter(p => p !== M.el); if (ps.length) jumpTo(pick(ps), now); }
+// Do nome do neuronio pro estado do mascote. A rede escolhe QUAL comportamento; o corpo e o
+// mesmo dos dois modos -- o que muda e quem decide.
+function doCerebro(c, now) {
+  const d = Math.max(0, c.duracao || 0);
+  M.cerebroAtual = c.comportamento; M.cerebroDesde = now;
+  switch (c.comportamento) {
+    case "andar":  M.dir = Math.random() < 0.5 ? 1 : -1; return setState("walk", now, d || rnd(3, 8));
+    case "pular":  return randomJump(now);
+    case "parar":  return setState("idle", now, d || rnd(2, 5));
+    case "sentar": return setState("sit", now, d || rnd(6, 14));
+    case "dormir": return setState("sleep", now, d || rnd(30, 90));
+    case "dancar": return setState("dance", now, d || rnd(8, 18));
+  }
+  return setState("idle", now, 2);
+}
 function chooseNext(now) {
+  const c = cerebroEscolha();
+  // No modo cerebro nem o reflexo da musica entra na frente: "musica -> dancar" e uma coisa que
+  // a rede pode aprender (ou nao) sozinha, e e justamente isso que se quer observar.
+  if (c) return doCerebro(c, now);
   if (audio.playing && Math.random() < 0.7) return setState("dance", now, rnd(8, 18));
   const r = Math.random();
   if (r < 0.45) { M.dir = Math.random() < 0.5 ? 1 : -1; setState("walk", now, rnd(3, 8)); }
@@ -2036,7 +2165,19 @@ mascotEl.addEventListener("pointerdown", () => {
   if (M.state !== "jump" && M.el) { const el = M.el; jumpTo(el, now, M.x); }
 });
 
+// Mudou de ideia? Troca na hora, sem esperar o prazo do comportamento vigente acabar -- senao um
+// "dormir" de 90 s engole todas as reacoes seguintes e o bicho para de responder ao painel. O
+// piso de 2 s evita tremelique; a rede ja suaviza em ~5 s na janela do voto.
+const DWELL_MIN = 2000;
+function mascotCerebro(now) {
+  const c = cerebroEscolha();
+  if (!c || M.state === "jump" || M.state === "fall") return;
+  if (c.comportamento === M.cerebroAtual || now - M.cerebroDesde < DWELL_MIN) return;
+  doCerebro(c, now);
+}
+
 function mascotStep(now, dt) {
+  mascotCerebro(now);
   if (M.state !== "jump") {
     const S = M.el && M.el.isConnected && spot(M.el);
     if (!S || S.max < S.min) {           // sem chao (inicio, troca de pagina, resize)
@@ -2113,6 +2254,7 @@ tick(); setInterval(tick, 1000);
 loadShortcuts(); setInterval(loadShortcuts, 20000);
 loadRedes(); setInterval(loadRedes, 30000);
 loadAgenda(); setInterval(loadAgenda, 30000);
+loadTexugo(); setInterval(loadTexugo, 1000);
 let version = null;
 setInterval(async () => {
   try {

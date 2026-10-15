@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-12
+updated: 2026-10-15
 tier: 2
 ---
 
@@ -7,38 +7,37 @@ tier: 2
 
 ## Estado atual
 
-Painel em uso no monitor virtual (DP-0), com dois layouts: o clássico e o agrupado por grade.
-O editor de grade está completo (G1 a G4): catálogo à esquerda, canvas de 12 colunas, mover,
-redimensionar, tamanho mínimo por medidor, estilos alternativos (anéis/barras/números) e grade
-limitada ao que cabe na tela. A agenda pelo Telegram está **ligada** — bot criado, `agenda.json`
-preenchido e item real chegando do celular. Repo público, limpo de credencial, árvore sem pendência
-de código. O projeto voltou pra `/mnt/SSD/git-projeto/toca-do-texugo` (2026-10-12).
+Painel em uso no monitor virtual (DP-0), com o clássico e o agrupado por grade, editor de grade
+completo e agenda do Telegram ligada. **Novo: o cérebro do texugo** (`texugo.py`) — rede de spike
+com STDP que escolhe o comportamento do mascote no lugar da tabela de probabilidades. Nasce em
+modo `instinto`; a chave está no medidor "Cérebro", que sai do catálogo do editor. Aprende desde
+o boot nos dois modos e guarda os pesos em `~/.config/toca-do-texugo/texugo-cerebro.json`.
 
 ## Próxima fase
 
-Decidir se a tela de configuração por botões (`renderConfig`, `index.html:1147`) sai agora que o
-editor de grade (`index.html:1196`) faz o mesmo — e, junto, se o editor é só pra usar do PC, com o
-tablet apenas exibindo (os botões existem por causa do toque impreciso via Moonlight).
-→ verify: abrir `http://127.0.0.1:8787`, montar um layout no editor, recarregar e ver que a grade
-voltou igual sem passar pela tela de botões.
+Deixar rodando alguns dias e ver que personalidade aparece — o teste sintético mostra as 4
+situações escolhendo neurônios bem sintonizados (53–78% contra 17% de acaso), mas com os sinais
+reais do painel isso ainda não foi observado ao longo do tempo.
+→ verify: medidor Cérebro com contraste visível na matriz (vínculos fortes contornados) depois de
+algumas horas, e `curl -s 127.0.0.1:8787/api/texugo` com as 6 taxas perto de 4 Hz e nenhum limiar
+grudado em 0,1 ou 60.
 
 ## Pendências e bloqueios
 
-- `docs/painel.png` do README é de antes e não mostra a linha do Claude nem os layouts novos. Um
-  print novo expõe as porcentagens reais de uso — decidir se vale atualizar.
+- `docs/painel.png` do README é de antes: não mostra a linha do Claude, os layouts novos nem o
+  cérebro. Um print novo expõe as porcentagens reais de uso — decidir se vale atualizar.
 - Painel ainda pode congelar por parada de composição do Chrome (2026-10-01): `bash abrir-painel.sh`
   destrava (reposiciona e dá o toggle de tela cheia); nada automatizado.
 - Se o `kick.com/api/v2` fechar, não há plano B — a API oficial não devolve seguidores.
 
 ## Concluído (recente)
 
+- Cérebro do texugo: STDP + covariância + homeostase, medidor e chave de modo (2026-10-15)
 - Projeto movido de volta pro SSD; service, autostart e lançador do menu corrigidos (2026-10-12)
 - `core.hooksPath .githooks` religado neste clone — o `pre-commit` estava desligado (2026-10-12)
 - Agenda do Telegram ligada: bot no @BotFather e `agenda.json` preenchido (2026-10-12)
 - Editor de grade G1 a G4, com estilos por medidor e grade limitada à tela (bc507f0…2a99716)
 - Agenda e recados no painel, alimentados por um bot do Telegram (07c9eb9)
-- Layout "Agrupado" inteiro, com seletor e tela de configuração (aab47c1…524063e)
-- Vazão espelhada de rede e disco, armazenamento num bloco só (da9e344)
 
 <!-- auto:start -->
 data: 2026-10-12
