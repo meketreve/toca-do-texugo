@@ -99,6 +99,9 @@ TELAS = [
     dict(arquivo="teste-atalhos.html", layout="agrupado", clica_rail="2"),
     dict(arquivo="teste-atalhos-linha.html", tema="linha", layout="agrupado",
          perfil="Linha · Máquina", clica_rail="2"),
+    # a combinacao da parede: tema Linha com o layout classico escolhido -- a pagina vira grade,
+    # e era aqui que a grade ficava montada e sem desenho
+    dict(arquivo="teste-linha-classico.html", tema="linha", layout="classico", perfil="Linha · Máquina"),
 ]
 
 # Ordem dos botoes na pagina de atalhos -- tem que casar com `TEMAS` no index.html; se mudar,
@@ -187,6 +190,10 @@ setTimeout(() => {
     // `rola` > cliente = o desenho passou do espaco do cartao (o .w-body corta, nao estoura a
     // tela). A folga de 3 px e das linhas fracionarias da grade, que arredondam pra cima.
     const estourou = m => m.body.scrollHeight > m.body.clientHeight + 3;
+    // Quanto cada cartao desenhou: cartao montado e nunca desenhado fica com o corpo vazio, e o
+    // relatorio de erro nao pega isso (o renderDashB engole a excecao, e sem desenho nao ha erro)
+    r.desenho = [...document.querySelectorAll("#widgets-b .widget")]
+      .map(c => [c.dataset.w, c.querySelector(".w-body").innerHTML.length]);
     r.estouros = [];
     for (const [id, m] of montados) if (estourou(m)) r.estouros.push([id, m.body.clientHeight, m.body.scrollHeight]);
     // Quem estourou, com as alturas dos filhos: sem isso so se sabe que estourou, nao onde
@@ -216,29 +223,44 @@ setTimeout(() => {
 </script>
 """
 
-for tela in TELAS:
-    tema = tela.get("tema")
+def monta(arquivo, tema, layout, perfil, perfis, clica_tema=None, clica_perfil=None, clica_rail=None, dados=None):
     tema_js = "" if not tema or tema == "atual" else f'localStorage.setItem("painel.tema", "{tema}");'
     # O perfil ativo e o que a tela mostra: sem ele o painel cairia no "Padrão" (o perfil de
     # nascenca), e nao na tela do mockup que `ativaLinha()` deixa ativa ao ligar o tema.
-    perfil = tela.get("perfil")
     perfil_js = f'localStorage.setItem("painel.perfil", "{perfil}");' if perfil else ""
-    perfis = tela.get("perfis")
     perfis_js = f'localStorage.setItem("painel.perfis", JSON.stringify({json.dumps(perfis, ensure_ascii=False)}));' if perfis else ""
-    semente = (SEMENTE.replace("__DADOS__", json.dumps(DADOS, ensure_ascii=False))
-                      .replace("__TEMA__", tema_js).replace("__LAYOUT__", tela["layout"])
+    semente = (SEMENTE.replace("__DADOS__", json.dumps(dados or DADOS, ensure_ascii=False))
+                      .replace("__TEMA__", tema_js).replace("__LAYOUT__", layout)
                       .replace("__PERFIL__", perfil_js + perfis_js))
     # 5200 ms: o roteiro so mede depois que a fonte trocou, senao mede o layout do fallback
     roteiro = ROTEIRO.replace("__ESPERA__", "5200")
-    if tela.get("clica_tema"):
-        extra = TROCA_TEMA.replace("__N__", str(TEMAS_ORDEM.index(tela["clica_tema"]) + 1))
-    elif tela.get("clica_perfil"):
-        extra = TROCA_PERFIL.replace("__NOME__", tela["clica_perfil"])
-    elif tela.get("clica_rail"):
-        extra = TROCA_RAIL.replace("__N__", str(tela["clica_rail"]))
+    if clica_tema:
+        extra = TROCA_TEMA.replace("__N__", str(TEMAS_ORDEM.index(clica_tema) + 1))
+    elif clica_perfil:
+        extra = TROCA_PERFIL.replace("__NOME__", clica_perfil)
+    elif clica_rail:
+        extra = TROCA_RAIL.replace("__N__", str(clica_rail))
     else:
         extra = ""
     out = (src.replace("<head>", "<head>" + semente, 1)
               .replace("</body>", extra + roteiro + "</body>", 1))
-    (SP / tela["arquivo"]).write_text(out)
+    (SP / arquivo).write_text(out)
+
+
+for tela in TELAS:
+    monta(tela["arquivo"], tela.get("tema"), tela["layout"], tela.get("perfil"), tela.get("perfis"),
+          tela.get("clica_tema"), tela.get("clica_perfil"), tela.get("clica_rail"))
 print("telas prontas:", ", ".join(t["arquivo"] for t in TELAS))
+
+# `--real`: as duas telas do Linha com o dado da PROPRIA maquina do painel, em vez da fixture. E o
+# que reproduz o que se ve na parede -- a fixture tem numeros redondos e nao pega campo que so
+# existe no dado de verdade (gpu nula, volume mudo, disco nao montado, cota do OneDrive em falta).
+if "--real" in sys.argv:
+    import urllib.request
+    real = {k: json.load(urllib.request.urlopen(f"http://127.0.0.1:8787/api/{k}", timeout=5))
+            for k in ("stats", "texugo", "agenda", "redes")}
+    real["shortcuts"] = []
+    monta("teste-real-1.html", "linha", "agrupado", "Linha · Máquina", None, dados=real)
+    monta("teste-real-2.html", "linha", "agrupado", "Linha · Dados", None, dados=real)
+    monta("teste-real-3.html", "linha", "classico", "Linha · Máquina", None, dados=real)
+    print("telas com o dado real: teste-real-1.html, teste-real-2.html, teste-real-3.html")

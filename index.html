@@ -1519,7 +1519,11 @@ function render(s) {
   renderMedia(s.media);
   pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
   
-  if (layout === "agrupado") renderDashB(s); else if (grafite()) renderDashG(s); else renderDashA(s);
+  // Quem manda no desenho e a PAGINA, nao o `layout`: no Grafite o classico vira `page-dash-g` e
+  // no Linha ele cai na grade (`page-dash-b`), entao despachar por `layout` deixava a grade
+  // montada e nunca desenhada -- cartao com rotulo e sem dado nenhum.
+  const pag = PAGES[0];
+  if (pag === "page-dash-b") renderDashB(s); else if (pag === "page-dash-g") renderDashG(s); else renderDashA(s);
 }
 
 /* Layout classico: o painel de sempre, intocado */
