@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-15
+updated: 2026-10-16
 tier: 2
 ---
 
@@ -47,11 +47,12 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 
 - `server.py` — HTTP + coleta: `Collector` 1×/s, `GpuReader`, `RaplReader`, `ClaudeUsage` (l. 169),
   rotas no `Handler` (`do_GET` l. 403, `do_POST` l. 479).
-- `index.html` — página inteira. Cabeçalho 369, `render(s)` 747, `renderClaude` 863, `renderConfig`
-  1147, **editor de grade** 1196, medidores 1363, cérebro 1681, agenda 1744, `renderRedes` 1876;
+- `index.html` — página inteira. Cabeçalho 418, `render(s)` 796, `renderClaude` 912, `renderConfig`
+  1216, **editor de grade** 1265, medidores 1499, cérebro 1835, agenda 1898, `renderRedes` 2030;
   mascote em canvas no fim (`chooseNext`/`doCerebro` decidem o comportamento).
 - camada de medidor: `medidor(id, nome, dadosDe, opts)` + `ESTILOS_MEDIDOR` (anéis/barras/números);
-  o medidor declara os itens UMA vez e os estilos leem os mesmos.
+  o medidor declara os itens UMA vez e os estilos leem os mesmos. Cada um diz seu `grupo`
+  (`GRUPOS`, l. 1052), que é por onde o catálogo do editor se organiza — sem grupo cai em "Outros".
 - `redes.py` — uma classe por rede (`PROVIDERS`) + `Redes`: histórico diário e token renovado só.
 - `agenda.py` — long polling do bot do Telegram; o "feito" é local do painel, nunca volta pro bot.
 - `texugo.py` — cérebro do mascote (spike + STDP, 100 Hz): `Sensores`, `passo()`, `_vencedor()`

@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-15
+updated: 2026-10-16
 tier: 2
 active: true
 ---
@@ -10,8 +10,6 @@ active: true
 
 Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão feitos.
 
-- [ ] **Grupos no catálogo**: campo `grupo` no `regWidget` e o catálogo agrupado — uma linha por
-      medidor agora, 30 linhas depois
 - [ ] **Perfis no medidor Cérebro**: ler melhor o que cada neurônio aprendeu — sensor ordenado por
       peso, "situação preferida" em palavras, quem está puxando o comando agora (`regWidget("cerebro")`)
 - [ ] **Perfis de layout**: conjuntos nomeados de medidores ("jogo", "trabalho", "noite") e a troca
@@ -28,6 +26,8 @@ Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão fe
 
 ## Concluído
 
+- [x] ~~Grupos no catálogo do editor: campo `grupo` no `regWidget`, cabeçalho que abre e fecha e
+      contador de quantos ainda estão fora do painel~~
 - [x] ~~Seletor de estilo no editor, no lugar do botão que ciclava; mostra "não cabe" e o tamanho
       que o estilo exige~~
 - [x] ~~Camada de medidor: `medidor()`/`ESTILOS_MEDIDOR`, itens declarados uma vez~~

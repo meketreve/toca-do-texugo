@@ -260,6 +260,16 @@
   .ed-cat button:active { border-color: var(--accent); background: var(--accent-wash); }
   .ed-cat button[disabled] { opacity: .35; cursor: default; }
   .ed-cat .ajuda { color: var(--muted); font-size: 15px; padding: 2px 2px 6px; }
+  /* Cabecalho de grupo: abre e fecha a lista. Nao parece botao de medidor de proposito --
+     quem procura um medidor nao pode confundir o cabecalho com o item. */
+  .ed-cat .ed-grp {
+    display: flex; align-items: baseline; gap: 8px; padding: 10px 10px 8px;
+    background: transparent; border-color: transparent; color: var(--text-2); font-size: 15px;
+  }
+  .ed-cat .ed-grp .nm { flex: 1; }
+  .ed-cat .ed-grp .sb, .ed-cat .ed-grp small { color: var(--muted); font-size: 13px; }
+  .ed-cat .ed-grp.cheio { opacity: .5; }
+  .ed-cat button[data-novo] { margin-left: 12px; }
   .ed-canvas {
     display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 62px; gap: 8px;
     border: 1px solid var(--border); border-radius: 12px; padding: 8px; overflow-y: auto;
@@ -1029,12 +1039,27 @@ const LAYOUTS = {
 };
 let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getItem("painel.layout") : "classico";
 
-// Registro de medidores: id -> { nome, col (de 12), montar(el), render(el, s) }
+// Registro de medidores: id -> { nome, grupo, col (de 12), montar(el), render(el, s) }
 /* Cada medidor tem um ou mais estilos de exibicao do MESMO dado (linhas, barras, aneis,
    numero). O jeito atual de desenhar vira o estilo padrao e os outros entram por addEstilo,
    cada um com o proprio tamanho minimo: barra legivel em 3x1 nao quer dizer grafico legivel
    no mesmo espaco. */
 const WIDGETS = {};
+/* Grupos do catalogo do editor. Lista plana na ordem de registro dava conta de 8 medidores; com
+   30 o catalogo vira cacada no rolar. Cada medidor diz a que grupo pertence e o catalogo segue a
+   ordem DAQUI, nao a de registro -- medidor sem grupo (ou com grupo que nao existe) cai em
+   "Outros", que e melhor do que desaparecer do catalogo. */
+const GRUPOS = {
+  maquina: "Máquina",
+  dados: "Rede e disco",
+  texugo: "Texugo",
+  dia: "Dia",
+  outros: "Outros",
+};
+const grupoDe = id => {
+  const g = (WIDGETS[id] || {}).grupo;
+  return GRUPOS[g] ? g : "outros";
+};
 function regWidget(id, def) {
   const { montar, render, minW, minH, ...resto } = def;
   WIDGETS[id] = { ...resto, estilos: [{ id: "padrao", nome: def.estiloNome || "Padrão", montar, render, minW, minH }] };
@@ -1246,6 +1271,7 @@ function renderConfig() {
 let edLista = [];
 let arrasto = null;
 let edAvisoT = null;
+const edFechados = new Set();  // grupos do catalogo fechados (so enquanto a pagina esta aberta)
 function edAviso(txt) {
   const el = document.getElementById("ed-aviso");
   if (!el) return;
@@ -1283,12 +1309,30 @@ function edLinhas() { return LINHAS; }
 function edRender() {
   const cat = document.getElementById("ed-cat"), cv = document.getElementById("ed-canvas");
   cat.innerHTML = '<div class="ajuda">Toque para pôr na primeira vaga, ou arraste até o lugar.</div>';
-  for (const [id, w] of Object.entries(WIDGETS)) {
-    const b = document.createElement("button");
-    b.textContent = w.nome;
-    b.dataset.novo = id;
-    if (edLista.some(i => i.id === id)) b.disabled = true;
-    cat.appendChild(b);
+  // Grupo vazio nao vira cabecalho: "Outros" so aparece quando algum medidor cai nele
+  const porGrupo = new Map(Object.keys(GRUPOS).map(g => [g, []]));
+  for (const id of Object.keys(WIDGETS)) porGrupo.get(grupoDe(id)).push(id);
+  for (const [g, ids] of porGrupo) {
+    if (!ids.length) continue;
+    const livres = ids.filter(id => !edLista.some(i => i.id === id)).length;
+    const fechado = edFechados.has(g);
+    const h = document.createElement("button");
+    h.className = "ed-grp" + (livres ? "" : " cheio");
+    h.dataset.grp = g;
+    // Conta o que AINDA DA pra por, no vocabulario da outra tela ("fora do painel"): o numero
+    // que interessa a quem procura medidor e esse, nao o total do grupo.
+    h.innerHTML = `<span class="sb">${fechado ? "▸" : "▾"}</span><span class="nm"></span>` +
+                  `<small>${livres ? `${livres} fora` : "tudo no painel"}</small>`;
+    h.querySelector(".nm").textContent = GRUPOS[g];
+    cat.appendChild(h);
+    if (fechado) continue;
+    for (const id of ids) {
+      const b = document.createElement("button");
+      b.textContent = WIDGETS[id].nome;
+      b.dataset.novo = id;
+      if (edLista.some(i => i.id === id)) b.disabled = true;
+      cat.appendChild(b);
+    }
   }
   const linhas = edLinhas();
   cv.style.gridTemplateRows = `repeat(${linhas}, 62px)`;
@@ -1368,6 +1412,12 @@ function edLiga() {
   const cv = document.getElementById("ed-canvas"), cat = document.getElementById("ed-cat");
 
   cat.addEventListener("pointerdown", ev => {
+    const g = ev.target.closest("button[data-grp]");
+    if (g) {
+      const k = g.dataset.grp;
+      if (edFechados.has(k)) edFechados.delete(k); else edFechados.add(k);
+      return edRender();
+    }
     const b = ev.target.closest("button[data-novo]");
     if (!b || b.disabled) return;
     const id = b.dataset.novo;
@@ -1457,7 +1507,7 @@ const SERIES_USO = [
 ];
 
 regWidget("uso", {
-  nome: "Uso", col: 6, h: 2, minW: 5, minH: 2,
+  nome: "Uso", grupo: "maquina", col: 6, h: 2, minW: 5, minH: 2,
   montar(el) { el.innerHTML = '<div class="uso"><svg class="uso-g"></svg><div class="uso-leg"></div></div>'; },
   render(el) {
     const series = SERIES_USO.map(d => ({ ...d, data: hist[d.key] }));
@@ -1554,7 +1604,7 @@ const ESTILOS_MEDIDOR = {
    MESMOS itens -- e o caso de quem tem algo a mais pra dizer (a escala das temperaturas, o "nao
    montado" dos discos) e nem por isso precisa remontar a lista. */
 function medidor(id, nome, dadosDe, opts = {}) {
-  const { col = 4, minW = 3, alturas = {}, estilos = ["barras", "numeros"], padrao } = opts;
+  const { grupo, col = 4, minW = 3, alturas = {}, estilos = ["barras", "numeros"], padrao } = opts;
   const comDados = (f) => function (el, s) {
     const d = dadosDe(s) || {};
     const itens = (d.itens || []).map((a, i) => ({ ...a, cor: a.cor || CORES_ANEL[i % CORES_ANEL.length] }));
@@ -1567,7 +1617,7 @@ function medidor(id, nome, dadosDe, opts = {}) {
   const lista = padrao ? [monta("padrao", padrao), ...estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]))]
                        : estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]));
   const p = lista[0];
-  regWidget(id, { nome, col, h: p.minH, minW: p.minW, minH: p.minH,
+  regWidget(id, { nome, grupo, col, h: p.minH, minW: p.minW, minH: p.minH,
                   estiloNome: p.nome, montar: p.montar, render: p.render });
   WIDGETS[id].estilos[0].id = p.id;
   lista.slice(1).forEach(e => addEstilo(id, e));
@@ -1575,10 +1625,10 @@ function medidor(id, nome, dadosDe, opts = {}) {
 
 
 // Radial: os aneis sao os itens do medidor, e os outros estilos leem os mesmos
-function gaugeWidget(id, nome, n, montarAneis) {
+function gaugeWidget(id, nome, n, montarAneis, grupo = "maquina") {
   const h = n <= 3 ? 2 : 3;
   medidor(id, nome, s => { const d = montarAneis(s) || {}; return { itens: d.aneis || [], centro: d.centro }; }, {
-    col: 3, minW: 3, estilos: ["aneis", "barras", "numeros"],
+    grupo, col: 3, minW: 3, estilos: ["aneis", "barras", "numeros"],
     alturas: { aneis: { minH: h }, barras: { minH: h },
                numeros: { minW: n <= 3 ? 3 : 4, minH: n <= 3 ? 1 : 2 } },
   });
@@ -1634,6 +1684,7 @@ medidor("temperaturas", "Temperaturas", s => ({
              rodape: `aviso em ${t.warn} °C` };
   }),
 }), {
+  grupo: "maquina",
   alturas: { numeros: { minH: 1 } },
   // O padrao diz duas coisas a mais que a barra generica: o icone/palavra do nivel e a escala
   padrao: {
@@ -1665,6 +1716,7 @@ medidor("potencia", "Consumo", s => {
                rodape: `${cp == null ? "—" : fmtN(cp)} W + ${gp == null ? "—" : fmtN(gp)} W` }],
   };
 }, {
+  grupo: "maquina",
   alturas: { numeros: { minW: 2, minH: 1 } },
   // O padrao empilha as duas pecas numa barra so, contra o teto somado
   padrao: {
@@ -1687,7 +1739,7 @@ medidor("potencia", "Consumo", s => {
 // esmagariam a rede, que e ordens de grandeza mais lenta que o NVMe.
 function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
   regWidget(id, {
-    nome, col: 4, h: 2, minW: 3, minH: 2,
+    nome, grupo: "dados", col: 4, h: 2, minW: 3, minH: 2,
     montar(el) { el.innerHTML = '<div class="vz"><svg></svg><div class="vz-leg"></div></div>'; },
     render(el) {
       drawMirror(el.querySelector("svg"), hist[kCima], hist[kBaixo], [COR_ENTRA, COR_SAI]);
@@ -1724,6 +1776,7 @@ medidor("capacidade", "Armazenamento", s => {
     })),
   };
 }, {
+  grupo: "dados",
   alturas: { numeros: { minW: 4, minH: 1 } },
   // O padrao usa o bloco do layout classico e sabe dizer "nao montado"
   padrao: {
@@ -1780,7 +1833,7 @@ async function texugoModo(modo) {
 }
 
 regWidget("cerebro", {
-  nome: "Cérebro", col: 6, h: 3, minW: 4, minH: 2,
+  nome: "Cérebro", grupo: "texugo", col: 6, h: 3, minW: 4, minH: 2,
   montar(el) {
     el.innerHTML = '<div class="cb"><div class="cb-topo">' +
       '<span class="cb-comp"></span><span class="cb-idade"></span>' +
@@ -1843,7 +1896,7 @@ regWidget("cerebro", {
 });
 
 regWidget("agenda", {
-  nome: "Agenda", col: 4, h: 2, minW: 3, minH: 2,
+  nome: "Agenda", grupo: "dia", col: 4, h: 2, minW: 3, minH: 2,
   montar(el) {
     el.innerHTML = '<div class="ag"></div>';
     el.addEventListener("click", async ev => {

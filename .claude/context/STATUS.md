@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-15
+updated: 2026-10-16
 tier: 2
 ---
 
@@ -12,16 +12,18 @@ completo e agenda do Telegram ligada. **Novo: o cérebro do texugo** (`texugo.py
 com STDP que escolhe o comportamento do mascote no lugar da tabela de probabilidades. Nasce em
 modo `instinto`; a chave está no medidor "Cérebro", que sai do catálogo do editor. Aprende desde
 o boot nos dois modos e guarda os pesos em `~/.config/toca-do-texugo/texugo-cerebro.json`.
+O catálogo do editor agora é agrupado (Máquina, Rede e disco, Texugo, Dia), com cabeçalho que
+abre e fecha e contador de quantos medidores do grupo ainda estão fora do painel.
 
 ## Próxima fase
 
 Duas coisas, nessa ordem (a 1ª é menor e fecha o que acabou de entrar):
 
-1. **Perfis no medidor Cérebro** (`index.html:1681`, dado em `texugo.py` `_publica`): hoje a matriz
+1. **Perfis no medidor Cérebro** (`index.html:1835`, dado em `texugo.py` `_publica`): hoje a matriz
    é 16×6 de opacidade, legível mas crua. Melhorar a leitura do que cada neurônio aprendeu —
    ordenar sensor por peso, dizer em palavras a "situação preferida" de cada comportamento,
    mostrar quem está puxando o comando agora.
-2. **Perfis de layout** (`index.html:1077` lê, `1083` grava, `setLayout` 1145, editor 1219):
+2. **Perfis de layout** (`index.html:1123` lê, `1129` grava, `setLayout` 1191, editor 1265):
    conjuntos nomeados ("jogo", "trabalho", "noite"), cada um com seus medidores e posições, e a
    troca pelo painel. Hoje só existe UM conjunto, em `localStorage["painel.widgets"]`, e um nome
    de layout em `painel.layout` — o perfil precisa virar `{nome: [medidores]}` com migração do

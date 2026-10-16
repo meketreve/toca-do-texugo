@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-15
+updated: 2026-10-16
 tier: 2
 ---
 
@@ -22,6 +22,7 @@ tier: 2
 - [2026-09-23] [privacidade] o mesmo arquivo tem o campo `org` (id da organização) — ler só `t` e `u`; nunca servir o `org`
 - [2026-10-05] [onedrive] aviso "cURL/libcurl 8.5.0 has known HTTP/2 bugs" a cada start do servico e cosmetico: o proprio cliente liga `force_http_11` sozinho e nada quebra; o painel ignora (so `ERROR:` vira `_last_error`) -- nao e bug do projeto
 - [2026-09-28] [deploy] mudou `.py` → `systemctl --user restart toca-do-texugo.service`; mudou `index.html` → não precisa, o painel recarrega sozinho
+- [2026-10-16] [front] dá pra testar o `index.html` sem a máquina do painel: copiar a página, injetar um roteiro no fim, servir por `http.server` e rodar o Chromium com `--headless=new --dump-dom`, lendo o relatório de dentro do DOM. Duas pegadinhas: o editor escuta `pointerdown`, e `setPointerCapture` com `pointerId` sintético estoura `NotFoundError` e mata o resto do handler (no teste, virar no-op)
 - [2026-09-28] [kick] `followers_count` vem como **string** e a hora da live em **UTC sem fuso** — os dois são convertidos no provider
 
 ## Erros a não repetir
