@@ -8,7 +8,12 @@ active: true
 
 ## Agora
 
-Próxima sessão: perfis. O G4 (estilos de exibição por medidor) já está feito.
+Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão feitos.
+
+- [ ] **Seletor de estilo** no editor: hoje é um botão que CICLA (`⟳`), e com 3 estilos por medidor
+      já incomoda no toque; com 6 fica inviável (`index.html`, handler do `data-est`)
+- [ ] **Grupos no catálogo**: campo `grupo` no `regWidget` e o catálogo agrupado — uma linha por
+      medidor agora, 30 linhas depois
 
 - [ ] **Perfis no medidor Cérebro**: ler melhor o que cada neurônio aprendeu — sensor ordenado por
       peso, "situação preferida" em palavras, quem está puxando o comando agora (`index.html:1681`)
@@ -33,6 +38,11 @@ Próxima sessão: perfis. O G4 (estilos de exibição por medidor) já está fei
 
 ## Ideias / talvez
 
+- **Página "cuidar do texugo"** (tamagotchi): página própria no painel pra cuidar do bicho — fome,
+  sono, carinho, limpeza, e o estado dele mudando com o tempo. Cuidado com o conflito: a decisão
+  de 2026-10-15 é que afagar NÃO treina a rede (STDP sem recompensa). Caminho que preserva isso:
+  as necessidades viram **sensores** novos do cérebro, não recompensa — o bicho fica com fome e a
+  rede aprende sozinha o que fazer com isso, em vez de a gente premiar o comportamento certo
 - Dar ao cérebro um comportamento que hoje não existe (cavar? olhar pro card que disparou?), pra
   ver a rede descobrir quando usar
 - Cravar o minuto do reset do Claude lendo o horário das mensagens em `~/.claude/projects/*.jsonl`

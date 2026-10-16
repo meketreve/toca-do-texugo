@@ -1026,7 +1026,12 @@ function regWidget(id, def) {
 function addEstilo(id, estilo) { WIDGETS[id].estilos.push(estilo); }
 const estiloDe = it => {
   const es = WIDGETS[it.id].estilos;
-  return es.find(e => e.id === it.estilo) || es[0];
+  // O plural variava entre medidores ("numero" no radial, "numeros" no resto). Casar sem o "s"
+  // final evita que configuracao ja salva caia calada no primeiro estilo quando os ids unificam.
+  const sem = x => (x || "").replace(/s$/, "");
+  return es.find(e => e.id === it.estilo)
+      || es.find(e => sem(e.id) === sem(it.estilo))
+      || es[0];
 };
 // Posicoes do padrao: fecham em 6 linhas, que e o que cabe numa tela de 1080p
 const LAYOUT_B_PADRAO = [
@@ -1434,41 +1439,90 @@ addEstilo("uso", {
 const TETO = { cpuTemp: 90, gpuTemp: 86 };
 const CORES_ANEL = ["#3987e5", "#d95926", "#199e70", "#9085e9", "#d55181"];
 
-function gaugeWidget(id, nome, n, montarAneis) {
-  const minH = n <= 3 ? 2 : 3;
-  regWidget(id, {
-    nome, col: 3, h: minH, minW: 3, minH,
+// Pecas que os estilos alternativos compartilham
+function barraHtml(nome, valorHtml, pct, cor, marca) {
+  const w = Math.min(Math.max(pct || 0, 0), 100).toFixed(1);
+  return `<div class="tp-row"><span class="nm">${nome}</span><span class="vl">${valorHtml}</span>` +
+         `<div class="tp-bar"><i style="width:${w}%;background:${cor}"></i>` +
+         (marca == null ? "" : `<u style="left:${Math.min(Math.max(marca, 0), 100).toFixed(1)}%"></u>`) +
+         `</div></div>`;
+}
+const numHtml = (k, v, f) => `<div class="num"><span class="v">${v}</span><span class="k">${k}</span>` +
+                             (f ? `<span class="f">${f}</span>` : "") + "</div>";
+const caixa = (el, cls, html) => { el.querySelector("." + cls).innerHTML = html; };
+
+/* ---------- Medidor: o QUE ele mostra, separado do COMO ----------
+   Um medidor declara os itens UMA vez e os estilos leem os mesmos itens. Antes cada estilo
+   remontava a lista por conta propria, e elas ja tinham divergido em silencio: a temperatura do
+   NVMe se chamava "SSD NVMe" no estilo padrao e "NVMe" no estilo Numeros.
+
+   Item: {nome, frac 0..1, texto, cor?, marca? 0..1, curto?, rodape?}. `cor` cai na paleta pela
+   posicao quando nao vem; `marca` e o tracinho de limite na barra; `curto`/`rodape` so mudam o
+   estilo Numeros, que mostra valor grande e uma linha de apoio. */
+const ESTILOS_MEDIDOR = {
+  aneis: {
+    nome: "Anéis",
     montar(el) { el.innerHTML = '<div class="gauge"><svg></svg><div class="gauge-leg"></div></div>'; },
-    render(el, s) {
-      const d = montarAneis(s);
-      const aneis = (d.aneis || []).map((a, i) => ({ ...a, cor: CORES_ANEL[i % CORES_ANEL.length] }));
-      drawGauge(el.querySelector("svg"), aneis, d.centro || { valor: "—", rotulo: "" });
-      el.querySelector(".gauge-leg").innerHTML = aneis.map(a =>
-        `<div class="gl"><i class="sw" style="background:${a.cor}"></i><span class="nm">${a.nome}</span><span class="vl">${a.texto}</span></div>`
-      ).join("");
+    render(el, d) {
+      drawGauge(el.querySelector("svg"), d.itens, d.centro || { valor: "—", rotulo: "" });
+      el.querySelector(".gauge-leg").innerHTML = d.itens.map(a =>
+        `<div class="gl"><i class="sw" style="background:${a.cor}"></i>` +
+        `<span class="nm">${a.nome}</span><span class="vl">${a.texto}</span></div>`).join("");
     },
+  },
+  barras: {
+    nome: "Barras",
+    montar(el) { el.innerHTML = '<div class="tp"></div>'; },
+    render(el, d) {
+      caixa(el, "tp", d.itens.map(a =>
+        barraHtml(a.nome, a.texto, (a.frac || 0) * 100, a.cor,
+                  a.marca == null ? null : a.marca * 100)).join(""));
+    },
+  },
+  numeros: {
+    nome: "Números",
+    montar(el) { el.innerHTML = '<div class="nums"></div>'; },
+    render(el, d) {
+      // `resumo` deixa um medidor dizer o total em vez de item a item (o Consumo faz isso),
+      // ainda saindo da mesma funcao de dados -- nunca de uma segunda lista.
+      const itens = d.resumo || d.itens;
+      caixa(el, "nums", itens.map(a => numHtml(a.nome, a.curto || a.texto, a.rodape)).join(""));
+    },
+  },
+};
+
+/* Registra um medidor a partir de uma funcao de dados. `estilos` sao ids de ESTILOS_MEDIDOR, na
+   ordem (o primeiro e o padrao); `padrao` troca o primeiro por um desenho proprio, que recebe os
+   MESMOS itens -- e o caso de quem tem algo a mais pra dizer (a escala das temperaturas, o "nao
+   montado" dos discos) e nem por isso precisa remontar a lista. */
+function medidor(id, nome, dadosDe, opts = {}) {
+  const { col = 4, minW = 3, alturas = {}, estilos = ["barras", "numeros"], padrao } = opts;
+  const comDados = (f) => function (el, s) {
+    const d = dadosDe(s) || {};
+    const itens = (d.itens || []).map((a, i) => ({ ...a, cor: a.cor || CORES_ANEL[i % CORES_ANEL.length] }));
+    f.call(this, el, { ...d, itens });
+  };
+  const monta = (eid, def) => ({
+    id: eid, nome: def.nome, minW: (alturas[eid] || {}).minW || minW,
+    minH: (alturas[eid] || {}).minH || 2, montar: def.montar, render: comDados(def.render),
   });
-  gaugeEstilos(id, montarAneis, n);
+  const lista = padrao ? [monta("padrao", padrao), ...estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]))]
+                       : estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]));
+  const p = lista[0];
+  regWidget(id, { nome, col, h: p.minH, minW: p.minW, minH: p.minH,
+                  estiloNome: p.nome, montar: p.montar, render: p.render });
+  WIDGETS[id].estilos[0].id = p.id;
+  lista.slice(1).forEach(e => addEstilo(id, e));
 }
 
-// Os estilos alternativos do radial leem os MESMOS aneis: muda so o desenho
-function gaugeEstilos(id, montarAneis, n) {
-  addEstilo(id, {
-    id: "barras", nome: "Barras", minW: 3, minH: n <= 3 ? 2 : 3,
-    montar(el) { el.innerHTML = '<div class="tp"></div>'; },
-    render(el, s) {
-      const d = montarAneis(s);
-      caixa(el, "tp", (d.aneis || []).map((a, i) =>
-        barraHtml(a.nome, a.texto, (a.frac || 0) * 100, CORES_ANEL[i % CORES_ANEL.length])).join(""));
-    },
-  });
-  addEstilo(id, {
-    id: "numero", nome: "Número", minW: n <= 3 ? 3 : 4, minH: n <= 3 ? 1 : 2,
-    montar(el) { el.innerHTML = '<div class="nums"></div>'; },
-    render(el, s) {
-      const d = montarAneis(s);
-      caixa(el, "nums", (d.aneis || []).map(a => numHtml(a.nome, a.texto)).join(""));
-    },
+
+// Radial: os aneis sao os itens do medidor, e os outros estilos leem os mesmos
+function gaugeWidget(id, nome, n, montarAneis) {
+  const h = n <= 3 ? 2 : 3;
+  medidor(id, nome, s => { const d = montarAneis(s) || {}; return { itens: d.aneis || [], centro: d.centro }; }, {
+    col: 3, minW: 3, estilos: ["aneis", "barras", "numeros"],
+    alturas: { aneis: { minH: h }, barras: { minH: h },
+               numeros: { minW: n <= 3 ? 3 : 4, minH: n <= 3 ? 1 : 2 } },
   });
 }
 
@@ -1500,15 +1554,6 @@ gaugeWidget("radial-gpu", "Placa de vídeo", 5, s => {
   };
 });
 
-// Pecas que os estilos alternativos compartilham
-function barraHtml(nome, valorHtml, pct, cor) {
-  return `<div class="tp-row"><span class="nm">${nome}</span><span class="vl">${valorHtml}</span>` +
-         `<div class="tp-bar"><i style="width:${Math.min(Math.max(pct || 0, 0), 100).toFixed(1)}%;background:${cor}"></i></div></div>`;
-}
-const numHtml = (k, v, f) => `<div class="num"><span class="v">${v}</span><span class="k">${k}</span>` +
-                             (f ? `<span class="f">${f}</span>` : "") + "</div>";
-const caixa = (el, cls, html) => { el.querySelector("." + cls).innerHTML = html; };
-
 // Cor por entidade, nao por posicao: a CPU e azul e a GPU verde-agua em todo medidor que
 // compara as duas, pra leitura nao mudar de significado de um card pro outro.
 const COR_CPU = "#3987e5", COR_GPU = "#199e70";
@@ -1518,45 +1563,65 @@ const COR_ENTRA = "#3987e5", COR_SAI = "#d95926";
 
 // Escala unica pras tres temperaturas: comparar so vale se o eixo for o mesmo.
 const TEMP_MAX = 100;
-regWidget("temperaturas", {
-  nome: "Temperaturas", col: 4, h: 2, minW: 3, minH: 2,
-  montar(el) { el.innerHTML = '<div class="tp"></div>'; },
-  render(el, s) {
-    const itens = [
-      { nome: "CPU", v: s.cpu.temp, warn: 80, crit: TETO.cpuTemp },
-      { nome: "GPU", v: s.gpu ? s.gpu.temp : null, warn: 78, crit: TETO.gpuTemp },
-      { nome: "SSD NVMe", v: s.nvme_temp, warn: 65, crit: 75 },
-    ];
-    el.querySelector(".tp").innerHTML = itens.map(t => {
-      const l = level(t.v, t.warn, t.crit);
-      const pct = Math.min(Math.max(t.v ?? 0, 0) / TEMP_MAX, 1) * 100;
-      return `<div class="tp-row"><span class="nm">${t.nome}</span>` +
-             `<span class="vl">${levelIcon(l)}${fmtN(t.v)} °C${levelWord[l]}</span>` +
-             `<div class="tp-bar"><i style="width:${pct.toFixed(1)}%;background:${levelColor[l]}"></i>` +
-             `<u style="left:${(100 * t.warn / TEMP_MAX).toFixed(1)}%"></u></div></div>`;
-    }).join("") + `<div class="tp-esc"><span>0 °C</span><span>${TEMP_MAX} °C</span></div>`;
+medidor("temperaturas", "Temperaturas", s => ({
+  itens: [
+    { nome: "CPU", v: s.cpu.temp, warn: 80, crit: TETO.cpuTemp },
+    { nome: "GPU", v: s.gpu ? s.gpu.temp : null, warn: 78, crit: TETO.gpuTemp },
+    { nome: "SSD NVMe", v: s.nvme_temp, warn: 65, crit: 75 },
+  ].map(t => {
+    const nivel = level(t.v, t.warn, t.crit);
+    return { nome: t.nome, nivel, frac: Math.min(Math.max(t.v ?? 0, 0) / TEMP_MAX, 1),
+             cor: levelColor[nivel], marca: t.warn / TEMP_MAX,
+             texto: `${fmtN(t.v)} °C`, curto: `${fmtN(t.v)}<small>°C</small>`,
+             rodape: `aviso em ${t.warn} °C` };
+  }),
+}), {
+  alturas: { numeros: { minH: 1 } },
+  // O padrao diz duas coisas a mais que a barra generica: o icone/palavra do nivel e a escala
+  padrao: {
+    nome: "Padrão",
+    montar(el) { el.innerHTML = '<div class="tp"></div>'; },
+    render(el, d) {
+      caixa(el, "tp", d.itens.map(t =>
+        barraHtml(t.nome, `${levelIcon(t.nivel)}${t.texto}${levelWord[t.nivel]}`,
+                  t.frac * 100, t.cor, t.marca * 100)).join("") +
+        `<div class="tp-esc"><span>0 °C</span><span>${TEMP_MAX} °C</span></div>`);
+    },
   },
 });
 
-// Potencia: uma barra so, as duas pecas empilhadas, teto = TDP da CPU + limite da GPU
-regWidget("potencia", {
-  nome: "Consumo", col: 4, h: 2, minW: 3, minH: 2,
-  montar(el) { el.innerHTML = '<div class="tp"><div class="pot-total"></div><div class="pot-bar"></div><div class="gauge-leg"></div></div>'; },
-  render(el, s) {
-    const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
-    const teto = (s.cpu.tdp || 0) + (s.gpu ? s.gpu.power_limit : 0);
-    const total = (cp || 0) + (gp || 0);
-    el.querySelector(".pot-total").innerHTML = (cp == null && gp == null)
-      ? '<small>sem acesso ao sensor</small>'
-      : `${fmtN(total)} W <small>de ${fmtN(teto)} W</small>`;
-    const larg = v => teto ? `${(100 * (v || 0) / teto).toFixed(1)}%` : "0%";
-    el.querySelector(".pot-bar").innerHTML =
-      `<i style="width:${larg(cp)};background:${COR_CPU}"></i><i style="width:${larg(gp)};background:${COR_GPU}"></i>`;
-    el.querySelector(".gauge-leg").innerHTML =
-      `<div class="gl"><i class="sw" style="background:${COR_CPU}"></i><span class="nm">CPU</span>` +
-      `<span class="vl">${cp == null ? "sem sensor" : `${fmtN(cp)} W de ${s.cpu.tdp || "?"} W`}</span></div>` +
-      (s.gpu ? `<div class="gl"><i class="sw" style="background:${COR_GPU}"></i><span class="nm">GPU</span>` +
-      `<span class="vl">${fmtN(gp)} W de ${fmtN(s.gpu.power_limit)} W</span></div>` : "");
+medidor("potencia", "Consumo", s => {
+  const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
+  const teto = (s.cpu.tdp || 0) + (s.gpu ? s.gpu.power_limit : 0);
+  const total = (cp || 0) + (gp || 0);
+  const itens = [{ nome: "CPU", v: cp, cor: COR_CPU, max: s.cpu.tdp,
+                   texto: cp == null ? "sem sensor" : `${fmtN(cp)} W de ${s.cpu.tdp || "?"} W` }];
+  if (s.gpu) itens.push({ nome: "GPU", v: gp, cor: COR_GPU, max: s.gpu.power_limit,
+                          texto: `${fmtN(gp)} W de ${fmtN(s.gpu.power_limit)} W` });
+  return {
+    teto, total, semSensor: cp == null && gp == null,
+    itens: itens.map(i => ({ ...i, frac: teto ? (i.v || 0) / teto : 0,
+                             curto: `${fmtN(i.v)}<small>W</small>` })),
+    // Numeros mostra a soma, nao peca por peca: e o numero que se olha de longe
+    resumo: [{ nome: "CPU + GPU", curto: `${fmtN(total)}<small>W</small>`,
+               rodape: `${cp == null ? "—" : fmtN(cp)} W + ${gp == null ? "—" : fmtN(gp)} W` }],
+  };
+}, {
+  alturas: { numeros: { minW: 2, minH: 1 } },
+  // O padrao empilha as duas pecas numa barra so, contra o teto somado
+  padrao: {
+    nome: "Padrão",
+    montar(el) { el.innerHTML = '<div class="tp"><div class="pot-total"></div><div class="pot-bar"></div><div class="gauge-leg"></div></div>'; },
+    render(el, d) {
+      el.querySelector(".pot-total").innerHTML = d.semSensor
+        ? '<small>sem acesso ao sensor</small>'
+        : `${fmtN(d.total)} W <small>de ${fmtN(d.teto)} W</small>`;
+      el.querySelector(".pot-bar").innerHTML = d.itens.map(i =>
+        `<i style="width:${(i.frac * 100).toFixed(1)}%;background:${i.cor}"></i>`).join("");
+      el.querySelector(".gauge-leg").innerHTML = d.itens.map(i =>
+        `<div class="gl"><i class="sw" style="background:${i.cor}"></i>` +
+        `<span class="nm">${i.nome}</span><span class="vl">${i.texto}</span></div>`).join("");
+    },
   },
 });
 
@@ -1588,52 +1653,30 @@ vazaoWidget("vazao-rede", "Rede", "rx", "tx", "Download", "Upload");
 vazaoWidget("vazao-disco", "Disco", "dr", "dw", "Leitura", "Escrita");
 
 // Capacidade: tudo que e "usado de um total" na mesma lista, discos e nuvem juntos
-regWidget("capacidade", {
-  nome: "Armazenamento", col: 4, h: 2, minW: 3, minH: 2,
-  montar(el) { el.innerHTML = '<div class="cap"></div>'; },
-  render(el, s) {
-    const itens = s.disks.map(d => ({ nome: d.label, used: d.used, total: d.total, pct: d.pct }));
-    const q = s.onedrive && s.onedrive.quota;
-    if (q) itens.push({ nome: "OneDrive", used: q.used, total: q.total, pct: 100 * q.used / q.total });
-    el.querySelector(".cap").innerHTML = itens.map(d => d.pct == null
-      ? row(d.nome, "não montado")
-      : meterBlock(d.nome, `${fmtBytes(d.used)} <small>de ${fmtBytes(d.total)}</small>`, d.pct, level(d.pct, 85, 95))
-    ).join("");
-  },
-});
-
-addEstilo("temperaturas", {
-  id: "numeros", nome: "Números", minW: 3, minH: 1,
-  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
-  render(el, s) {
-    const itens = [
-      { nome: "CPU", v: s.cpu.temp, warn: 80 },
-      { nome: "GPU", v: s.gpu ? s.gpu.temp : null, warn: 78 },
-      { nome: "NVMe", v: s.nvme_temp, warn: 65 },
-    ];
-    caixa(el, "nums", itens.map(t => numHtml(t.nome, `${fmtN(t.v)}<small>°C</small>`, `aviso em ${t.warn} °C`)).join(""));
-  },
-});
-
-addEstilo("potencia", {
-  id: "numero", nome: "Número", minW: 2, minH: 1,
-  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
-  render(el, s) {
-    const cp = s.cpu.power, gp = s.gpu ? s.gpu.power : null;
-    caixa(el, "nums", numHtml("CPU + GPU", `${fmtN((cp || 0) + (gp || 0))}<small>W</small>`,
-      `${cp == null ? "—" : fmtN(cp)} W + ${gp == null ? "—" : fmtN(gp)} W`));
-  },
-});
-
-addEstilo("capacidade", {
-  id: "numeros", nome: "Números", minW: 4, minH: 1,
-  montar(el) { el.innerHTML = '<div class="nums"></div>'; },
-  render(el, s) {
-    const itens = s.disks.filter(d => d.pct != null)
-      .map(d => numHtml(d.label, `${fmtN(d.pct)}<small>%</small>`, `${fmtBytes(d.used)} de ${fmtBytes(d.total)}`));
-    const q = s.onedrive && s.onedrive.quota;
-    if (q) itens.push(numHtml("OneDrive", `${fmtN(100 * q.used / q.total)}<small>%</small>`, `${fmtBytes(q.used)} de ${fmtBytes(q.total)}`));
-    caixa(el, "nums", itens.join(""));
+medidor("capacidade", "Armazenamento", s => {
+  const itens = s.disks.map(d => ({ nome: d.label, used: d.used, total: d.total, pct: d.pct }));
+  const q = s.onedrive && s.onedrive.quota;
+  if (q) itens.push({ nome: "OneDrive", used: q.used, total: q.total, pct: 100 * q.used / q.total });
+  return {
+    itens: itens.map(d => ({
+      ...d, nivel: level(d.pct, 85, 95), frac: (d.pct || 0) / 100, cor: levelColor[level(d.pct, 85, 95)],
+      texto: d.pct == null ? "não montado" : `${fmtBytes(d.used)} de ${fmtBytes(d.total)}`,
+      curto: d.pct == null ? "—" : `${fmtN(d.pct)}<small>%</small>`,
+      rodape: d.pct == null ? "não montado" : `${fmtBytes(d.used)} de ${fmtBytes(d.total)}`,
+    })),
+  };
+}, {
+  alturas: { numeros: { minW: 4, minH: 1 } },
+  // O padrao usa o bloco do layout classico e sabe dizer "nao montado"
+  padrao: {
+    nome: "Padrão",
+    montar(el) { el.innerHTML = '<div class="cap"></div>'; },
+    render(el, d) {
+      caixa(el, "cap", d.itens.map(x => x.pct == null
+        ? row(x.nome, "não montado")
+        : meterBlock(x.nome, `${fmtBytes(x.used)} <small>de ${fmtBytes(x.total)}</small>`, x.pct, x.nivel)
+      ).join(""));
+    },
   },
 });
 

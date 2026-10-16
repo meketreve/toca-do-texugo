@@ -50,32 +50,32 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 - `index.html` — página inteira. Cabeçalho 369, `render(s)` 747, `renderClaude` 863, `renderConfig`
   1147, **editor de grade** 1196, medidores 1363, cérebro 1681, agenda 1744, `renderRedes` 1876;
   mascote em canvas no fim (`chooseNext`/`doCerebro` decidem o comportamento).
+- camada de medidor: `medidor(id, nome, dadosDe, opts)` + `ESTILOS_MEDIDOR` (anéis/barras/números);
+  o medidor declara os itens UMA vez e os estilos leem os mesmos.
 - `redes.py` — uma classe por rede (`PROVIDERS`) + `Redes`: histórico diário e token renovado só.
 - `agenda.py` — long polling do bot do Telegram; o "feito" é local do painel, nunca volta pro bot.
-- `texugo.py` — cérebro do mascote (rede de spike + STDP, thread a 100 Hz): `Sensores` (stats → 16
-  canais), `passo()` (10 ms), `_vencedor()` (z de Poisson). Teste solto: `python3 texugo.py 12 6`.
+- `texugo.py` — cérebro do mascote (spike + STDP, 100 Hz): `Sensores`, `passo()`, `_vencedor()`
+  (z de Poisson). Teste solto: `python3 texugo.py 12 6`.
 - `onedrive.py` — lê o journal do serviço `onedrive` e a cota (cache de 1 h).
-- `abrir-painel.sh` — sobe o serviço e abre o Chrome em tela cheia; janela já aberta, só
-  reposiciona e dá o toggle (é o destravamento do congelamento por composição).
+- `abrir-painel.sh` — sobe o serviço e abre o Chrome em tela cheia; se a janela já existe, só
+  reposiciona e dá o toggle (destrava o congelamento por composição). `docs/` — prints do README.
 - `.githooks/pre-commit` — barra credencial no commit (`git config core.hooksPath .githooks`).
-- `docs/` — prints usados no README.
 
 ## Pontos de entrada e fluxos principais
 
 - Painel: `GET /` → `index.html` → busca `/api/stats` 1×/s → `render(s)` desenha tudo.
-- Métricas: thread do `Collector` → dict em `COLLECTOR.stats` → servido como JSON (nada é calculado por requisição).
-- Redes: `redes.py` atualiza em segundo plano → `/api/redes` (o painel busca a cada 30 s).
+- Métricas: thread do `Collector` → `COLLECTOR.stats` → JSON (nada calculado por requisição).
+- Redes: `redes.py` em segundo plano → `/api/redes` (o painel busca a cada 30 s).
 - Áudio: `/api/audio` manda PCM s16le mono 24 kHz do monitor da saída padrão → FFT no navegador.
 - Atalhos: `POST /api/run/<id>`, só ids de `~/.config/toca-do-texugo/atalhos.json`, exige `X-Dash: 1`.
 - Agenda: bot do Telegram → `agenda.py` → `/api/agenda`; o toque no item faz `POST /api/agenda/<id>`.
-- Mascote: `texugo.py` → `/api/texugo` (1×/s) → `doCerebro()`; no modo `instinto` o painel nem
-  pergunta e segue no `chooseNext()` de sempre.
+- Mascote: `texugo.py` → `/api/texugo` (1×/s) → `doCerebro()`; em `instinto`, `chooseNext()`.
 
 ## Arquivos locais (fora do repo, em `~/.config/toca-do-texugo/`)
 
-`config.json` (máquina), `redes.json` (credenciais), `redes-tokens.json`, `redes-historico.json`,
-`atalhos.json`, `agenda.json` (token do bot), `agenda-itens.json`, `texugo-cerebro.json`,
-`onedrive-cota.json`, `chrome/` (perfil do Chrome do painel).
+`config.json`, `redes.json` (credenciais), `redes-tokens.json`, `redes-historico.json`,
+`atalhos.json`, `agenda.json` (bot), `agenda-itens.json`, `texugo-cerebro.json`,
+`onedrive-cota.json`, `chrome/` (perfil do painel).
 
 ## Arquivos de fora que apontam pra pasta do projeto
 Mudou de pasta? Corrigir os três + `daemon-reload`: `systemd/user/toca-do-texugo.service`

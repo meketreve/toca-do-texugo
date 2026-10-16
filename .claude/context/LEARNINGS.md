@@ -26,6 +26,10 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-15] [medidores] estilo alternativo que remonta a própria lista de dados DIVERGE calado: a temperatura do NVMe virou "SSD NVMe" num estilo e "NVMe" no outro. Medidor declara os itens uma vez (`medidor()`), estilo só desenha
+- [2026-10-15] [front] `const` em zona morta temporal derruba o script inteiro: `ESTILOS_MEDIDOR` declarado depois das chamadas `gaugeWidget(...)` dava `Cannot access before initialization` e a página virava relógio `--:--`. Primitivas antes dos medidores no arquivo
+- [2026-10-15] [front] o editor escuta `pointerdown`, não `click` — `.click()` sintético em teste não dispara nada e parece bug que não existe
+- [2026-10-15] [front] `montados` é um Map por id do medidor: o mesmo medidor duas vezes na grade deixa o primeiro card vazio (o catálogo já desabilita o repetido, mas um layout montado na mão esbarra nisso)
 - [2026-10-15] [texugo-snn] inibição lateral divisiva ACUMULA: sem teto < 1 os perdedores chegam a 1.0, que é surdez permanente (carga × 0) e nunca mais disparam nem com limiar no piso — `INIB_MAX = 0.8`
 - [2026-10-15] [texugo-snn] limiar grudado no teto = homeostase desligada: o neurônio dispara acima do alvo e vence o voto em qualquer situação. Teto é salvaguarda (60), não faixa de operação
 - [2026-10-15] [texugo-snn] escala de tempo é tudo: o domínio do vencedor tem que durar na ordem do comportamento (~1,5 s), a homeostase mais lenta que ele, e a janela do voto com spike suficiente pra z significar algo (5 s a 4 Hz ≈ 20) — errando isso a rede funciona e não aprende nada
