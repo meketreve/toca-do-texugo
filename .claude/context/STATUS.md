@@ -43,9 +43,9 @@ tema Linha: a tela e o tema andam em par.
 ## Próxima fase
 
 Na parede: escolher o tema (atalhos → Tema) e conferir a barra lateral nos três — no Atual ela é
-nova, então vale o toque nos cinco botões pelo Moonlight. O Linha precisa do serviço reiniciado
-uma vez (rota `/fontes/`). O Cérebro tem 4 estilos (Matriz, Perfis, Rede, Cards — Cards pede
-7×3): escolher qual fica.
+nova, então vale o toque nos cinco botões pelo Moonlight. A mesma página agora tem **uma lista de
+telas** (Clássico + um botão por perfil), no lugar dos dois seletores. O Cérebro tem 4 estilos
+(Matriz, Perfis, Rede, Cards — Cards pede 7×3): escolher qual fica.
 
 Depois disso, o que resta pede uso, não teclado:
 
@@ -72,6 +72,7 @@ das 13h40 o cérebro zerou (idade foi a 0) sem restart nem POST meu — prováve
 
 ## Concluído (recente)
 
+- "Tela do painel": layout e perfil numa lista só, e o carretel do Disco com giro suave em JS (2026-10-16)
 - O texugo não sobe mais na fileira de cima do Linha: plataforma que não cabe na tela sai da lista (2026-10-16)
 - Tema Linha: os dois mockups como tema + dois perfis de medidores, com a fonte vendorizada (2026-10-16)
 - `addEstilo` passa a entregar os itens do medidor ao estilo acrescentado depois do registro (2026-10-16)

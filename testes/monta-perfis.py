@@ -22,7 +22,8 @@ const esboco = () => ({
   perfis: Object.fromEntries(Object.entries(perfis()).map(([k, v]) => [k, v.map(i => i.id)])),
   natela: [...document.querySelectorAll("#widgets-b .widget")].map(c => c.dataset.w),
   chips: [...document.querySelectorAll("#ed-perfis .chip")].map(b => b.textContent),
-  botoes: [...document.querySelectorAll("#perfis button .lb")].map(b => b.textContent),
+  // a lista da pagina de atalhos e de TELAS desde 2026-10-16: o classico + um botao por perfil
+  botoes: [...document.querySelectorAll("#telas button .lb")].map(b => b.textContent),
 });
 const conta = (passo) => r.passos.push({ passo, ...esboco() });
 const fim = () => {
@@ -40,7 +41,7 @@ try {
   localStorage.setItem("painel.widgets", JSON.stringify(["uso", { id: "temperaturas", col: 3 },
                                                         { id: "agenda", x: 6, y: 4, w: 6, h: 2 }]));
   localStorage.setItem("painel.layout", "agrupado");
-  montarDashB(); renderConfig(); renderPerfis();
+  montarDashB(); renderConfig(); renderTelas();
   conta("migracao do formato antigo");
 
   edAbre();

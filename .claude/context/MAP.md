@@ -66,8 +66,9 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
   1216, **editor de grade** 1265, medidores 1499, cérebro 1853 (estilo Matriz 1922, Perfis 1969),
   agenda 2010, `renderRedes` 2142; mascote no fim (`chooseNext`/`doCerebro` escolhem o jeito).
 - perfis de medidores: `perfis()` l. 1165 lê `painel.perfis` `{nome: [itens]}`, `perfilAtual()` o
-  ativo (`painel.perfil`), `layoutB()`/`salvarB()` l. 1188 falam só com o perfil ativo, seletor em
-  `renderPerfis()` l. 1289. NÃO confundir com `painel.layout`, que é clássico vs agrupado.
+  ativo (`painel.perfil`), `layoutB()`/`salvarB()` l. 1188 falam só com o perfil ativo. A página de
+  atalhos lista TELAS (`renderTelas()`), que é o par (layout, perfil): `setTela()` l. 2163 — o
+  clássico não tem perfil (é página fixa) e a barra de perfis do editor é `renderEdPerfis()`.
 - camada de medidor: `medidor(id, nome, dadosDe, opts)` + `ESTILOS_MEDIDOR` (anéis/barras/números);
   o medidor declara os itens UMA vez e os estilos leem os mesmos. Cada um diz seu `grupo`
   (`GRUPOS`, l. 1052), que é por onde o catálogo do editor se organiza — sem grupo cai em "Outros".

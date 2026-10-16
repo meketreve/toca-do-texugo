@@ -270,6 +270,8 @@ try {
   /* A lista cresce com os medidores: rola em vez de estourar a pagina */
   .layout-pick:last-child { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
   .cfg-rows { display: grid; gap: 8px; align-content: start; overflow-y: auto; }
+  .cfg-aviso { color: var(--muted); font-size: 15px; padding: 2px 2px 6px; }
+  .cfg-aviso b { color: var(--text-2); font-weight: 500; }
 
   /* Agenda: toque no item marca como feito */
   .ag { display: grid; gap: 6px; align-content: start; overflow-y: auto; height: 100%; }
@@ -634,11 +636,6 @@ try {
   .g .shortcuts button.perigo .ic { color: var(--critical); background: color-mix(in srgb, var(--critical) 20%, var(--elev)); }
   .g .shortcuts button.ok { border-color: transparent; box-shadow: var(--brilho); }
   .g .shortcuts button.err { border-color: transparent; box-shadow: 0 0 0 2px var(--critical); }
-  /* Layout e tema lado a lado: cada botao fica do tamanho de antes (1/5 da largura) */
-  .picks-duplo { display: grid; grid-template-columns: 2fr 3fr; gap: var(--gap); }
-  .picks-duplo > div { display: grid; gap: var(--gap); align-content: start; }
-  .picks-duplo #picks { grid-template-columns: repeat(2, 1fr); }
-  .picks-duplo #temas { grid-template-columns: repeat(3, 1fr); }
 
   /* Configuracoes: um card por rede, campos grandes pro toque (e o teclado do Moonlight) */
   #page-config { grid-template-rows: auto minmax(0, 1fr) auto; }
@@ -956,8 +953,9 @@ try {
   .lcl-fila .pct { font-size: 56px; font-weight: 200; line-height: 1; }
   .lcl-fila .pct small { font-size: 24px; color: var(--muted); }
   @keyframes l-gira { to { transform: rotate(360deg); } }
+  /* Giro constante, por CSS: e o vinil do card Tocando agora. O carretel do Disco NAO usa isto --
+     a velocidade dele muda com a vazao, e isso e feito no quadro da animacao (ver `giraPratos`) */
   .l-gira-lento { transform-box: fill-box; transform-origin: center; animation: l-gira 9s linear infinite; }
-  .l-gira-rapido { transform-box: fill-box; transform-origin: center; animation: l-gira 2.4s linear infinite; }
 
   /* Agenda: o item vira uma linha com quadradinho desenhado e a data numa pilula */
   .l .ag { gap: 0; }
@@ -1227,16 +1225,16 @@ try {
     <div class="atalhos-topo"><h2 class="page-title">Atalhos</h2>
       <span class="volta" id="volta">volta ao painel em <b></b><i><u></u></i></span></div>
     <section class="shortcuts" id="shortcuts"></section>
-    <section class="layout-pick picks-duplo">
-      <div><h2 class="page-title">Layout do painel</h2><div class="picks" id="picks"></div></div>
-      <div><h2 class="page-title">Tema</h2><div class="picks" id="temas"></div></div>
+    <section class="layout-pick">
+      <h2 class="page-title">Tela do painel</h2>
+      <div class="picks" id="telas"></div>
     </section>
     <section class="layout-pick">
-      <h2 class="page-title">Perfil de medidores</h2>
-      <div class="picks" id="perfis"></div>
+      <h2 class="page-title">Tema</h2>
+      <div class="picks" id="temas"></div>
     </section>
     <section class="layout-pick">
-      <h2 class="page-title">Medidores do layout agrupado</h2>
+      <h2 class="page-title">Medidores da tela agrupada</h2>
       <div class="cfg-rows" id="cfg-rows"></div>
       <div class="cfg-pe"><button id="ed-abrir">Editar na grade</button><button id="cfg-reset">Restaurar o padrão</button><button id="cfr-abrir">Configurações</button></div>
     </section>
@@ -2059,7 +2057,7 @@ function salvarPerfis(p, ativo) {
     localStorage.setItem("painel.perfis", JSON.stringify(p));
     if (ativo) localStorage.setItem("painel.perfil", ativo);
   } catch (e) {}
-  montarDashB(); renderConfig(); renderPerfis();
+  montarDashB(); renderConfig(); renderTelas();
 }
 function layoutB() {
   const l = perfis()[perfilAtual()];
@@ -2081,7 +2079,7 @@ function setPerfil(nome) {
   // do mockup. Quem escolhe a tela quer a tela inteira, entao o tema vai junto.
   if (PERFIL_TEMA[nome] && temaAtual() !== PERFIL_TEMA[nome]) return setTema(PERFIL_TEMA[nome], nome);
   try { localStorage.setItem("painel.perfil", nome); } catch (e) {}
-  montarDashB(); renderConfig(); renderPerfis(); edSegue();
+  montarDashB(); renderConfig(); renderTelas(); edSegue();
 }
 function novoPerfil(nome) {
   const p = perfis();
@@ -2165,25 +2163,49 @@ function setLayout(id) {
   try { localStorage.setItem("painel.layout", id); } catch (e) {}
   PAGES[0] = paginaDe(id);
   ocultaLayouts();
-  renderPicks();
+  renderTelas();
   showPage(0);
 }
-/* Os dois lugares onde o perfil aparece: botão grande na página de atalhos (é por lá que se
-   troca no dia a dia) e a barra do editor, que além de trocar cria e apaga. */
-function renderPerfis() {
-  const p = perfis(), atual = perfilAtual(), nomes = Object.keys(p);
-  const box = document.getElementById("perfis");
+/* ---------- Tela do painel: layout + perfil numa lista só ----------
+   Eram dois seletores que se atropelavam: o "layout" escolhe a PAGINA (o classico e uma pagina
+   fixa, escrita a mao; o agrupado e a grade de medidores) e o "perfil" escolhe QUAIS medidores
+   nessa grade -- o perfil nao faz nada no classico. Na pagina de atalhos isso virava dois botoes
+   pro mesmo lugar, e com o perfil sem efeito metade das vezes.
+   Agora a lista e de TELAS: "Clássico" (a pagina fixa) e uma entrada por perfil da grade. O par
+   continua sendo dois estados por baixo (o classico nao cabe num perfil: as pecas dele -- tela,
+   tiles, processos -- nao sao medidores do registro), mas quem escolhe escolhe uma tela. */
+function setTela(lay, nome) {
+  // O layout primeiro: ele nao recarrega. O perfil pode pedir tema (perfil do Linha), e ai o
+  // `setTema()` recarrega -- os dois ja estao gravados no localStorage quando isso acontece.
+  if (layout !== lay) setLayout(lay);
+  if (nome && nome !== perfilAtual()) setPerfil(nome);
+}
+function renderTelas() {
+  const nomes = Object.keys(perfis());
+  const box = document.getElementById("telas");
   if (box) {
     box.innerHTML = "";
-    for (const n of nomes) {
-      const b = document.createElement("button");
-      b.innerHTML = '<span class="ic">▦</span><span class="lb"></span>';
-      b.querySelector(".lb").textContent = n;
-      if (n === atual) b.classList.add("sel");
-      b.addEventListener("click", () => setPerfil(n));
-      box.appendChild(b);
+    const botoes = [];
+    // Sob o tema Linha nao existe classico: os dois layouts caem na mesma grade (`paginaDe`)
+    if (!linha()) botoes.push({ icone: LAYOUTS.classico.icone, nome: LAYOUTS.classico.nome, lay: "classico" });
+    for (const n of nomes) botoes.push({ icone: "◴", nome: n, lay: "agrupado", perfil: n });
+    for (const b of botoes) {
+      const el = document.createElement("button");
+      el.innerHTML = `<span class="ic"></span><span class="lb"></span>`;
+      el.querySelector(".ic").textContent = b.icone;
+      el.querySelector(".lb").textContent = b.nome;
+      const ativa = b.perfil ? layout === "agrupado" && b.perfil === perfilAtual() : layout === "classico";
+      if (ativa) el.classList.add("sel");
+      el.addEventListener("click", () => { if (!ativa) setTela(b.lay, b.perfil); });
+      box.appendChild(el);
     }
   }
+  renderEdPerfis(nomes);
+}
+/* A barra de perfis do EDITOR: la o que se faz e escolher qual perfil editar, e criar/apagar --
+   por isso ela continua sendo de perfis, e nao de telas. */
+function renderEdPerfis(nomes) {
+  const atual = perfilAtual();
   const barra = document.getElementById("ed-perfis");
   if (!barra) return;
   barra.innerHTML = "";
@@ -2244,20 +2266,6 @@ function renderTemas() {
   }
 }
 
-function renderPicks() {
-  const box = document.getElementById("picks");
-  box.innerHTML = "";
-  for (const [id, L] of Object.entries(LAYOUTS)) {
-    const b = document.createElement("button");
-    b.innerHTML = `<span class="ic"></span><span class="lb"></span>`;
-    b.querySelector(".ic").textContent = L.icone;
-    b.querySelector(".lb").textContent = L.nome;
-    if (id === layout) b.classList.add("sel");
-    b.addEventListener("click", () => setLayout(id));
-    box.appendChild(b);
-  }
-}
-
 /* Configuracao: liga/desliga, ordem e largura de cada medidor. Botao em vez de arrastar
    porque o painel e tocado pelo tablet via Moonlight, onde arrastar e impreciso. */
 function renderConfig() {
@@ -2266,6 +2274,15 @@ function renderConfig() {
   const lista = layoutB();
   const fora = Object.keys(WIDGETS).filter(id => !lista.some(it => it.id === id));
   box.innerHTML = "";
+  // A lista e da GRADE: com a tela classica escolhida ela esta editando um perfil que nao esta na
+  // tela -- dizer isso evita a impressao de que o botao nao funcionou
+  if (layout === "classico") {
+    const a = document.createElement("div");
+    a.className = "cfg-aviso";
+    a.innerHTML = `A tela <b>Clássica</b> é fixa: estes medidores são da tela agrupada ` +
+                  `<b>${esc(perfilAtual())}</b>, que não está na tela agora.`;
+    box.appendChild(a);
+  }
 
   lista.forEach((it, i) => {
     const r = document.createElement("div");
@@ -3173,12 +3190,28 @@ addEstilo("potencia", {
   },
 });
 
-/* Disco, estilo Pratos: dois carreteis que giram NA VELOCIDADE DA VAZAO (e a legenda do mockup) */
+/* Disco, estilo Pratos: dois carreteis que giram NA VELOCIDADE DA VAZAO (e a legenda do mockup).
+   O giro e em JS, dentro do mesmo `requestAnimationFrame` do mascote, e nao com
+   `animation-duration`: duracao trocada de 1 em 1 s da um degrau visivel na tela, enquanto aqui a
+   velocidade PERCORRE ate a nova (meio segundo de rampa) -- o carretel acelera e desacelera como
+   um de verdade, e para sozinho quando a vazao zera. */
+const VZ_VOLTA_MIN = 0.11, VZ_VOLTA_MAX = 0.42;  // 9 s e 2,4 s por volta, como no mockup
+const voltasPorSegundo = b => b > 512
+  ? VZ_VOLTA_MIN + (VZ_VOLTA_MAX - VZ_VOLTA_MIN) * Math.min(1, b / (512 * 1024)) : 0;
+function giraPratos(dt) {
+  for (const g of document.querySelectorAll("#page-dash-b .prato")) {
+    const vel = +g.dataset.vel || 0, alvo = +g.dataset.alvo || 0;
+    const nova = vel + (alvo - vel) * Math.min(1, dt * 2.2);
+    const ang = ((+g.dataset.ang || 0) + nova * 360 * dt) % 360;
+    g.dataset.vel = nova.toFixed(4); g.dataset.ang = ang.toFixed(2);
+    g.setAttribute("transform", `rotate(${ang.toFixed(2)} ${g.dataset.cx} ${g.dataset.cy})`);
+  }
+}
 addEstilo("vazao-disco", {
   id: "pratos", nome: "Pratos", minW: 4, minH: 3,
   montar(el) {
     el.innerHTML = '<div class="lpr"><svg viewBox="0 0 560 300" aria-hidden="true">' +
-      prato(140, 128, "var(--l-entra)") + prato(420, 128, "var(--l-gpu)") +
+      prato(140, 128, "var(--l-entra)", "leitura") + prato(420, 128, "var(--l-gpu)", "escrita") +
       '<path d="M140,232 L216,276 M344,276 L420,232" stroke="var(--muted)" stroke-width="1.6" fill="none"/>' +
       '<circle cx="222" cy="280" r="7" fill="var(--page)" stroke="var(--muted)" stroke-width="1.6"/>' +
       '<circle cx="338" cy="280" r="7" fill="var(--page)" stroke="var(--muted)" stroke-width="1.6"/>' +
@@ -3196,30 +3229,25 @@ addEstilo("vazao-disco", {
       `<div class="dir"><span class="l-rot" style="color:var(--l-gpu)">ESCRITA</span>` +
       `<span class="l-num" style="color:var(--l-gpu)">${fmtBytes(b.atual)}<small>/S</small></span>` +
       `<span class="l-pe">pico ${fmtRate(b.max)}</span></div>`;
-    giraPrato(el.querySelectorAll(".l-gira-rapido"), a.atual);
-    giraPrato(el.querySelectorAll(".l-gira-lento"), b.atual);
+    // So o ALVO aqui: quem gira e o `giraPratos()`, no quadro da animacao
+    const [gL, gR] = el.querySelectorAll(".prato");
+    if (gL) gL.dataset.alvo = voltasPorSegundo(a.atual);
+    if (gR) gR.dataset.alvo = voltasPorSegundo(b.atual);
   },
 });
-// Um prato: aro, trilho tracejado, cubo e tres raios. O giro e do grupo (CSS), nao do desenho.
-function prato(cx, cy, cor) {
-  const r = i => 32 + i * 20;
+// Um prato: aro, trilho tracejado, cubo e tres raios. O giro e do grupo, aplicado por
+// `giraPratos()` -- o `data-cx`/`data-cy` guardam o centro pra rotacao ser em volta dele.
+function prato(cx, cy, cor, fluxo) {
   let raios = "";
   for (const g of [0, 120, 240]) {
     const [x0, y0] = ptTopo(cx, cy, 32, g), [x1, y1] = ptTopo(cx, cy, 52, g);
     raios += `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} `;
   }
-  return `<g class="l-gira-lento"><circle cx="${cx}" cy="${cy}" r="104" fill="none" stroke="${cor}" stroke-width="2"/>` +
+  return `<g class="prato" data-fluxo="${fluxo}" data-cx="${cx}" data-cy="${cy}">` +
+         `<circle cx="${cx}" cy="${cy}" r="104" fill="none" stroke="${cor}" stroke-width="2"/>` +
          `<circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="var(--track)" stroke-width="2" stroke-dasharray="3 7"/>` +
          `<circle cx="${cx}" cy="${cy}" r="24" fill="none" stroke="var(--text)" stroke-width="2.4"/>` +
          `<path d="${raios}" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/></g>`;
-}
-// Sem vazao o carretel PARA; com vazao ele gira na razao dela, presa entre 0,35 s e 9 s por volta
-function giraPrato(grupos, taxa) {
-  const dur = taxa > 512 ? Math.min(9, Math.max(0.35, 6 * (512 * 1024 / taxa))) : 0;
-  for (const g of grupos) {
-    g.style.animationDuration = dur ? dur + "s" : "";
-    g.style.animationPlayState = dur ? "running" : "paused";
-  }
 }
 
 /* Armazenamento, estilo Cilindros: um cilindro por disco, cheio ate a altura do usado */
@@ -4431,12 +4459,12 @@ let lastFrame = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - lastFrame) / 1000); lastFrame = now;
   analyse(now, dt);
-  if (page === 0) drawViz();
+  if (page === 0) { drawViz(); giraPratos(dt); }  // giro continuo: so na pagina do painel
   mascotStep(now, dt);
   requestAnimationFrame(frame);
 }
 
-ocultaLayouts(); semeiaLinha(); montarDashB(); renderPicks(); renderTemas(); renderPerfis(); renderConfig(); edLiga();
+ocultaLayouts(); semeiaLinha(); montarDashB(); renderTelas(); renderTemas(); renderConfig(); edLiga();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);

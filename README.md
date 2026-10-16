@@ -54,11 +54,12 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 
 **Páginas**: painel → redes → atalhos, trocadas pela **barra lateral** à esquerda (logo, as três páginas, Configurações e o editor de grade), que é a mesma nos três temas. A página de atalhos volta sozinha pro painel depois de 90 s sem toque, e o aviso da volta aparece no alto dela em qualquer tema.
 
-**Temas e telas** (página de atalhos → *Tema*)
-- **Atual** é o visual de sempre, o **Grafite** (escuro e claro) vem dos mockups `Painel · Grafite` e o **Linha** dos mockups `Linha · mostradores da máquina` e `Linha · dados, música e texugo`: fundo preto, traço fino, caixa alta e a fonte Barlow Condensed, servida pelo próprio painel em `/fontes/` (SIL OFL, ver `fontes/OFL.txt`) — nenhuma dependência de CDN
+**Temas e telas** (página de atalhos)
+- **Tela do painel** é uma lista só: **Clássico** (a página fixa, escrita à mão) e uma entrada por **perfil de medidores** da grade agrupada. Por baixo são dois estados — o layout (`painel.layout`) escolhe a página e o perfil (`painel.perfis`) escolhe quais medidores na grade — mas quem escolhe escolhe uma tela, e o Clássico não tem perfil (as peças dele não são medidores do registro). Escolher um perfil do Linha liga o tema Linha junto: a tela e o tema andam em par
+- **Tema** é separado: **Atual** é o visual de sempre, o **Grafite** (escuro e claro) vem dos mockups `Painel · Grafite` e o **Linha** dos mockups `Linha · mostradores da máquina` e `Linha · dados, música e texugo`: fundo preto, traço fino, caixa alta e a fonte Barlow Condensed, servida pelo próprio painel em `/fontes/` (SIL OFL, ver `fontes/OFL.txt`) — nenhuma dependência de CDN
 - Cada tema é uma **opção** (`painel.tema`), nunca um substituto: as cores vivem em `data-tema` e só a estrutura muda, sob a classe do tema (`.g` no Grafite, `.l` no Linha). Trocar de tema recarrega a página
+- As duas telas do Linha (`Linha · Máquina` e `Linha · Dados`, 3×2 cartões) entram como perfis na primeira vez que o tema é ligado — sem sobrescrever nem apagar perfil nenhum. Sob o Linha não existe Clássico: os dois layouts caem na mesma grade, então a lista mostra só as telas de perfil
 - No tema Linha o **cabeçalho sai** e o que ele mostrava (hora, data, volume, carga, ligado, Claude) vai pro card **Relógio**, com o `AO VIVO` no canto dele — a conexão com o servidor o texugo mostra na barra lateral, como nos outros temas
-- As duas telas do Linha entram como **perfis de medidores** (`Linha · Máquina` e `Linha · Dados`, 3×2 cartões) na primeira vez que o tema é ligado — sem sobrescrever nem apagar perfil nenhum. Escolher um deles pelo seletor de perfil liga o tema Linha junto: a tela e o tema andam em par
 
 ## Como funciona
 

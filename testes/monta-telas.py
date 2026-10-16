@@ -79,7 +79,8 @@ DADOS = {"stats": STATS, "agenda": AGENDA, "redes": REDES, "shortcuts": [],
 # A fixture do perfil tem que existir ANTES do localStorage que o roteiro injeta: ela e uma copia
 # MINIMA do que o app semeia com o tema Linha. O que se testa aqui e o TEMA seguindo o perfil
 # escolhido; o desenho da tela do Linha o `teste-linha-2.html` cobre.
-PERFIL_LINHA_FIXO = {"Linha · Dados": [{"id": "vazao-rede", "x": 0, "y": 0, "w": 4, "h": 3}]}
+PERFIL_LINHA_FIXO = {"Padrão": [{"id": "uso", "x": 0, "y": 0, "w": 6, "h": 2}],
+                      "Linha · Dados": [{"id": "vazao-rede", "x": 0, "y": 0, "w": 4, "h": 3}]}
 
 # Uma tela por arquivo. Com tema Linha o painel semeia sozinho os dois perfis do mockup no boot;
 # sem ele nem mexe em `painel.perfis`, pra o painel cair no "Padrão" de sempre.
@@ -143,7 +144,7 @@ setTimeout(() => { document.querySelector('#temas button:nth-child(__N__)').clic
 # ligar o tema do perfil, senao a tela sai com a fonte e as cores erradas.
 TROCA_PERFIL = """<script>
 setTimeout(() => {
-  const b = [...document.querySelectorAll("#perfis button")].find(x => x.querySelector(".lb").textContent === "__NOME__");
+  const b = [...document.querySelectorAll("#telas button")].find(x => x.querySelector(".lb").textContent === "__NOME__");
   if (b) b.click();
 }, 1200);
 </script>
@@ -195,7 +196,10 @@ setTimeout(() => {
     const gAntes = { media, comportamento: texugoData.comportamento,
                      feito: agendaData.itens && agendaData.itens[0] && agendaData.itens[0].feito };
     if (media) media = { ...media, title: "Outra música", status: "Playing" };
-    texugoData.comportamento = "dormir";
+    // Um comportamento DIFERENTE do atual: se o cerebro ja tivesse sorteado "dormir", mexer nele
+    // pra "dormir" deixava o texto igual e o teste acusava o cartao sem motivo
+    texugoData.comportamento = ["dormir", "pular", "sentar", "dancar", "andar", "parar"]
+      .find(n => n !== texugoData.comportamento);
     if (agendaData.itens && agendaData.itens[0]) agendaData.itens[0].feito = !gAntes.feito;
     const mexido = JSON.parse(JSON.stringify(DADOS.stats));
     Object.assign(mexido.cpu, { pct: 88, power: 99, temp: 71 });
@@ -225,6 +229,18 @@ setTimeout(() => {
       uso.e.render(uso.body, DADOS.stats);
       r.traco = [...uso.body.querySelectorAll(".len-tr polyline")].map(p => Math.round(p.getBBox().height));
       for (const k of ["cpu", "ram", "gpu", "vram"]) hist[k] = guarda[k];
+    }
+    // O carretel do Disco: a velocidade tem que PERCORRER ate a nova. Se alguem voltar a mexer
+    // na duracao da animacao de 1 em 1 s, os passos aqui viram um degrau (0 -> 0,42 de uma vez)
+    r.giro = null;
+    const prato0 = document.querySelector("#page-dash-b .prato");
+    if (page === 0 && prato0) {
+      prato0.dataset.vel = 0; prato0.dataset.ang = 0; prato0.dataset.alvo = 0.42;
+      for (let i = 0; i < 3; i++) giraPratos(0.1);
+      const subindo = +prato0.dataset.vel;
+      prato0.dataset.alvo = 0;
+      for (let i = 0; i < 3; i++) giraPratos(0.1);
+      r.giro = [+subindo.toFixed(3), +(+prato0.dataset.vel).toFixed(3), +prato0.getAttribute("transform").split(" ")[0].replace("rotate(", "")];
     }
     media = gAntes.media; texugoData.comportamento = gAntes.comportamento;
     if (agendaData.itens && agendaData.itens[0]) agendaData.itens[0].feito = gAntes.feito;
