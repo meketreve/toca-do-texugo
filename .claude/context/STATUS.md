@@ -36,9 +36,9 @@ Depois disso, o que resta pede uso, não teclado:
 3. **Página "cuidar do texugo"** (tamagotchi) é a próxima coisa grande, se for pra ter uma — com a
    decisão de 2026-10-15 valendo: fome/sono viram SENSORES, nunca recompensa.
 
-Antes de qualquer uma: `git merge` do `main-3ouquh` no `main` e `bash atualizar-painel.sh` na
-máquina do painel — são 5 commits que ainda não rodaram em lugar nenhum, e o
-`texugo.py` mudou (publica `inib`), então o restart é obrigatório.
+Os 5 commits da nuvem já rodam na máquina do painel (`atualizar-painel.sh`, 2026-10-16). Na
+mesma sessão: o sensor `noite` estava invertido (pico às 15 h) — corrigido, mas as ~8 h de peso
+aprendido com ele trocado ficam até a rede reaprender ou alguém tocar em "esquecer".
 
 ## Pendências e bloqueios
 

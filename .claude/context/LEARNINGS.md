@@ -27,6 +27,8 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-16] [texugo-snn] sensor `noite` nasceu com o sinal trocado (`0.5 - 0.5·cos` → pico às 15 h) e ninguém viu porque na matriz "noite aceso" parece normal — sensor novo de relógio: conferir o valor numa hora conhecida no `/api/texugo`
+
 - [2026-10-16] [front] migração de formato NÃO pode normalizar na hora de gravar: o `normaliza()` corta altura e y pelo `LINHAS`, que depende do tamanho da janela NAQUELE instante — gravar o resultado cravaria uma tela pequena pra sempre. A migração dos perfis guarda o valor antigo como está e normaliza só na leitura
 - [2026-10-16] [front] `.cb-corpo` É a grade da matriz do Cérebro (2 colunas): estilo novo que põe um filho só cai dentro da 1ª coluna e desenha espremido — ou pede `grid-column: 1 / -1` (Perfis) ou vira bloco (Rede). Dois estilos caíram nisso
 - [2026-10-16] [texugo-snn] a inibição lateral vive perto do teto: medido em 120 amostras, 86% dos neurônios ficam acima de 0,3 o tempo todo, então corte fixo marca todo mundo. O que informa é o RELATIVO — o espalhamento entre eles é 0,68 na mediana, e o vencedor é o menos inibido em 70% das amostras

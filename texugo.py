@@ -173,7 +173,8 @@ class Sensores:
         v["volume"] = 0.0 if vol.get("muted") else _lim((vol.get("pct") or 0) / 100.0)
         v["claude"] = _lim((cla.get("five_hour") or 0) / 100.0)
         hora = time.localtime().tm_hour + time.localtime().tm_min / 60.0
-        v["noite"] = 0.5 - 0.5 * math.cos(2 * math.pi * (hora - 3.0) / 24.0)
+        # 1.0 as 3 h, 0.0 as 15 h (com "-" no lugar do "+" o pico caia no meio da tarde)
+        v["noite"] = 0.5 + 0.5 * math.cos(2 * math.pi * (hora - 3.0) / 24.0)
 
         # Fasicos: so sobem, e so quando a coisa muda pra cima.
         v["pico_cpu"] = max(v["pico_cpu"], _lim((cpu - ant.get("cpu", cpu)) / 25.0))
