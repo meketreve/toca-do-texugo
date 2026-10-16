@@ -23,6 +23,7 @@ import psutil
 
 from agenda import Agenda
 from onedrive import OneDrive
+import redes
 from redes import Redes
 from texugo import Texugo
 
@@ -435,6 +436,8 @@ class Handler(BaseHTTPRequestHandler):
             items = [{**{k: s.get(k) for k in ("id", "label", "icon")}, "sub": shortcut_sub(s)}
                      for s in load_shortcuts()]
             return self._send(200, json.dumps(items, ensure_ascii=False))
+        if self.path == "/api/config/redes":
+            return self._send(200, json.dumps(redes.config_publica(), ensure_ascii=False))
         if self.path == "/api/version":  # o painel se recarrega quando o index.html muda
             return self._send(200, json.dumps({"index": (BASE / "index.html").stat().st_mtime}))
         if self.path == "/api/redes":
@@ -527,6 +530,20 @@ class Handler(BaseHTTPRequestHandler):
             if modo not in ("cerebro", "instinto"):
                 return self._send(400, '{"error":"modo"}')
             return self._send(200, json.dumps({"modo": TEXUGO.set_modo(modo)}))
+        # Pagina de configuracoes: grava o redes.json (o Redes rele sozinho quando o arquivo muda)
+        if self.path == "/api/config/redes":
+            tam = int(self.headers.get("Content-Length") or 0)
+            if tam > 16384:
+                return self._send(413, '{"error":"grande demais"}')
+            try:
+                mudancas = json.loads(self.rfile.read(tam).decode("utf-8")) if tam else {}
+            except (ValueError, UnicodeDecodeError):
+                return self._send(400, '{"error":"json"}')
+            erro = redes.grava_config(mudancas)
+            if erro:
+                return self._send(400, json.dumps({"error": erro}, ensure_ascii=False))
+            REDES.recarrega()
+            return self._send(200, json.dumps(redes.config_publica(), ensure_ascii=False))
         if self.path == "/api/texugo/esquecer":
             TEXUGO.esquecer()
             return self._send(200, '{"ok":true}')

@@ -123,7 +123,7 @@ Ou `bash atualizar-painel.sh`, que puxa o `main` e reinicia só se precisar (`--
 
 ## Configurando as redes
 
-As credenciais ficam em `~/.config/toca-do-texugo/redes.json` (`chmod 600`, **fora do repo**). O arquivo é relido quando muda, sem precisar reiniciar:
+As credenciais ficam em `~/.config/toca-do-texugo/redes.json` (`chmod 600`, **fora do repo**). Dá pra preencher pela página **Configurações** do painel (botão na página de atalhos, ou a engrenagem da barra lateral no tema Grafite): os segredos nunca voltam pra tela, só aparece se estão definidos, e campo de segredo vazio mantém o que está salvo. Ou edite o arquivo à mão — ele é relido quando muda, sem precisar reiniciar:
 
 ```json
 {

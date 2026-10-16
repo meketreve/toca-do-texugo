@@ -57,6 +57,8 @@ tier: 2
 
 ## Decisões e o porquê
 
+- [2026-10-16] [config] [✓] página de configurações nunca recebe segredo de volta (só `definido`), e Client ID/key contam como segredo — a tela vai pelo Sunshine e pode estar na live. Segredo vazio = mantém; `null` = apaga
+
 - [2026-10-16] [tema] [✓] Grafite é OPÇÃO (`painel.tema`), não substituto: cores em `data-tema`, estrutura só sob `.g` — o Atual fica byte a byte igual. Trocar de tema recarrega a página (cores do canvas lidas uma vez, página do layout muda)
 - [2026-10-16] [tema] [✓] no Grafite o clássico vira outra página (`page-dash-g`), não CSS por cima da antiga: o mockup junta 4 cards num só com abas e muda Redes de lugar — CSS não remonta isso
 

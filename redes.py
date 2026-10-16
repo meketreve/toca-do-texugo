@@ -6,6 +6,7 @@ Historico diario em ~/.config/toca-do-texugo/redes-historico.json (pra "+N hoje"
 import datetime
 import hashlib
 import json
+import os
 import secrets
 import subprocess
 import threading
@@ -300,6 +301,75 @@ class TikTok:
 
 PROVIDERS = {"youtube": Youtube, "twitch": Twitch, "kick": Kick, "tiktok": TikTok}
 
+# Campos que a pagina de configuracoes pode mexer, e quais sao segredo. Segredo nunca sai do
+# servidor: a tela vai pro tablet pelo Sunshine e pode estar na live, entao a pagina so fica
+# sabendo SE ele esta definido. Client ID e client key entram como segredo pelo mesmo motivo.
+CAMPOS = {
+    "youtube": {"handle": False, "api_key": True},
+    "twitch": {"login": False, "client_id": True, "client_secret": True},
+    "kick": {"usuario": False},
+    "tiktok": {"usuario": False, "client_key": True, "client_secret": True, "redirect_uri": False},
+}
+CAMPO_MAX = 400
+
+
+def _le_conf():
+    try:
+        d = json.loads(CONF.read_text())
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def config_publica():
+    """O redes.json como a pagina pode ver: valor dos campos comuns, so `definido` nos segredos."""
+    cfg = _le_conf()
+    out = {}
+    for rede, campos in CAMPOS.items():
+        atual = cfg.get(rede) if isinstance(cfg.get(rede), dict) else {}
+        out[rede] = {c: {"definido": bool(atual.get(c))} if seg else (atual.get(c) or "")
+                     for c, seg in campos.items()}
+    return out
+
+
+def grava_config(mudancas):
+    """Aplica {rede: {campo: valor}} no redes.json. Campo comum vazio sai do arquivo; segredo
+    vazio fica como esta (a pagina nao conhece o valor) e `null` apaga. Chave que a pagina nao
+    conhece fica intocada. Devolve a mensagem de erro, ou None."""
+    if not isinstance(mudancas, dict):
+        return "formato"
+    cfg = _le_conf()
+    for rede, campos in mudancas.items():
+        if rede not in CAMPOS or not isinstance(campos, dict):
+            return f"rede desconhecida: {rede}"
+        atual = cfg.get(rede) if isinstance(cfg.get(rede), dict) else {}
+        for campo, valor in campos.items():
+            if campo not in CAMPOS[rede]:
+                return f"campo desconhecido: {rede}.{campo}"
+            if valor is not None and not isinstance(valor, str):
+                return f"{rede}.{campo} tem que ser texto"
+            valor = None if valor is None else valor.strip()
+            if valor and len(valor) > CAMPO_MAX:
+                return f"{rede}.{campo} grande demais"
+            if CAMPOS[rede][campo] and valor == "":
+                continue
+            if valor:
+                atual[campo] = valor
+            else:
+                atual.pop(campo, None)
+        cfg[rede] = atual
+    try:
+        CONF.parent.mkdir(parents=True, exist_ok=True)
+        tmp = CONF.with_suffix(".tmp")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n")
+        os.chmod(tmp, 0o600)
+        tmp.replace(CONF)
+    except OSError as exc:
+        return f"não consegui gravar: {exc}"
+    return None
+
 
 class Redes:
     def __init__(self):
@@ -354,6 +424,11 @@ class Redes:
     def provider(self, name):
         self._load_config()
         return self._providers.get(name)
+
+    def recarrega(self):
+        """Config gravada pela pagina: rele ja e busca tudo de novo na proxima volta."""
+        self._mtime = None
+        self._load_config()
 
     def refresh_now(self, name):
         self._next[name] = 0

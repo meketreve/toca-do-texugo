@@ -601,6 +601,40 @@ try {
   .picks-duplo #picks { grid-template-columns: repeat(2, 1fr); }
   .picks-duplo #temas { grid-template-columns: repeat(3, 1fr); }
 
+  /* Configuracoes: um card por rede, campos grandes pro toque (e o teclado do Moonlight) */
+  #page-config { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .cfr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); align-content: start; overflow-y: auto; min-height: 0; }
+  .cfr-card { display: grid; gap: 12px; align-content: start; }
+  .cfr-cab { display: flex; align-items: center; gap: 10px; }
+  .cfr-cab svg { width: 22px; height: 22px; color: var(--text-2); flex: none; }
+  .cfr-cab h2 { margin: 0; }
+  .cfr-st { margin-left: auto; font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .cfr-st.ok { color: var(--good); }
+  .cfr-st.av { color: var(--warning); }
+  .cfr-campos { display: grid; grid-template-columns: minmax(130px, auto) minmax(0, 1fr); gap: 10px 14px; align-items: center; }
+  .cfr-campos label { color: var(--text-2); font-size: 17px; }
+  .cfr-in { display: flex; gap: 8px; min-width: 0; }
+  .cfr input {
+    flex: 1; min-width: 0; height: 48px; padding: 0 14px; font: inherit; font-size: 18px;
+    color: var(--text); background: var(--page); border: 1px solid var(--border); border-radius: 10px;
+    user-select: text; -webkit-user-select: text;
+  }
+  .cfr input:focus { outline: none; border-color: var(--accent); }
+  .cfr input::placeholder { color: var(--muted); }
+  .cfr-in button, .cfr-pe button {
+    font: inherit; font-size: 16px; color: var(--text-2); background: var(--surface); cursor: pointer;
+    border: 1px solid var(--border); border-radius: 10px; padding: 0 16px; min-height: 48px;
+  }
+  .cfr-pe { display: flex; align-items: center; gap: 12px; }
+  .cfr-pe .salva { color: var(--text); border-color: var(--accent); }
+  .cfr-pe .msg { font-size: 15px; color: var(--muted); }
+  .cfr-pe .msg.av { color: var(--warning); }
+  .cfr-ajuda { font-size: 15px; color: var(--muted); }
+  .g .cfr input { background: var(--elev); border-color: transparent; border-radius: 14px; }
+  .g .cfr input:focus { box-shadow: 0 0 0 2px var(--accent); }
+  .g .cfr-in button, .g .cfr-pe button { background: var(--elev); border-color: transparent; border-radius: 999px; }
+  .g .cfr-pe .salva { background: var(--accent-bg); color: var(--accent-txt); }
+
   /* ---------- Classico remontado (so no tema Grafite) ---------- */
   #page-dash-g { grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
   .gd-cima { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); min-height: 0; }
@@ -770,6 +804,7 @@ try {
     <button data-ir="1" aria-label="Redes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></button>
     <button data-ir="2" aria-label="Atalhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg></button>
     <span class="sep"></span>
+    <button data-ir="config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button data-ir="editor" aria-label="Editor de grade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg></button>
     <span class="fim"></span>
     <span class="conn-dot" id="conn-dot" role="img" aria-label="Servidor do painel"><i></i></span>
@@ -930,6 +965,12 @@ try {
     </div>
   </main>
 
+  <main class="page" id="page-config" hidden>
+    <div class="atalhos-topo"><h2 class="page-title">Configurações</h2></div>
+    <section class="cfr" id="cfr"></section>
+    <div class="cfg-pe"><button id="cfr-fechar">Concluir</button></div>
+  </main>
+
   <main class="page" id="page-redes" hidden>
     <section class="redes" id="redes"></section>
   </main>
@@ -949,7 +990,7 @@ try {
     <section class="layout-pick">
       <h2 class="page-title">Medidores do layout agrupado</h2>
       <div class="cfg-rows" id="cfg-rows"></div>
-      <div class="cfg-pe"><button id="ed-abrir">Editar na grade</button><button id="cfg-reset">Restaurar o padrão</button></div>
+      <div class="cfg-pe"><button id="ed-abrir">Editar na grade</button><button id="cfg-reset">Restaurar o padrão</button><button id="cfr-abrir">Configurações</button></div>
     </section>
   </main>
 </div>
@@ -2261,6 +2302,7 @@ function edLiga() {
 // O editor nao entra no rodizio do botao de pagina: e tela de ajuste, nao de olhar
 function edAbre() {
   for (const id of PAGES) document.getElementById(id).hidden = true;
+  document.getElementById("page-config").hidden = true;
   const el = document.getElementById("page-editor");
   el.hidden = false;
   el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
@@ -3001,7 +3043,9 @@ document.getElementById("rail").addEventListener("click", ev => {
   const b = ev.target.closest("button[data-ir]");
   if (!b) return;
   if (b.dataset.ir === "editor") return edAbre();
+  if (b.dataset.ir === "config") return cfrAbre();
   document.getElementById("page-editor").hidden = true;
+  document.getElementById("page-config").hidden = true;
   document.getElementById("mascot").hidden = false;
   showPage(+b.dataset.ir);
 });
@@ -3139,6 +3183,127 @@ document.getElementById("redes-mini").addEventListener("click", () => showPage(P
 document.getElementById("pager").addEventListener("click", () => showPage((page + 1) % PAGES.length));
 document.getElementById("page-atalhos").addEventListener("pointerdown", armBack);
 document.getElementById("cfg-reset").addEventListener("click", () => salvarB(normaliza(LAYOUT_B_PADRAO)));
+
+/* ---------- Configuracoes: o redes.json pela tela ----------
+   Fora do rodizio de paginas, como o editor. O servidor nunca devolve segredo (a tela pode estar
+   na live): campo de segredo vem vazio, com "definida" no placeholder, e vazio ao salvar quer
+   dizer "mantem". Cada card salva so a propria rede. */
+const CFR = {
+  youtube: { campos: [["handle", "Canal", "@seu_canal"], ["api_key", "Chave da API"]],
+             ajuda: "Chave da YouTube Data API v3, criada no Google Cloud." },
+  twitch: { campos: [["login", "Login", "seu_login"], ["client_id", "Client ID"], ["client_secret", "Client secret"]],
+            ajuda: "App próprio em dev.twitch.tv, tipo Confidential, redirect http://localhost." },
+  kick: { campos: [["usuario", "Canal", "o que vem depois de kick.com/"]],
+          ajuda: "Sem credencial: só o nome do canal." },
+  tiktok: { campos: [["usuario", "Usuário", "seu_usuario"], ["client_key", "Client key"], ["client_secret", "Client secret"],
+                     ["redirect_uri", "Redirect URI", "só se não for a padrão"]],
+            ajuda: "Depois de salvar, autorize abrindo localhost:8787/tiktok/login no navegador do PC." },
+};
+let cfrDados = {};
+function cfrStatus(id) {
+  const d = redesData[id] || {};
+  if (!d.configured) return ["não configurado", ""];
+  if (d.ok === false) return [d.error || "erro na última leitura", "av"];
+  if (d.ok) return [`lendo · ${fmtN(d.followers)} ${REDES.find(r => r.id === id).seg}`, "ok"];
+  return ["buscando…", ""];
+}
+function cfrRender() {
+  const box = document.getElementById("cfr");
+  box.innerHTML = "";
+  for (const r of REDES) {
+    const C = CFR[r.id], d = cfrDados[r.id] || {};
+    const card = document.createElement("div");
+    card.className = "card cfr-card"; card.dataset.rede = r.id;
+    card.innerHTML = `<div class="cfr-cab"><svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">${r.icon}</svg>` +
+      `<h2>${r.nome}</h2><span class="cfr-st"></span></div><div class="cfr-campos"></div>` +
+      `<div class="cfr-ajuda"></div><div class="cfr-pe"><button class="salva">Salvar</button><span class="msg"></span></div>`;
+    const campos = card.querySelector(".cfr-campos");
+    for (const [campo, rotulo, dica] of C.campos) {
+      const v = d[campo], seg = v && typeof v === "object";
+      const lb = document.createElement("label"), wrap = document.createElement("div"), inp = document.createElement("input");
+      lb.textContent = rotulo; lb.htmlFor = inp.id = `cfr-${r.id}-${campo}`;
+      wrap.className = "cfr-in";
+      inp.dataset.campo = campo; inp.spellcheck = false;
+      if (seg) {
+        inp.type = "password"; inp.autocomplete = "new-password"; inp.dataset.seg = "1";
+        inp.placeholder = v.definido ? "definida · deixe vazio pra manter" : "não definida";
+      } else {
+        inp.type = "text"; inp.autocomplete = "off"; inp.value = v || ""; inp.placeholder = dica || "";
+      }
+      wrap.appendChild(inp);
+      if (seg && v.definido) {
+        const x = document.createElement("button");
+        x.textContent = "apagar"; x.dataset.apaga = campo;
+        wrap.appendChild(x);
+      }
+      campos.append(lb, wrap);
+    }
+    card.querySelector(".cfr-ajuda").textContent = C.ajuda;
+    box.appendChild(card);
+  }
+  cfrStatusAtualiza();
+}
+function cfrStatusAtualiza() {
+  document.querySelectorAll("#cfr .cfr-card").forEach(c => {
+    const [txt, cls] = cfrStatus(c.dataset.rede), st = c.querySelector(".cfr-st");
+    st.textContent = txt; st.className = "cfr-st " + cls; st.title = txt;
+  });
+}
+async function cfrCarrega() {
+  try { cfrDados = await (await fetch("/api/config/redes", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json(); }
+  catch (e) { document.getElementById("cfr").textContent = "Não consegui ler a configuração."; return; }
+  cfrRender();
+}
+async function cfrSalva(card, apagar) {
+  const rede = card.dataset.rede, msg = card.querySelector(".msg"), campos = {};
+  card.querySelectorAll("input[data-campo]").forEach(i => { campos[i.dataset.campo] = i.value; });
+  if (apagar) campos[apagar] = null;
+  msg.className = "msg"; msg.textContent = "salvando…";
+  try {
+    const r = await fetch("/api/config/redes", { method: "POST", headers: { "X-Dash": "1", "Content-Type": "application/json" },
+                                                 body: JSON.stringify({ [rede]: campos }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "erro");
+    cfrDados = d;
+  } catch (e) {
+    msg.className = "msg av"; msg.textContent = "não salvou: " + e.message;
+    return;
+  }
+  cfrRender();
+  const m = document.querySelector(`#cfr .cfr-card[data-rede="${rede}"] .msg`);
+  m.textContent = "salvo · buscando os números…";
+  // O Redes busca de novo em ate ~10 s; o status do card acompanha
+  setTimeout(async () => { await loadRedes(); cfrStatusAtualiza(); m.textContent = ""; }, 12000);
+}
+function cfrAbre() {
+  for (const id of PAGES) document.getElementById(id).hidden = true;
+  document.getElementById("page-editor").hidden = true;
+  const el = document.getElementById("page-config");
+  el.hidden = false;
+  el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
+  document.getElementById("mascot").hidden = true;
+  clearTimeout(backTimer);
+  railMarca("config");
+  cfrCarrega();
+}
+document.getElementById("cfr").addEventListener("click", ev => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  const card = b.closest(".cfr-card");
+  if (b.dataset.apaga) {
+    if (confirm(`Apagar ${b.parentElement.previousElementSibling.textContent} do ${card.querySelector("h2").textContent}?`)) cfrSalva(card, b.dataset.apaga);
+  } else if (b.classList.contains("salva")) cfrSalva(card);
+});
+// Enter num campo salva o card (quem estiver no teclado do PC ou do Moonlight)
+document.getElementById("cfr").addEventListener("keydown", ev => {
+  if (ev.key === "Enter" && ev.target.matches("input")) cfrSalva(ev.target.closest(".cfr-card"));
+});
+document.getElementById("cfr-abrir").addEventListener("click", cfrAbre);
+document.getElementById("cfr-fechar").addEventListener("click", () => {
+  document.getElementById("page-config").hidden = true;
+  document.getElementById("mascot").hidden = false;
+  showPage(ATALHOS);
+});
 
 /* ---------- Audio: PCM do servidor -> FFT -> barras ---------- */
 const AUDIO_RATE = 24000, FFT_N = 2048, BARS = 64;

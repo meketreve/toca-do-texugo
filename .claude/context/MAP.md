@@ -52,6 +52,8 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 - **tema**: `<script>` no `<head>` aplica `painel.tema` (`data-tema` + classe `.g`) antes do 1º
   desenho; CSS do Grafite no fim do `<style>`; `TEMAS`/`paginaDe()` no JS — no Grafite o layout
   clássico é `page-dash-g` (`renderDashG`), barra lateral `#rail`. Trocar tema = `location.reload()`.
+- **configurações**: `page-config` (`cfrAbre`, `CFR` no `index.html`) ↔ `GET/POST /api/config/redes`
+  ↔ `redes.config_publica()`/`grava_config()` (`CAMPOS` diz o que é segredo; segredo nunca volta).
 - `index.html` — página inteira. Cabeçalho 418, `render(s)` 796, `renderClaude` 912, `renderConfig`
   1216, **editor de grade** 1265, medidores 1499, cérebro 1853 (estilo Matriz 1922, Perfis 1969),
   agenda 2010, `renderRedes` 2142; mascote no fim (`chooseNext`/`doCerebro` escolhem o jeito).
