@@ -73,6 +73,8 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - `redes.py` busca os números das redes em segundo plano, guarda o histórico diário e renova os tokens sozinho
 - `texugo.py` roda a rede de spike numa thread a 100 Hz e escolhe o comportamento do mascote
 - `abrir-painel.sh` sobe o serviço e abre o Chrome em modo app, em tela cheia no `DP-0`
+- `atualizar-painel.sh` traz o que está no GitHub, reinicia o serviço só se mexeu em `.py`
+  e volta sozinho se o painel não subir
 - O painel se recarrega sozinho quando o `index.html` muda
 
 Pra mostrar a tela no tablet, usei o [**monitor-virtual-tablet**](https://github.com/meketreve/monitor-virtual-tablet): um monitor virtual na placa NVIDIA transmitido por uma segunda instância do Sunshine.
@@ -117,6 +119,7 @@ Precisa de Python 3 com `psutil`, `google-chrome`, `wmctrl`, `xrandr`, `curl`, `
 4. Atalhos: copie `atalhos.exemplo.json` pra `~/.config/toca-do-texugo/atalhos.json` e ajuste. Cada item é `{id, label, icon, cmd}`, e só os ids desse arquivo podem ser executados.
 
 Depois de mudar `server.py`, `redes.py` ou `onedrive.py`: `systemctl --user restart toca-do-texugo.service`.
+Ou `bash atualizar-painel.sh`, que puxa o `main` e reinicia só se precisar (`--voltar` desfaz).
 
 ## Configurando as redes
 

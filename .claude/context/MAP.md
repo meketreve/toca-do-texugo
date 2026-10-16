@@ -41,6 +41,7 @@ server.py
 | Rodar | `systemctl --user restart toca-do-texugo.service` (depois de mexer nos `.py`) |
 | Abrir o painel | `bash abrir-painel.sh` (sobe o serviço e abre o Chrome em modo app no monitor do `config.json`) |
 | Ver log | `journalctl --user -u toca-do-texugo -f` |
+| Atualizar a máquina do painel | `bash atualizar-painel.sh` (puxa o `main`; `--voltar` desfaz) |
 
 Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`/api/version`).
 ## Onde fica cada coisa
@@ -60,6 +61,9 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 - `onedrive.py` — lê o journal do serviço `onedrive` e a cota (cache de 1 h).
 - `abrir-painel.sh` — sobe o serviço e abre o Chrome em tela cheia; se a janela já existe, só
   reposiciona e dá o toggle (destrava o congelamento por composição). `docs/` — prints do README.
+- `atualizar-painel.sh` — `fetch` + `merge --ff-only` do `main`, restart só se mudou `.py`, e
+  `reset --hard` de volta se o painel não responder depois. Sha anterior em
+  `~/.config/toca-do-texugo/atualizar-anterior`.
 - `.githooks/pre-commit` — barra credencial no commit (`git config core.hooksPath .githooks`).
 
 ## Pontos de entrada e fluxos principais

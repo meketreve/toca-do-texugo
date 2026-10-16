@@ -37,6 +37,7 @@ ver cada um voltar igual.
 
 ## Concluído (recente)
 
+- `atualizar-painel.sh`: puxa o `main`, reinicia só se mudou `.py`, volta sozinho se não subir (2026-10-16)
 - Catálogo do editor agrupado e estilo Perfis no medidor Cérebro (2026-10-16)
 - Cérebro do texugo: STDP + covariância + homeostase, medidor e chave de modo (2026-10-15)
 - Projeto movido de volta pro SSD; service, autostart e lançador do menu corrigidos (2026-10-12)
