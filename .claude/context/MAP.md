@@ -49,6 +49,9 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 
 - `server.py` — HTTP + coleta: `Collector` 1×/s, `GpuReader`, `RaplReader`, `ClaudeUsage` (l. 169),
   rotas no `Handler` (`do_GET` l. 403, `do_POST` l. 479).
+- **barra lateral**: `#rail` no CSS base (coluna 1 do `.app`, 76 px), `railMarca()` marca o botão
+  ativo; Grafite (`radius 24`, item cheio de menta) e Linha (sem fundo, contorno de 1px) só trocam a
+  moldura. O botão discreto de página (`#pager`) saiu — não há mais dois caminhos pra mesma coisa.
 - **tema**: `<script>` no `<head>` aplica `painel.tema` (`data-tema` + classe `.g`/`.l`) antes do 1º
   desenho; CSS do Grafite e do Linha no fim do `<style>`; `TEMAS`/`paginaDe()` no JS — no Grafite o
   clássico é `page-dash-g`, no Linha os dois layouts caem na grade e as telas do mockup são PERFIS

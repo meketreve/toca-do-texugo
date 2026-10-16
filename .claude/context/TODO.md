@@ -10,6 +10,7 @@ active: true
 
 Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
+- [ ] Barra lateral nos três temas, pelo Moonlight: alvos de 48 px, item ativo e o ponto de conexão
 - [ ] Tema Linha na parede: toque na Agenda e na chave do Cérebro pelo Moonlight, cinza no tablet
 - [ ] Tema Grafite na parede: toque na barra lateral e nas abas pelo Moonlight, claro no tablet
 - [ ] Escolher na parede qual estilo do Cérebro fica: Matriz, Perfis, Rede ou Cards

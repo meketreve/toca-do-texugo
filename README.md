@@ -52,13 +52,13 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - Dança no ritmo da música, dorme quando fica parado, sua quando o PC esquenta
 - Comemora quando entra seguidor novo; tocar nele ganha um coração
 
-**Páginas**: painel → redes → atalhos, trocadas por um botão discreto no canto inferior direito. A página de atalhos volta sozinha pro painel depois de 90 s sem toque.
+**Páginas**: painel → redes → atalhos, trocadas pela **barra lateral** à esquerda (logo, as três páginas, Configurações e o editor de grade), que é a mesma nos três temas. A página de atalhos volta sozinha pro painel depois de 90 s sem toque, e o aviso da volta aparece no alto dela em qualquer tema.
 
 **Temas e telas** (página de atalhos → *Tema*)
 - **Atual** é o visual de sempre, o **Grafite** (escuro e claro) vem dos mockups `Painel · Grafite` e o **Linha** dos mockups `Linha · mostradores da máquina` e `Linha · dados, música e texugo`: fundo preto, traço fino, caixa alta e a fonte Barlow Condensed, servida pelo próprio painel em `/fontes/` (SIL OFL, ver `fontes/OFL.txt`) — nenhuma dependência de CDN
 - Cada tema é uma **opção** (`painel.tema`), nunca um substituto: as cores vivem em `data-tema` e só a estrutura muda, sob a classe do tema (`.g` no Grafite, `.l` no Linha). Trocar de tema recarrega a página
-- No tema Linha o **cabeçalho sai** e o que ele mostrava (hora, data, volume, carga, ligado, Claude) vai pro card **Relógio**, com o `AO VIVO` e o ponto de conexão no canto dele
-- As duas telas do Linha entram como **perfis de medidores** (`Linha · Máquina` e `Linha · Dados`, 3×2 cartões) na primeira vez que o tema é ligado — sem sobrescrever nem apagar perfil nenhum, e a troca entre elas é a de perfil de sempre
+- No tema Linha o **cabeçalho sai** e o que ele mostrava (hora, data, volume, carga, ligado, Claude) vai pro card **Relógio**, com o `AO VIVO` no canto dele — a conexão com o servidor o texugo mostra na barra lateral, como nos outros temas
+- As duas telas do Linha entram como **perfis de medidores** (`Linha · Máquina` e `Linha · Dados`, 3×2 cartões) na primeira vez que o tema é ligado — sem sobrescrever nem apagar perfil nenhum. Escolher um deles pelo seletor de perfil liga o tema Linha junto: a tela e o tema andam em par
 
 ## Como funciona
 

@@ -69,6 +69,9 @@ try {
     --warning: #fab219;
     --critical: #d03b3b;
     --good: #0ca30c;
+    /* Nasceram no Grafite e hoje a barra lateral usa nos tres temas: a bolinha do logo e o seu
+       desenho. Aqui valem como valor de nascenca, pra barra nao depender do tema. */
+    --pill: #d9d9d9; --pill-txt: #1e1e1e;
     --gap: 16px;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
@@ -77,11 +80,37 @@ try {
   html, body { margin: 0; height: 100%; background: var(--page); color: var(--text); overflow: hidden; }
   body { font-size: 20px; user-select: none; -webkit-user-select: none; }
 
+  /* Painel lateral + conteudo. A barra e o canto esquerdo em TODOS os temas: ela e a navegacao
+     que se ve, no lugar do botao discreto que existia so no Atual (que saiu). O Grafite e o Linha
+     so trocam a moldura dela; o miolo (logo, botoes de 48 px, ponto de conexao) e o mesmo. */
   .app {
     height: 100vh; padding: var(--gap);
     display: grid; gap: var(--gap);
+    grid-template-columns: 76px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
   }
+  .app > header { grid-column: 2; grid-row: 1; }
+  .app > main { grid-column: 2; grid-row: 2; }
+  #rail {
+    grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; align-items: center;
+    gap: 12px; background: var(--surface); border-radius: 16px; padding: 14px 0;
+    box-shadow: var(--sombra, none);
+  }
+  #rail .logo { width: 48px; height: 48px; border-radius: 50%; background: var(--pill, #d9d9d9); display: grid; place-items: center; }
+  #rail .sep { width: 32px; height: 2px; border-radius: 1px; background: var(--grid); }
+  #rail button {
+    width: 48px; height: 48px; border-radius: 14px; border: 0; padding: 0; cursor: pointer;
+    display: grid; place-items: center; background: transparent; color: var(--text-2);
+  }
+  #rail button:active { background: var(--accent-wash); }
+  #rail button svg { width: 22px; height: 22px; }
+  #rail button.on { background: var(--accent-wash); color: var(--accent); box-shadow: var(--brilho, none); }
+  #rail .fim { flex: 1; }
+  #rail .conn-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; }
+  #rail .conn-dot i { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  #rail .conn-dot.off { border-color: var(--critical); }
+  #rail .conn-dot.off i { background: var(--critical); }
+
   .page { display: grid; gap: var(--gap); min-height: 0; }
   .page.enter { animation: page-in .25s ease-out; }
   @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
@@ -89,17 +118,6 @@ try {
   /* Uma linha por secao: atalhos, layout, perfil e a lista de medidores (que rola) */
   #page-atalhos { grid-template-rows: auto auto auto auto minmax(0, 1fr); align-content: start; }
   .page-title { margin: 4px 6px 0; font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
-
-  /* Botao discreto de trocar pagina */
-  #pager {
-    position: fixed; right: 4px; bottom: 4px; z-index: 20;
-    width: 44px; height: 44px; border-radius: 50%; padding: 0;
-    display: grid; place-items: center; cursor: pointer;
-    background: transparent; border: 1px solid transparent; color: var(--muted);
-    opacity: .35; transition: opacity .2s, border-color .2s;
-  }
-  #pager:active { opacity: 1; border-color: var(--border); }
-  #pager svg { width: 20px; height: 20px; }
 
   /* Cabecalho */
   header { display: flex; align-items: baseline; gap: 28px; padding: 0 6px; }
@@ -518,29 +536,11 @@ try {
     --brilho: 0 0 0 2px #7FD0A8, 0 0 18px rgba(127,208,168,0.45);
   }
 
-  /* Barra lateral: troca o botao discreto de pagina por navegacao que se ve */
-  #rail { display: none; }
-  .g .app { grid-template-columns: 76px minmax(0, 1fr); padding: 20px; }
-  .g .app > header { grid-column: 2; grid-row: 1; }
-  .g .app > main { grid-column: 2; grid-row: 2; }
-  .g #pager { display: none; }
-  .g #rail {
-    grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 12px;
-    background: var(--surface); box-shadow: var(--sombra); border-radius: 24px; padding: 14px 0;
-  }
-  #rail .logo { width: 48px; height: 48px; border-radius: 50%; background: var(--pill); display: grid; place-items: center; }
-  #rail .sep { width: 32px; height: 2px; border-radius: 1px; background: var(--grid); }
-  #rail button {
-    width: 48px; height: 48px; border-radius: 14px; border: 0; padding: 0; cursor: pointer;
-    display: grid; place-items: center; background: transparent; color: var(--text-2);
-  }
-  #rail button svg { width: 22px; height: 22px; }
-  #rail button.on { background: var(--accent-bg); color: var(--accent-txt); box-shadow: var(--brilho); }
-  #rail .fim { flex: 1; }
-  #rail .conn-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; }
-  #rail .conn-dot i { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
-  #rail .conn-dot.off { border-color: var(--critical); }
-  #rail .conn-dot.off i { background: var(--critical); }
+  /* Barra lateral: o Grafite so engrossa o canto dela e mantem a margem de 20 px que o mockup
+     dele pede (o miolo esta no CSS base, que usa o `--gap` de cada tema) */
+  .g .app { padding: 20px; }
+  .g #rail { border-radius: 24px; }
+  .g #rail button.on { background: var(--accent-bg); color: var(--accent-txt); box-shadow: var(--brilho); }
 
   /* Cabecalho em pilulas */
   .g header { align-items: center; gap: 12px; min-height: 56px; }
@@ -606,14 +606,15 @@ try {
 
   /* Atalhos: bloco grande com o icone num circulo, nome e o programa embaixo */
   .atalhos-topo { display: flex; align-items: center; gap: 12px; }
-  .volta { display: none; }
-  .g .volta {
+  /* O aviso de que a pagina de atalhos volta sozinha aparece nos TRES temas: a volta sempre
+     aconteceu em todos eles (o relogio e o mesmo `armBack`), so ficava invisivel no Atual. */
+  .volta {
     display: inline-flex; align-items: center; gap: 10px; margin-left: auto; height: 40px; padding: 0 16px;
-    border-radius: 999px; background: var(--surface); box-shadow: var(--sombra); font-size: 16px; color: var(--text-2);
+    border-radius: 999px; background: var(--surface); box-shadow: var(--sombra, none); font-size: 16px; color: var(--text-2);
   }
-  .g .volta b { color: var(--text); font-variant-numeric: tabular-nums; min-width: 3.2em; }
-  .g .volta i { display: block; width: 120px; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
-  .g .volta u { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .volta b { color: var(--text); font-variant-numeric: tabular-nums; min-width: 3.2em; }
+  .volta i { display: block; width: 120px; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .volta u { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
   .shortcuts .ic svg, .shortcuts .sb { display: none; }
   .g .shortcuts button {
     border-radius: 24px; min-height: 184px; padding: 18px 22px; gap: 2px; box-shadow: var(--sombra);
@@ -851,13 +852,16 @@ try {
     --l-c1: #6a8efe; --l-c2: #3ed5a0; --l-c3: #f2f0f7; --l-c4: #f0566e; --l-c5: #6a8efe;
     --l-cpu: #6a8efe; --l-gpu: #3ed5a0; --l-entra: #6a8efe; --l-sai: #f0566e;
     --rede-ativo: #3ed5a0;
+    --pill: #f2f0f7; --pill-txt: #05070f;
     --gap: 20px;
     font-family: "Barlow Condensed", "DejaVu Sans Condensed", system-ui, sans-serif;
     font-weight: 300;
   }
   /* Uma linha so na grade: a faixa do cabecalho era o que empurrava o calcLinhas() pra 5 linhas,
-     e o mockup precisa das 6 pra fechar 3x2. */
+     e o mockup precisa das 6 pra fechar 3x2. O `main` vai pra linha 1 (no resto do painel ele e a
+     linha 2, embaixo do cabecalho) e a barra lateral ocupa a coluna 1 inteira. */
   .l .app { grid-template-rows: minmax(0, 1fr); }
+  .l .app > main { grid-row: 1; }
   .l header { display: none; }
   .l .card {
     background: transparent; border: 1px solid var(--border); border-radius: 6px;
@@ -900,8 +904,6 @@ try {
   .lrl-meta .v { font-size: 34px; font-weight: 300; line-height: 1.05; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .lrl-vivo { display: inline-flex; align-items: center; gap: 7px; color: var(--critical); border: 1px solid var(--critical); padding: 0 8px; font-size: 15px; letter-spacing: .1em; }
   .lrl-vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
-  .lrl-conn { width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
-  .lrl-conn.off { background: var(--critical); }
 
   /* Tocando agora: vinil, titulo e espectro */
   .lms { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; height: 100%; }
@@ -1032,6 +1034,13 @@ try {
   .l .ed-menu button { background: var(--elev); }
   .l .ed-menu button:disabled { background: var(--surface); }
   .l .ed-cat .ed-grp { color: var(--text-2); }
+  /* A barra lateral segue o mockup: sem fundo, contorno de 1px, cantos de 6 e o item ativo so
+     com o contorno do acento -- no Atual ele e uma pilula cheia e no Grafite tambem. */
+  .l #rail { background: transparent; border: 1px solid var(--border); border-radius: 6px; }
+  .l #rail .logo { border-radius: 0; }
+  .l #rail button { border-radius: 0; }
+  .l #rail button.on { background: transparent; box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+  .l #rail .sep { background: var(--border); }
 </style>
 </head>
 <body>
@@ -1234,7 +1243,6 @@ try {
   </main>
 </div>
 
-<button id="pager" aria-label="Trocar de página"></button>
 <div id="mascot" aria-hidden="true"><canvas width="16" height="9"></canvas></div>
 
 <script>
@@ -1824,19 +1832,14 @@ function mediaProgress() {
   $("gnp-len").textContent = fmtMin(media.length);
 }
 
-// O card Relogio do tema Linha mostra a conexao (no Linha nao ha barra lateral com o ponto):
-// o estado vem daqui, do mesmo lugar que acende o aviso do cabecalho nos outros temas.
-let servidorOk = true;
 async function tick() {
   try {
     const r = await fetch("/api/stats", { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const s = await r.json();
     if (s.cpu) render(s);
-    servidorOk = true;
     document.getElementById("conn").classList.remove("show");
     document.getElementById("conn-dot").classList.remove("off");
   } catch (e) {
-    servidorOk = false;
     document.getElementById("conn").classList.add("show");
     document.getElementById("conn-dot").classList.add("off");
   }
@@ -3297,8 +3300,10 @@ regWidget("relogio", {
     vals[3].textContent = cl == null ? "—" : fmtN(cl) + "%";
     vals[3].style.color = cl == null ? "" : levelColor[level(cl, 75, 90)];
     const vivo = Object.values(redesData || {}).some(r => r && r.live);
-    linhaCab(el, `${DIAS[d.getDay()].toUpperCase()} <span class="lrl-conn${servidorOk ? "" : " off"}"></span>` +
-                (vivo ? '<span class="lrl-vivo"><i></i>AO VIVO</span>' : ""));
+    // A conexao com o servidor o texugo mostra na barra lateral (o `#conn-dot`); aqui so o AO VIVO,
+    // que no Linha nao tem mais cabecalho pra carregar.
+    linhaCab(el, DIAS[d.getDay()].toUpperCase() +
+                (vivo ? ' <span class="lrl-vivo"><i></i>AO VIVO</span>' : ""));
   },
 });
 
@@ -3787,15 +3792,6 @@ WIDGETS.agenda.cabExtra = el => {
 /* ---------- Paginas: painel e atalhos ---------- */
 const PAGES = [paginaDe(layout), "page-redes", "page-atalhos"];
 const ATALHOS = 2;
-// O botao mostra o icone da PROXIMA pagina
-const PAGER_ICONS = [
-  // painel -> redes: pessoas
-  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7.5" cy="7" r="3"/><path d="M2 17c.6-3 2.8-4.5 5.5-4.5S12.4 14 13 17"/><path d="M13 4.3a3 3 0 0 1 0 5.4M15.5 12.8c1.4.7 2.2 2.1 2.5 4.2"/></svg>',
-  // redes -> atalhos: grade
-  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="6.5" height="6.5" rx="1.5"/><rect x="11.5" y="2" width="6.5" height="6.5" rx="1.5"/><rect x="2" y="11.5" width="6.5" height="6.5" rx="1.5"/><rect x="11.5" y="11.5" width="6.5" height="6.5" rx="1.5"/></svg>',
-  // atalhos -> painel: grafico
-  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 17h14M5 14V9M10 14V4M15 14v-6"/></svg>',
-];
 const BACK_AFTER = 90000; // atalhos voltam sozinhos pro painel depois de 90 s sem toque
 let page = 0, backTimer = null;
 function showPage(i) {
@@ -3805,7 +3801,6 @@ function showPage(i) {
     el.hidden = j !== i;
     if (j === i) { el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter"); }
   });
-  document.getElementById("pager").innerHTML = PAGER_ICONS[i];
   railMarca(i);
   armBack();
   tick();
@@ -3972,7 +3967,6 @@ function renderRedesMini() {
   }).join("");
 }
 document.getElementById("redes-mini").addEventListener("click", () => showPage(PAGES.indexOf("page-redes")));
-document.getElementById("pager").addEventListener("click", () => showPage((page + 1) % PAGES.length));
 document.getElementById("page-atalhos").addEventListener("pointerdown", armBack);
 document.getElementById("cfg-reset").addEventListener("click", () => salvarB(normaliza(LAYOUT_B_PADRAO)));
 

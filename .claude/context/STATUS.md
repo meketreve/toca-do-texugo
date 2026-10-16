@@ -33,13 +33,19 @@ existia (Encoders, Bancada, Faders, Faixa, Pratos, Cilindros) mais dois medidore
 Tocando agora. De quebra, `addEstilo` passou a entregar os itens do medidor (antes entregava os
 stats crus e o estilo novo desenhava vazio) e o `renderMedia` subiu pro `render(s)`, valendo pros
 três layouts.
+**Barra lateral em todos os temas**: o `#rail` que só existia no Grafite virou a navegação padrão
+(coluna de 76 px do `.app`, com logo, as três páginas, Configurações e o editor) e o botão
+discreto de trocar página (`#pager`) saiu. O Grafite e o Linha só trocam a moldura dela — o
+Grafite ficou pixel a pixel como era — e o aviso "volta ao painel em N s" da página de atalhos
+agora aparece nos três temas. Escolher um perfil do Linha pelo seletor de perfil também liga o
+tema Linha: a tela e o tema andam em par.
 
 ## Próxima fase
 
-Na parede: escolher o tema (atalhos → Tema). O Linha só precisa do serviço reiniciado uma vez
-(rota `/fontes/`); depois disso, conferir pelo Moonlight o toque nos itens da Agenda e na chave do
-Cérebro, e a leitura do cinza `#8A8AA0` no tablet. O Cérebro tem 4 estilos (Matriz, Perfis, Rede,
-Cards — Cards pede 7×3): escolher qual fica.
+Na parede: escolher o tema (atalhos → Tema) e conferir a barra lateral nos três — no Atual ela é
+nova, então vale o toque nos cinco botões pelo Moonlight. O Linha precisa do serviço reiniciado
+uma vez (rota `/fontes/`). O Cérebro tem 4 estilos (Matriz, Perfis, Rede, Cards — Cards pede
+7×3): escolher qual fica.
 
 Depois disso, o que resta pede uso, não teclado:
 

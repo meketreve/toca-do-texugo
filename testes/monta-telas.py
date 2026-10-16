@@ -95,6 +95,10 @@ TELAS = [
     dict(arquivo="teste-tema.html", layout="classico", clica_tema="linha"),
     dict(arquivo="teste-perfil-tema.html", layout="agrupado", perfil="Padrão",
          perfis=PERFIL_LINHA_FIXO, clica_perfil="Linha · Dados"),
+    # a barra lateral levando pras paginas, e o aviso de volta que agora aparece nos tres temas
+    dict(arquivo="teste-atalhos.html", layout="agrupado", clica_rail="2"),
+    dict(arquivo="teste-atalhos-linha.html", tema="linha", layout="agrupado",
+         perfil="Linha · Máquina", clica_rail="2"),
 ]
 
 # Ordem dos botoes na pagina de atalhos -- tem que casar com `TEMAS` no index.html; se mudar,
@@ -141,6 +145,11 @@ setTimeout(() => {
 }, 1200);
 </script>
 """
+# E pela barra lateral, que e a navegacao de todos os temas (o botao discreto de pagina saiu)
+TROCA_RAIL = """<script>
+setTimeout(() => { document.querySelector('#rail button[data-ir="__N__"]').click(); }, 1200);
+</script>
+"""
 
 ROTEIRO = """<script>
 setTimeout(() => {
@@ -156,6 +165,13 @@ setTimeout(() => {
     r.linhas = LINHAS;
     r.fonte = [document.fonts.status, document.fonts.check('300 20px "Barlow Condensed"')];
     r.cabecalho = getComputedStyle(document.querySelector("header")).display;
+    // Barra lateral: tem que estar visivel em TODOS os temas, com um botao marcado, e o botao
+    // discreto de trocar pagina (o `#pager`) nao pode mais existir no documento
+    r.pagina = [page, PAGES[page], !document.getElementById("volta").hidden &&
+                getComputedStyle(document.getElementById("volta")).display !== "none"];
+    r.rail = { visivel: getComputedStyle(document.getElementById("rail")).display !== "none",
+               botoes: [...document.querySelectorAll("#rail button")].map(b => b.dataset.ir + (b.classList.contains("on") ? "*" : "")),
+               pager: !!document.getElementById("pager") };
     r.sondas = [];
     // Sonda: re-renderiza cada medidor SEM o try/catch do painel, senao erro de desenho passa
     // calado (o renderDashB engole) e o cartao fica com o ultimo desenho bom, parecendo certo.
@@ -214,11 +230,12 @@ for tela in TELAS:
                       .replace("__PERFIL__", perfil_js + perfis_js))
     # 5200 ms: o roteiro so mede depois que a fonte trocou, senao mede o layout do fallback
     roteiro = ROTEIRO.replace("__ESPERA__", "5200")
-    clica = tela.get("clica_tema") or tela.get("clica_perfil")
     if tela.get("clica_tema"):
         extra = TROCA_TEMA.replace("__N__", str(TEMAS_ORDEM.index(tela["clica_tema"]) + 1))
     elif tela.get("clica_perfil"):
         extra = TROCA_PERFIL.replace("__NOME__", tela["clica_perfil"])
+    elif tela.get("clica_rail"):
+        extra = TROCA_RAIL.replace("__N__", str(tela["clica_rail"]))
     else:
         extra = ""
     out = (src.replace("<head>", "<head>" + semente, 1)

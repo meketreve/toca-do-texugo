@@ -13,7 +13,7 @@ Nada disso roda no painel nem entra na página servida: é tudo cópia, em `test
 | `monta.py` | catálogo do editor: grupos, abrir/fechar, pôr medidor, "sem espaço" |
 | `monta-cerebro.py` | os três estilos do medidor Cérebro, com dado real do `texugo.py` |
 | `monta-perfis.py` | perfis de layout em DUAS páginas, pra testar o reload de verdade |
-| `monta-telas.py` | as telas com um `/api` falso: as duas do tema Linha, o clássico, o agrupado e o Grafite (pra comparar print com mockup e pegar regressão nos temas que não mudaram), mais dois testes de ponta a ponta — trocar o tema e escolher um perfil pelo seletor |
+| `monta-telas.py` | as telas com um `/api` falso: as duas do tema Linha, o clássico, o agrupado e o Grafite (pra comparar print com mockup e pegar regressão nos temas que não mudaram), mais quatro testes de ponta a ponta — trocar o tema, escolher um perfil pelo seletor e navegar pela barra lateral (`teste-atalhos*`) |
 | `estado.py` | roda a rede e cospe o `/api/texugo` que os testes do Cérebro usam |
 | `mede.py` | peso − média da coluna, no nascimento e depois de aprender |
 | `piso.py` | qual piso separa gosto aprendido de ruído de nascença (deu 0,20) |
