@@ -13,7 +13,7 @@ O que sobrou aqui depende de rodar e olhar, não de escrever código.
 - [ ] Na parede: escolher a tela e o tema, e conferir a **barra lateral nos três temas** pelo
       Moonlight (alvos de 48 px, item ativo e ponto de conexão; no Atual ela é nova)
 - [ ] No Linha, pelo Moonlight: toque nos itens da Agenda e na chave do Cérebro, cinza no tablet
-- [ ] Escolher qual estilo do Cérebro fica: Matriz, Perfis, Rede ou Cards (Cards pede 7×3)
+- [ ] Escolher qual estilo do Cérebro fica: Matriz, Perfis, Rede neural ou Cards (Cards pede 7×3)
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar o `ETA_STDP` — 0,004 —
       se ficar rápido ou lento demais)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo

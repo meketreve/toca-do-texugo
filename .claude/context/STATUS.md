@@ -26,7 +26,8 @@ de 3×2 (`Linha · Máquina`, `Linha · Dados`), semeados na primeira vez que o 
 
 Na parede: escolher a tela e o tema (atalhos), conferir a barra lateral nos três temas pelo
 Moonlight (no Atual ela é nova — vale o toque nos cinco botões) e escolher o estilo do Cérebro que
-fica (Matriz, Perfis, Rede, Cards — Cards pede 7×3). Depois disso só resta o que pede uso:
+fica (Matriz, Perfis, Rede neural, Cards — Cards pede 7×3; escolhe-se no botão "▾" do bloco no
+editor, não no catálogo). Depois disso só resta o que pede uso:
 
 1. Rodar o cérebro alguns dias e ver que personalidade aparece (não saindo em uma semana, subir o
    `ETA_STDP`, hoje 0.004).
@@ -43,6 +44,7 @@ fica (Matriz, Perfis, Rede, Cards — Cards pede 7×3). Depois disso só resta o
 
 ## Concluído (recente)
 
+- Editor: Concluir volta pro painel; estilo Rede do Cérebro vira "Rede neural" (2026-10-16)
 - Tema Linha: os dois artboards como perfis, com dois medidores novos (Relógio, Tocando agora) (2026-10-16)
 - Barra lateral nos três temas, e a lista de telas no lugar do par layout+perfil (2026-10-16)
 - Estilos novos por medidor (Encoders, Bancada, Faders, Faixa, Pratos, Cilindros) (2026-10-16)
@@ -56,17 +58,14 @@ fica (Matriz, Perfis, Rede, Cards — Cards pede 7×3). Depois disso só resta o
 data: 2026-10-16
 
 ```
+f4396e7 Editor: Concluir volta pro painel, e o estilo Rede do Cérebro vira "Rede neural"
+ddcca25 Contexto em dia: os três temas, a barra lateral e a lista de telas
 93fa1b5 "Tela do painel": layout e perfil viram uma lista só
 f14d796 Três defeitos dos desenhos do Linha que só a parede mostrava
 a179783 Quem manda no desenho é a página, não o layout: grade do Linha ficava sem dado
 a0de9a6 Barra lateral em todos os temas, no lugar do botão discreto de página
 7474032 O desenho do medidor não é do tema: perfil do Linha fora do Linha desenhava vazio
 35e499c O texugo não pisa onde não cabe: fora a fileira de cima do tema Linha
-4713205 Linha: as paginas de servico (atalhos, editor, redes) tambem entram no tom do tema
-e1b5568 Tema Linha: as duas telas dos mockups, com a Barlow Condensed vendorizada
 --- status ---
- M .claude/context/MAP.md
- M .claude/context/STATUS.md
- M .claude/context/TODO.md
 ```
 <!-- auto:end -->
