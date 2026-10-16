@@ -165,6 +165,16 @@ setTimeout(() => {
     }
     const fora = document.getElementById("fora-aviso");
     r.foraDaTela = fora.hidden ? "" : fora.textContent;
+    // Texugo: em que cartoes ele pode pisar e onde ele esta agora. `spriteTopo` negativo = o bicho
+    // esta com o corpo fora da tela por cima.
+    r.plataformas = platforms().map(e => [e.dataset.w || String(e.className), Math.round(e.getBoundingClientRect().top)]);
+    // Em pe em cada uma delas: o corpo (MH acima das patas) tem que caber na tela
+    r.mascoteEmPe = platforms().map(e => {
+      const S = spot(e);
+      return [e.dataset.w || "card", Math.round(S.top - MH), S.top - MH >= 0];
+    });
+    r.mascote = { estado: M.state, pe: Math.round(M.y), spriteTopo: Math.round(M.y - MH),
+                  cartao: (M.el && M.el.dataset.w) || "", fora: M.y - MH < 0 };
   } catch (e) { r.estouro = String(e && e.stack || e); }
   const pre = document.createElement("pre");
   pre.id = "relatorio"; pre.textContent = JSON.stringify(r, null, 1);

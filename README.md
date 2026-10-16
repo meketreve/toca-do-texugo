@@ -48,7 +48,7 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - O arquivo não guarda a hora do reset, só as porcentagens. Ela é estimada pelas viradas do histórico (a porcentagem cai, ou sai do zero), que é amostrado de 15 em 15 min — daí o `~`: o erro fica na casa dos 10 min. Se a virada caiu num buraco do histórico (app fechado na hora), o painel mostra a porcentagem e omite o horário
 
 **Texugo** 🦡
-- Anda por cima dos cards (menos a fileira de cima, pra não cobrir o cabeçalho) e pula de um pro outro, inclusive quando a página muda
+- Anda por cima dos cards e pula de um pro outro, inclusive quando a página muda; cartão colado no alto da tela fica de fora, senão o corpo dele subiria pra fora — é o que acontece com a fileira de cima do tema Linha, que não tem cabeçalho (no Atual e no Grafite a fileira de cima também sai, pra ele não cobrir o cabeçalho)
 - Dança no ritmo da música, dorme quando fica parado, sua quando o PC esquenta
 - Comemora quando entra seguidor novo; tocar nele ganha um coração
 

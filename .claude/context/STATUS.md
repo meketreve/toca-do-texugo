@@ -66,6 +66,7 @@ das 13h40 o cérebro zerou (idade foi a 0) sem restart nem POST meu — prováve
 
 ## Concluído (recente)
 
+- O texugo não sobe mais na fileira de cima do Linha: plataforma que não cabe na tela sai da lista (2026-10-16)
 - Tema Linha: os dois mockups como tema + dois perfis de medidores, com a fonte vendorizada (2026-10-16)
 - `addEstilo` passa a entregar os itens do medidor ao estilo acrescentado depois do registro (2026-10-16)
 - Estilo Rede no medidor Cérebro e bancada de testes portada pro repo (`testes/`) (2026-10-16)

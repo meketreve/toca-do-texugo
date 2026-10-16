@@ -59,6 +59,8 @@ tier: 2
 - [2026-09-28] [css] `.live` (AO VIVO no cabeçalho) é `inline-flex`: texto quebrado em vários elementos perde os espaços — montar a frase num elemento só e trocar o `innerHTML`
 - [2026-09-28] [rede] não servir na rede: o servidor só escuta em `127.0.0.1` e confere o `Host` — o tablet vê o painel pelo vídeo do Sunshine, não por HTTP
 
+- [2026-10-16] [mascote] plataforma que não cabe não é plataforma: o texugo em pé ocupa `MH` ACIMA das patas (o pé fica na borda de cima do cartão), então no tema Linha — que não tem cabeçalho e por isso tem a fileira de cima colada no alto — ele subia metade pra fora da tela. `platforms()` agora pede `rect.top >= MH + 4`; no Atual e no Grafite nada muda (a fileira de cima já começa abaixo do cabeçalho)
+
 ## Decisões e o porquê
 
 - [2026-10-16] [tema] [✓] Linha entra como OPÇÃO, mesmo contrato do Grafite: cores em `data-tema="linha"`, estrutura sob `.l`, Atual intacto. As duas telas do mockup ("mostradores da máquina" e "dados, música e texugo") são PERFIS de medidores de 4×3 — a grade já é 12×6 e o perfil já tem seletor e editor —, semeados por `semeiaLinha()` na primeira vez que o tema liga e sem apagar perfil nenhum
