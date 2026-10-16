@@ -15,12 +15,19 @@ o boot nos dois modos e guarda os pesos em `~/.config/toca-do-texugo/texugo-cere
 
 ## Próxima fase
 
-Deixar rodando alguns dias e ver que personalidade aparece — o teste sintético mostra as 4
-situações escolhendo neurônios bem sintonizados (53–78% contra 17% de acaso), mas com os sinais
-reais do painel isso ainda não foi observado ao longo do tempo.
-→ verify: medidor Cérebro com contraste visível na matriz (vínculos fortes contornados) depois de
-algumas horas, e `curl -s 127.0.0.1:8787/api/texugo` com as 6 taxas perto de 4 Hz e nenhum limiar
-grudado em 0,1 ou 60.
+Duas coisas, nessa ordem (a 1ª é menor e fecha o que acabou de entrar):
+
+1. **Perfis no medidor Cérebro** (`index.html:1681`, dado em `texugo.py` `_publica`): hoje a matriz
+   é 16×6 de opacidade, legível mas crua. Melhorar a leitura do que cada neurônio aprendeu —
+   ordenar sensor por peso, dizer em palavras a "situação preferida" de cada comportamento,
+   mostrar quem está puxando o comando agora.
+2. **Perfis de layout** (`index.html:1077` lê, `1083` grava, `setLayout` 1145, editor 1219):
+   conjuntos nomeados ("jogo", "trabalho", "noite"), cada um com seus medidores e posições, e a
+   troca pelo painel. Hoje só existe UM conjunto, em `localStorage["painel.widgets"]`, e um nome
+   de layout em `painel.layout` — o perfil precisa virar `{nome: [medidores]}` com migração do
+   formato atual (ver `normaliza()`, que já aceita formas antigas).
+→ verify: criar dois perfis com medidores diferentes, trocar entre eles, recarregar a página e
+ver cada um voltar igual; e o medidor Cérebro dizendo qual sensor está no comando.
 
 ## Pendências e bloqueios
 

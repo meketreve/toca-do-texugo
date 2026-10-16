@@ -8,10 +8,15 @@ active: true
 
 ## Agora
 
+Próxima sessão: perfis. O G4 (estilos de exibição por medidor) já está feito.
+
+- [ ] **Perfis no medidor Cérebro**: ler melhor o que cada neurônio aprendeu — sensor ordenado por
+      peso, "situação preferida" em palavras, quem está puxando o comando agora (`index.html:1681`)
+- [ ] **Perfis de layout**: conjuntos nomeados de medidores ("jogo", "trabalho", "noite") e a troca
+      entre eles; hoje só existe um, em `localStorage["painel.widgets"]` (`index.html:1077`/`1083`)
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar `ETA_STDP` se ficar
       rápido ou lento demais; hoje é 0.004 por disparo)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo
-      (e se o editor é só pra usar do PC, com o tablet só exibindo)
 
 ## Depois
 
@@ -32,5 +37,5 @@ active: true
   ver a rede descobrir quando usar
 - Cravar o minuto do reset do Claude lendo o horário das mensagens em `~/.claude/projects/*.jsonl`
 - Automatizar o destravamento do congelamento por composição (hoje é `bash abrir-painel.sh`)
-- Modelos (temas/layouts) de dashboard com inspiração em fotos do Pinterest (`DESIGN-REFS.md`)
+- Inspiração visual pros perfis de layout: fotos do Pinterest catalogadas em `DESIGN-REFS.md`
 
