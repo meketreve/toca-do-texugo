@@ -2582,7 +2582,8 @@ function edLiga() {
   document.getElementById("ed-fechar").addEventListener("click", () => {
     document.getElementById("page-editor").hidden = true;
     document.getElementById("mascot").hidden = false;
-    showPage(ATALHOS);
+    // Volta pro painel, nao pros atalhos: quem acabou de montar a grade quer ver ela montada
+    showPage(0);
   });
   // Restaura so o perfil ativo: os outros nao tem nada a ver com isso
   document.getElementById("ed-reset").addEventListener("click", () => {
@@ -3694,7 +3695,7 @@ function montaRede(corpo, d) {
 addEstilo("cerebro", {
   // minW 4 pro card de 1/3 de tela do tema Linha: o grafo escala com o card (viewBox), entao
   // 4 colunas so encolhem o desenho -- nao ha nada quebrando em 4 que nao quebre em 6.
-  id: "rede", nome: "Rede", minW: 4, minH: 3,
+  id: "rede", nome: "Rede neural", minW: 4, minH: 3,
   montar: cbMontaTopo,
   render(el, s) {
     const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
