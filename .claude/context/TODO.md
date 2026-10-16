@@ -10,6 +10,7 @@ active: true
 
 Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
+- [ ] Tema Linha na parede: toque na Agenda e na chave do Cérebro pelo Moonlight, cinza no tablet
 - [ ] Tema Grafite na parede: toque na barra lateral e nas abas pelo Moonlight, claro no tablet
 - [ ] Escolher na parede qual estilo do Cérebro fica: Matriz, Perfis, Rede ou Cards
 - [ ] Juntar "Layout do painel" e "Perfil de medidores" numa linha só (perfil só vale no Agrupado)
@@ -25,6 +26,8 @@ Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever
 
 ## Concluído
 
+- [x] ~~Tema Linha: os dois mockups de `~/Downloads` como tema + dois perfis de medidores, com a
+      Barlow Condensed vendorizada em `fontes/` e servida pelo `server.py`~~
 - [x] ~~Estilo Rede no Cérebro (duas camadas, sinapses pelo peso, ativação ao vivo) e
       bancada de testes em `testes/`~~
 - [x] ~~Perfis de layout: `{nome: [medidores]}` em `painel.perfis`, troca pela página de atalhos,

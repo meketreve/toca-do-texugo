@@ -425,11 +425,26 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _send_fonte(self, nome):
+        """Fonte do tema Linha (fontes/): so o que esta na pasta, e com cache -- ao contrario do
+        resto, que e sempre no-store porque o painel se recarrega sozinho. Nao muda: uma semana."""
+        arq = BASE / "fontes" / nome
+        if arq.parent != BASE / "fontes" or not arq.is_file():
+            return self._send(404, '{"error":"not found"}')
+        self.send_response(200)
+        self.send_header("Content-Type", "font/woff2")
+        self.send_header("Content-Length", str(arq.stat().st_size))
+        self.send_header("Cache-Control", "public, max-age=604800")
+        self.end_headers()
+        self.wfile.write(arq.read_bytes())
+
     def do_GET(self):
         if not self._host_ok():
             return self._send(403, '{"error":"host"}')
         if self.path in ("/", "/index.html"):
             return self._send(200, (BASE / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if self.path.startswith("/fontes/"):
+            return self._send_fonte(self.path[len("/fontes/"):])
         if self.path == "/api/stats":
             return self._send(200, json.dumps({**COLLECTOR.stats, "onedrive": ONEDRIVE.state}))
         if self.path == "/api/shortcuts":

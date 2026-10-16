@@ -11,10 +11,48 @@ try {
   if (t === "grafite" || t === "grafite-claro") {
     document.documentElement.dataset.tema = t;
     document.documentElement.classList.add("g");
+  } else if (t === "linha") {
+    document.documentElement.dataset.tema = t;
+    document.documentElement.classList.add("l");
   }
 } catch (e) {}
 </script>
 <style>
+  /* Fonte do tema Linha (Barlow Condensed, SIL OFL -- ver fontes/OFL.txt), servida pelo proprio
+     servidor em /fontes/. Declarada aqui de proposito: @font-face nao pode ficar dentro de uma
+     regra, e o navegador so baixa o arquivo quando alguem usa a familia -- no Atual e no Grafite
+     nenhum elemento usa, entao nada e baixado. */
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 200; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-200.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 200; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-ext-200.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 300; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-300.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 300; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-ext-300.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 400; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-400.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: normal; font-weight: 400; font-display: swap;
+    src: url("fontes/barlow-condensed-latin-ext-400.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
   :root {
     color-scheme: dark;
     --page: #0d0d0d;
@@ -793,6 +831,200 @@ try {
   .cd-s .nm { color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cd-s .vl { text-align: right; color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
   .cd-s.fraco { opacity: .45; }
+
+  /* ---------- Tema Linha (dos mockups "Linha · mostradores da maquina" e "Linha · dados,
+     musica e texugo") ----------
+     Mesmo contrato do Grafite: as cores vivem em `data-tema`, a estrutura so sob `.l`, e o
+     Atual fica intacto. O DESENHO de cada cartao mora nos estilos de medidor (proximo bloco de
+     comentario no JS); aqui fica a moldura do mockup -- cartao sem fundo, contorno de 1px e
+     rotulo de secao em caixa alta com borda -- e as duas coisas que o tema decidiu mudar:
+     sem cabecalho (hora, data, volume, carga, uptime e Claude moram no card Relogio) e a
+     tipografia condensada, que vem do proprio arquivo servido em /fontes/. */
+  :root[data-tema="linha"] {
+    --page: #000000; --surface: #101016; --elev: #16161d; --border: #1e1e28;
+    --text: #f2f0f7; --text-2: #c6c4ce; --muted: #8a8aa0;
+    --grid: #1e1e28; --axis: #3a3a48; --track: #2a2a36;
+    --accent: #6a8efe; --accent-wash: rgba(106,142,254,.12); --accent-bg: #6a8efe; --accent-txt: #05070f;
+    --warning: #f0566e; --critical: #f0566e; --good: #3ed5a0;
+    /* Cores de serie: o JS as pede por var() com a reserva de sempre, entao o Atual nao sabe
+       que este tema existe e nenhum medidor pergunta em que tema esta. */
+    --l-c1: #6a8efe; --l-c2: #3ed5a0; --l-c3: #f2f0f7; --l-c4: #f0566e; --l-c5: #6a8efe;
+    --l-cpu: #6a8efe; --l-gpu: #3ed5a0; --l-entra: #6a8efe; --l-sai: #f0566e;
+    --rede-ativo: #3ed5a0;
+    --gap: 20px;
+    font-family: "Barlow Condensed", "DejaVu Sans Condensed", system-ui, sans-serif;
+    font-weight: 300;
+  }
+  /* Uma linha so na grade: a faixa do cabecalho era o que empurrava o calcLinhas() pra 5 linhas,
+     e o mockup precisa das 6 pra fechar 3x2. */
+  .l .app { grid-template-rows: minmax(0, 1fr); }
+  .l header { display: none; }
+  .l .card {
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    padding: 18px 22px; box-shadow: none;
+  }
+  .l .card h2 {
+    margin: 0; justify-self: start; align-self: start;
+    font-size: 15px; font-weight: 400; line-height: 1.3; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--muted); border-radius: 0; padding: 1px 8px;
+  }
+  .l .widget { gap: 6px; }
+  /* O texto do canto na linha do rotulo ("90 S · escala propria") entra como IRMAO do h2, que e
+     do card: a primeira linha vira duas colunas e a .w-body continua embaixo, inteira. */
+  .l .widget.l-cab { grid-template-columns: auto minmax(0, 1fr); }
+  .l .widget.l-cab > .l-extra {
+    grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
+    display: flex; align-items: center; gap: 12px; text-transform: uppercase;
+    font-size: 18px; letter-spacing: .08em; color: var(--muted); white-space: nowrap;
+  }
+  .l .widget.l-cab > .w-body { grid-column: 1 / -1; grid-row: 2; }
+
+  /* Pecas comuns dos desenhos: rotulo grande em cima do numero, numero fino, rodape apagado */
+  .l .l-num { font-size: 84px; font-weight: 200; line-height: .95; font-variant-numeric: tabular-nums; }
+  .l .l-num small { font-size: 28px; font-weight: 300; margin-left: 6px; }
+  .l .l-rot { font-size: 18px; letter-spacing: .12em; }
+  .l .l-pe { font-size: 16px; color: var(--muted); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  .l .l-tag { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
+  .l .l-cheio { min-height: 0; height: 100%; }
+
+  /* Relogio: data, mostrador analogico, hora grande e a linha de metricas do cabecalho */
+  .l .lrl { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 4px; height: 100%; }
+  .l .lrl-data { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: .02em; }
+  .l .lrl-hora { display: flex; align-items: center; gap: 22px; min-height: 0; }
+  .l .lrl-hora svg { width: 118px; height: 118px; flex: none; }
+  .l .lrl-hh { font-size: 150px; font-weight: 200; line-height: .9; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .l .lrl-ss { font-size: 46px; color: var(--accent); align-self: flex-end; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+  .l .lrl-meta { grid-row: 4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .l .lrl-meta > div { display: grid; gap: 2px; align-content: start; min-width: 0; }
+  .l .lrl-meta .k { font-size: 15px; letter-spacing: .12em; color: var(--muted); }
+  .l .lrl-meta .v { font-size: 34px; font-weight: 300; line-height: 1.05; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .l .lrl-vivo { display: inline-flex; align-items: center; gap: 7px; color: var(--critical); border: 1px solid var(--critical); padding: 0 8px; font-size: 15px; letter-spacing: .1em; }
+  .l .lrl-vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
+  .l .lrl-conn { width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
+  .l .lrl-conn.off { background: var(--critical); }
+
+  /* Tocando agora: vinil, titulo e espectro */
+  .l .lms { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; height: 100%; }
+  .l .lms-t { display: flex; gap: 20px; align-items: center; min-width: 0; flex: none; }
+  .l .lms-t svg { width: 160px; height: 160px; flex: none; }
+  .l .lms-tx { display: grid; gap: 2px; min-width: 0; }
+  .l .lms-tt { font-size: 40px; font-weight: 300; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .l .lms-ar { font-size: 21px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .l .lms-tm { font-size: 46px; font-weight: 200; color: var(--good); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .l .lms-tm i { color: var(--axis); font-style: normal; }
+  .l .lms-tm u { color: var(--muted); text-decoration: none; }
+  .l .lms-viz { width: 100%; height: 100%; min-height: 0; display: block; }
+  .l .l-extra .l-on { color: var(--good); border: 1px solid var(--good); padding: 0 6px; }
+  .l .l-extra .l-off { color: var(--axis); }
+  .l .l-extra .l-pl { color: var(--muted); }
+
+  /* Encoders (Uso e Placa de video) */
+  .l .len { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; height: 100%; }
+  .l .len-topo { display: flex; align-items: baseline; gap: 14px; }
+  .l .len-fila { display: grid; gap: 8px; align-items: center; min-height: 0; }
+  .l .len-k { display: grid; justify-items: center; gap: 2px; min-width: 0; }
+  .l .len-k svg { width: 100%; height: 100%; max-height: 118px; min-height: 0; }
+  .l .len-k .vl { font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
+  .l .len-k .de { font-size: 15px; color: var(--muted); white-space: nowrap; }
+  .l .len-tr { width: 100%; height: 100%; min-height: 40px; }
+
+  /* Bancada (Processador): tres aneis concentricos, ticks e as barras por thread */
+  .l .lbn { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; height: 100%; }
+  .l .lbn-meio { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 10px; align-items: center; min-height: 0; }
+  .l .lbn-rel { position: relative; height: 100%; min-height: 0; }
+  .l .lbn-rel svg { width: 100%; height: 100%; }
+  .l .lbn-centro { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; }
+  .l .lbn-thr { width: 100%; height: 46px; flex: none; }
+
+  /* Faders (Temperaturas) e Faixa (Consumo) */
+  .l .lfd { width: 100%; height: 100%; min-height: 0; display: block; }
+  .l .lpf { display: grid; grid-template-rows: minmax(0, 1fr) 96px; gap: 8px; height: 100%; }
+  .l .lpf-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-content: start; }
+  .l .lpf-2 .vl { font-size: 120px; font-weight: 200; line-height: .85; font-variant-numeric: tabular-nums; }
+  .l .lpf-sc { width: 100%; height: 96px; }
+
+  /* Pratos (Disco) e Cilindros (Armazenamento) */
+  .l .lpr { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
+  .l .lpr svg { width: 100%; height: 100%; min-height: 0; display: block; }
+  .l .lpr-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .l .lpr-2 .dir { align-items: flex-end; }
+  .l .lcl { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
+  .l .lcl svg { width: 100%; height: 100%; min-height: 0; display: block; }
+  .l .lcl-fila { display: grid; gap: 10px; text-align: center; }
+  .l .lcl-fila .pct { font-size: 56px; font-weight: 200; line-height: 1; }
+  .l .lcl-fila .pct small { font-size: 24px; color: var(--muted); }
+  @keyframes l-gira { to { transform: rotate(360deg); } }
+  .l .l-gira-lento { transform-box: fill-box; transform-origin: center; animation: l-gira 9s linear infinite; }
+  .l .l-gira-rapido { transform-box: fill-box; transform-origin: center; animation: l-gira 2.4s linear infinite; }
+
+  /* Agenda: o item vira uma linha com quadradinho desenhado e a data numa pilula */
+  .l .ag { gap: 0; }
+  .l .ag-item {
+    grid-template-columns: 26px minmax(0, 1fr) auto; gap: 14px; align-items: center;
+    min-height: 56px; padding: 4px 0; border-radius: 0; border-bottom: 1px solid var(--border);
+  }
+  .l .ag-item:active { background: none; }
+  .l .ag-item .bx {
+    position: relative; align-self: center; width: 22px; height: 22px;
+    border: 1.8px solid var(--muted); font-size: 0;
+  }
+  .l .ag-item.atrasado .bx { border-color: var(--critical); }
+  .l .ag-item.ok .bx { border-color: var(--good); }
+  .l .ag-item.ok .bx::after {
+    content: ""; position: absolute; left: 5px; top: 1px; width: 10px; height: 6px;
+    border-left: 2.2px solid var(--good); border-bottom: 2.2px solid var(--good); transform: rotate(-45deg);
+  }
+  .l .ag-item .tx { font-size: 26px; }
+  .l .ag-item .qd { font-size: 20px; letter-spacing: .06em; padding: 0 6px; border: 1px solid transparent; }
+  .l .ag-item.hoje .qd { border-color: var(--accent); }
+  .l .ag-item.atrasado .qd { border-color: var(--critical); }
+
+  /* Cerebro: a chave cerebro/instinto vira a pilula do mockup e o grafo ganha o verde do tema */
+  .l .cb-topo { align-items: center; gap: 12px; }
+  .l .cb-comp { font-size: 54px; font-weight: 200; text-transform: uppercase; }
+  .l .cb-puxa { border: 1px solid var(--accent); padding: 0 6px; }
+  .l .cb-idade { font-size: 15px; }
+  .l .cb-modo { gap: 12px; }
+  .l .cb-modo button {
+    background: transparent; border: 1px solid transparent; border-radius: 0; padding: 0 6px;
+    font-size: 18px; letter-spacing: .1em; text-transform: uppercase; color: var(--axis);
+  }
+  .l .cb-modo button.on { background: transparent; border-color: var(--rede-ativo); color: var(--rede-ativo); }
+  .l .cb-modo button[data-acao] { color: var(--muted); }
+  .l .rede .rot, .l .rede .cam { font-size: 11px; }
+
+  /* Vazao de rede: os dois numeros grandes em cima do grafico, como no mockup */
+  .l .vz { grid-template-rows: auto minmax(0, 1fr); }
+  .l .vz > svg { grid-row: 2; }
+  .l .vz-leg { grid-row: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .l .vz-leg > span { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+  .l .vz-leg > span:last-child { align-items: flex-end; }
+  .l .vz-leg b { font-size: 76px; font-weight: 200; line-height: .95; font-variant-numeric: tabular-nums; }
+  .l .vz-leg b small { font-size: 28px; font-weight: 300; }
+  .l .vz-leg small { font-size: 16px; color: var(--muted); }
+
+  /* Arranjo interno dos cartoes de medidor: cada bloco empilha rotulo, numero e apoio */
+  .l .len-fila, .l .lpf-2 > div, .l .lpr-2 > div, .l .lcl-fila > div, .l .lbn-leg > div {
+    display: grid; justify-items: start; align-content: start; min-width: 0;
+  }
+  .l .widget[data-w="uso"] .len { grid-template-rows: minmax(0, 1fr) 130px; }
+  .l .widget[data-w="uso"] .len-fila { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .l .widget[data-w="uso"] .len-k .vl { font-size: 72px; }
+  .l .widget[data-w="radial-gpu"] .len-k .vl { font-size: 34px; }
+  .l .lpr-2 > div { align-content: center; }
+  .l .lpr-2 .l-num { font-size: 64px; }
+  .l .lpr-2 > .dir { justify-items: end; }
+  .l .lcl-fila > div { justify-items: center; }
+  .l .lbn-leg > div { gap: 12px; }
+  .l .len-topo { margin-top: 6px; }
+  .l .len-topo .l-num { font-size: 110px; color: var(--l-gpu); }
+  .l .len-topo .clk { align-self: baseline; }
+  .l .lbn-centro .v { font-size: 88px; font-weight: 200; line-height: .9; color: var(--l-cpu); font-variant-numeric: tabular-nums; }
+  .l .lbn-centro .v small { font-size: 34px; }
+  .l .lbn-centro .r { font-size: 22px; color: var(--muted); letter-spacing: .06em; }
+  .l .lbn-leg > div .nm { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
+  .l .lbn-leg > div .vl { font-size: 40px; font-weight: 200; line-height: 1.1; white-space: nowrap; }
+  .l .lbn-leg > div .vl small { font-size: 17px; color: var(--muted); margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -1267,6 +1499,9 @@ function render(s) {
 
   renderClaude(s.claude, s.t);
   marcaMudo(v && v.muted);
+  // Tocando agora vale pra qualquer layout: o card do Linha e os dois players do Atual/Grafite
+  // leem o MESMO `media`, e antes so os layouts com player fixo atualizavam ele.
+  renderMedia(s.media);
   pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
   
   if (layout === "agrupado") renderDashB(s); else if (grafite()) renderDashG(s); else renderDashA(s);
@@ -1338,7 +1573,6 @@ function renderDashA(s) {
   while (tbody.lastElementChild && tbody.lastElementChild.getBoundingClientRect().bottom > limit) tbody.lastElementChild.remove();
 
   renderOneDrive(s.onedrive);
-  renderMedia(s.media);
 }
 
 /* ---------- Classico remontado (tema Grafite) ----------
@@ -1433,7 +1667,6 @@ function renderDashG(s) {
   while (pr.childElementCount > 1 && pr.lastElementChild.getBoundingClientRect().bottom > lim) pr.lastElementChild.remove();
 
   renderRedesG();
-  renderMedia(s.media);
 }
 
 const GD_OD = { ok: "sincronizado", syncing: "sincronizando…", error: "erro na sincronização",
@@ -1584,14 +1817,19 @@ function mediaProgress() {
   $("gnp-len").textContent = fmtMin(media.length);
 }
 
+// O card Relogio do tema Linha mostra a conexao (no Linha nao ha barra lateral com o ponto):
+// o estado vem daqui, do mesmo lugar que acende o aviso do cabecalho nos outros temas.
+let servidorOk = true;
 async function tick() {
   try {
     const r = await fetch("/api/stats", { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const s = await r.json();
     if (s.cpu) render(s);
+    servidorOk = true;
     document.getElementById("conn").classList.remove("show");
     document.getElementById("conn-dot").classList.remove("off");
   } catch (e) {
+    servidorOk = false;
     document.getElementById("conn").classList.add("show");
     document.getElementById("conn-dot").classList.add("off");
   }
@@ -1676,11 +1914,15 @@ const TEMAS = {
   atual: { nome: "Atual", icone: "◐" },
   grafite: { nome: "Grafite", icone: "●" },
   "grafite-claro": { nome: "Grafite claro", icone: "○" },
+  linha: { nome: "Linha", icone: "┃" },
 };
 const temaAtual = () => document.documentElement.dataset.tema || "atual";
 const grafite = () => document.documentElement.classList.contains("g");
-// No Grafite o layout classico e a pagina remontada; o agrupado e o mesmo nos dois temas
-const paginaDe = id => id === "classico" && grafite() ? "page-dash-g" : LAYOUTS[id].pagina;
+const linha = () => document.documentElement.classList.contains("l");
+// No Grafite o layout classico e a pagina remontada; no Linha nao ha pagina fixa: as duas telas
+// do mockup sao PERFIS de medidores do layout agrupado, entao os dois layouts caem na mesma grade.
+const paginaDe = id => id === "classico" && grafite() ? "page-dash-g"
+                    : linha() ? "page-dash-b" : LAYOUTS[id].pagina;
 const PAGINAS_LAYOUT = ["page-dash", "page-dash-g", "page-dash-b"];
 let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getItem("painel.layout") : "classico";
 
@@ -1697,6 +1939,7 @@ const WIDGETS = {};
 const GRUPOS = {
   maquina: "Máquina",
   dados: "Rede e disco",
+  midia: "Música",
   texugo: "Texugo",
   dia: "Dia",
   outros: "Outros",
@@ -1709,7 +1952,14 @@ function regWidget(id, def) {
   const { montar, render, minW, minH, ...resto } = def;
   WIDGETS[id] = { ...resto, estilos: [{ id: "padrao", nome: def.estiloNome || "Padrão", montar, render, minW, minH }] };
 }
-function addEstilo(id, estilo) { WIDGETS[id].estilos.push(estilo); }
+function addEstilo(id, estilo) {
+  const w = WIDGETS[id];
+  if (!w) return;
+  // Medidor que declara itens (ver `comDados`) entrega os MESMOS itens pro estilo acrescentado
+  // depois: sem isso o estilo novo recebe os stats crus, acha que nao ha item nenhum e desenha
+  // vazio -- ou pior, remonta a lista por conta propria e divergem calado.
+  w.estilos.push(w.dadosDe ? { ...estilo, render: comDados(w.dadosDe)(estilo.render) } : estilo);
+}
 const estiloDe = it => {
   const es = WIDGETS[it.id].estilos;
   // O plural variava entre medidores ("numero" no radial, "numeros" no resto). Casar sem o "s"
@@ -1879,8 +2129,12 @@ function montarDashB() {
   }
 }
 function renderDashB(s) {
-  for (const [, m] of montados) {
+  for (const [id, m] of montados) {
     try { m.e.render(m.body, s); } catch (e) {}  // um medidor quebrado nao derruba os outros
+    // Texto do canto do card ("90 S", "1/5 feitos hoje"): e do MEDIDOR, nao do estilo, porque
+    // medidor sem estilo proprio no Linha tambem tem esse canto. Fora do Linha nao faz nada.
+    const w = WIDGETS[id];
+    if (w && w.cabExtra) { try { w.cabExtra(m.body, s); } catch (e) {} }
   }
 }
 // A pagina do layout inativo nao esta em PAGES, entao ninguem a esconde: e aqui que isso acontece
@@ -1955,6 +2209,7 @@ function menuNomePerfil(barra) {
 // Trocar de tema recarrega: as cores do canvas sao lidas uma vez, e a pagina do layout muda
 function setTema(t) {
   try { t === "atual" ? localStorage.removeItem("painel.tema") : localStorage.setItem("painel.tema", t); } catch (e) {}
+  if (t === "linha") ativaLinha();  // as duas telas do mockup entram junto com o tema
   location.reload();
 }
 function renderTemas() {
@@ -2361,7 +2616,8 @@ addEstilo("uso", {
 // Tetos dos arcos que nao sao porcentagem. Os de temperatura sao os mesmos ja usados nos
 // avisos do layout classico, pros dois layouts contarem a mesma historia.
 const TETO = { cpuTemp: 90, gpuTemp: 86 };
-const CORES_ANEL = ["#3987e5", "#d95926", "#199e70", "#9085e9", "#d55181"];
+const CORES_ANEL = ["var(--l-c1, #3987e5)", "var(--l-c2, #d95926)", "var(--l-c3, #199e70)",
+                    "var(--l-c4, #9085e9)", "var(--l-c5, #d55181)"];
 
 // Pecas que os estilos alternativos compartilham
 function barraHtml(nome, valorHtml, pct, cor, marca) {
@@ -2415,26 +2671,35 @@ const ESTILOS_MEDIDOR = {
   },
 };
 
+/* Medidor que declara os itens UMA vez: todo estilo -- o padrao, os do registro e os que chegam
+   depois por addEstilo -- le os MESMOS `itens`, com a cor da paleta preenchida quando o item nao
+   traz a sua. Sem isso o estilo novo recebe os stats crus, acha que nao ha item nenhum e desenha
+   vazio -- ou remonta a lista por conta propria e as duas divergem calado. */
+function comDados(dadosDe) {
+  return f => function (el, s) {
+    const d = dadosDe(s) || {};
+    const itens = (d.itens || []).map((a, i) => ({ ...a, cor: a.cor || CORES_ANEL[i % CORES_ANEL.length] }));
+    f.call(this, el, { ...d, itens });
+  };
+}
+
 /* Registra um medidor a partir de uma funcao de dados. `estilos` sao ids de ESTILOS_MEDIDOR, na
    ordem (o primeiro e o padrao); `padrao` troca o primeiro por um desenho proprio, que recebe os
    MESMOS itens -- e o caso de quem tem algo a mais pra dizer (a escala das temperaturas, o "nao
    montado" dos discos) e nem por isso precisa remontar a lista. */
 function medidor(id, nome, dadosDe, opts = {}) {
   const { grupo, col = 4, minW = 3, alturas = {}, estilos = ["barras", "numeros"], padrao } = opts;
-  const comDados = (f) => function (el, s) {
-    const d = dadosDe(s) || {};
-    const itens = (d.itens || []).map((a, i) => ({ ...a, cor: a.cor || CORES_ANEL[i % CORES_ANEL.length] }));
-    f.call(this, el, { ...d, itens });
-  };
+  const com = comDados(dadosDe);
   const monta = (eid, def) => ({
     id: eid, nome: def.nome, minW: (alturas[eid] || {}).minW || minW,
-    minH: (alturas[eid] || {}).minH || 2, montar: def.montar, render: comDados(def.render),
+    minH: (alturas[eid] || {}).minH || 2, montar: def.montar, render: def.render,
   });
   const lista = padrao ? [monta("padrao", padrao), ...estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]))]
                        : estilos.map(e => monta(e, ESTILOS_MEDIDOR[e]));
   const p = lista[0];
-  regWidget(id, { nome, grupo, col, h: p.minH, minW: p.minW, minH: p.minH,
-                  estiloNome: p.nome, montar: p.montar, render: p.render });
+  // `dadosDe` vai no registro: e por ele que addEstilo() entrega os mesmos itens ao estilo novo
+  regWidget(id, { nome, grupo, col, h: p.minH, minW: p.minW, minH: p.minH, dadosDe,
+                  estiloNome: p.nome, montar: p.montar, render: com(p.render) });
   WIDGETS[id].estilos[0].id = p.id;
   lista.slice(1).forEach(e => addEstilo(id, e));
 }
@@ -2443,7 +2708,9 @@ function medidor(id, nome, dadosDe, opts = {}) {
 // Radial: os aneis sao os itens do medidor, e os outros estilos leem os mesmos
 function gaugeWidget(id, nome, n, montarAneis, grupo = "maquina") {
   const h = n <= 3 ? 2 : 3;
-  medidor(id, nome, s => { const d = montarAneis(s) || {}; return { itens: d.aneis || [], centro: d.centro }; }, {
+  // O que o montador devolver passa adiante (per/threads da CPU, por exemplo): o estilo que
+  // desenha mais que aneis precisa dos mesmos dados, e nao de uma segunda leitura do sensor.
+  medidor(id, nome, s => { const d = montarAneis(s) || {}; return { ...d, itens: d.aneis || [], centro: d.centro }; }, {
     grupo, col: 3, minW: 3, estilos: ["aneis", "barras", "numeros"],
     alturas: { aneis: { minH: h }, barras: { minH: h },
                numeros: { minW: n <= 3 ? 3 : 4, minH: n <= 3 ? 1 : 2 } },
@@ -2454,10 +2721,14 @@ gaugeWidget("radial-cpu", "Processador", 3, s => {
   const c = s.cpu;
   return {
     centro: { valor: fmtN(c.pct) + "%", rotulo: fmtN((c.freq || 0) / 1000, 2) + " GHz" },
+    per: c.per || [], threads: c.threads || (c.per || []).length,
     aneis: [
-      { nome: "Uso", frac: norm(c.pct, 100), texto: fmtN(c.pct) + "%" },
-      { nome: "Consumo", frac: norm(c.power, c.tdp), texto: c.power == null ? "sem sensor" : `${fmtN(c.power)} W de ${c.tdp || "?"} W` },
-      { nome: "Temperatura", frac: norm(c.temp, TETO.cpuTemp), texto: `${fmtN(c.temp)} °C de ${TETO.cpuTemp} °C` },
+      { nome: "Uso", tag: "USO", frac: norm(c.pct, 100), texto: fmtN(c.pct) + "%",
+        curto: fmtN(c.pct) + "<small>%</small>", rodape: "" },
+      { nome: "Consumo", tag: "W", frac: norm(c.power, c.tdp), texto: c.power == null ? "sem sensor" : `${fmtN(c.power)} W de ${c.tdp || "?"} W`,
+        curto: c.power == null ? "—" : fmtN(c.power), rodape: c.power == null ? "sem sensor" : `de ${c.tdp || "?"} W` },
+      { nome: "Temperatura", tag: "°C", frac: norm(c.temp, TETO.cpuTemp), texto: `${fmtN(c.temp)} °C de ${TETO.cpuTemp} °C`,
+        curto: fmtN(c.temp), rodape: `de ${TETO.cpuTemp} °C` },
     ],
   };
 });
@@ -2468,22 +2739,30 @@ gaugeWidget("radial-gpu", "Placa de vídeo", 5, s => {
   const vp = 100 * g.mem_used / g.mem_total;
   return {
     centro: { valor: fmtN(g.util) + "%", rotulo: fmtN(g.clock) + " MHz" },
+    nome: g.name || "", clock: g.clock,
     aneis: [
-      { nome: "Uso", frac: norm(g.util, 100), texto: fmtN(g.util) + "%" },
-      { nome: "VRAM", frac: norm(vp, 100), texto: `${fmtN(g.mem_used / 1024, 1)} de ${fmtN(g.mem_total / 1024, 0)} GB` },
-      { nome: "Consumo", frac: norm(g.power, g.power_limit), texto: `${fmtN(g.power)} W de ${fmtN(g.power_limit)} W` },
-      { nome: "Temperatura", frac: norm(g.temp, TETO.gpuTemp), texto: `${fmtN(g.temp)} °C de ${TETO.gpuTemp} °C` },
-      { nome: "Ventoinha", frac: norm(g.fan, 100), texto: fmtN(g.fan) + "%" },
+      { nome: "Uso", tag: "USO", frac: norm(g.util, 100), texto: fmtN(g.util) + "%",
+        curto: fmtN(g.util) + "<small>%</small>", rodape: "" },
+      { nome: "VRAM", tag: "VRAM", frac: norm(vp, 100), texto: `${fmtN(g.mem_used / 1024, 1)} de ${fmtN(g.mem_total / 1024, 0)} GB`,
+        curto: fmtN(g.mem_used / 1024, 1), rodape: `de ${fmtN(g.mem_total / 1024, 0)} GB` },
+      { nome: "Consumo", tag: "W", frac: norm(g.power, g.power_limit), texto: `${fmtN(g.power)} W de ${fmtN(g.power_limit)} W`,
+        curto: fmtN(g.power), rodape: `de ${fmtN(g.power_limit)} W` },
+      { nome: "Temperatura", tag: "°C", frac: norm(g.temp, TETO.gpuTemp), texto: `${fmtN(g.temp)} °C de ${TETO.gpuTemp} °C`,
+        curto: fmtN(g.temp), rodape: `de ${TETO.gpuTemp} °C` },
+      { nome: "Ventoinha", tag: "FAN", frac: norm(g.fan, 100), texto: fmtN(g.fan) + "%",
+        curto: fmtN(g.fan) + "<small>%</small>", rodape: "" },
     ],
   };
 });
 
 // Cor por entidade, nao por posicao: a CPU e azul e a GPU verde-agua em todo medidor que
 // compara as duas, pra leitura nao mudar de significado de um card pro outro.
-const COR_CPU = "#3987e5", COR_GPU = "#199e70";
+// Vao como var() com reserva: o tema Linha reescreve as mesmas variaveis e nenhum medidor
+// precisa saber em que tema esta (o Atual cai sempre na reserva).
+const COR_CPU = "var(--l-cpu, #3987e5)", COR_GPU = "var(--l-gpu, #199e70)";
 // No grafico espelhado a cor nao identifica peca, e sim o sentido do fluxo; a posicao
 // (acima/abaixo do eixo) e o triangulo do rotulo dizem o mesmo, pra nao depender da cor.
-const COR_ENTRA = "#3987e5", COR_SAI = "#d95926";
+const COR_ENTRA = "var(--l-entra, #3987e5)", COR_SAI = "var(--l-sai, #d95926)";
 
 // Escala unica pras tres temperaturas: comparar so vale se o eixo for o mesmo.
 const TEMP_MAX = 100;
@@ -2494,7 +2773,7 @@ medidor("temperaturas", "Temperaturas", s => ({
     { nome: "SSD NVMe", v: s.nvme_temp, warn: 65, crit: 75 },
   ].map(t => {
     const nivel = level(t.v, t.warn, t.crit);
-    return { nome: t.nome, nivel, frac: Math.min(Math.max(t.v ?? 0, 0) / TEMP_MAX, 1),
+    return { nome: t.nome, v: t.v, nivel, frac: Math.min(Math.max(t.v ?? 0, 0) / TEMP_MAX, 1),
              cor: levelColor[nivel], marca: t.warn / TEMP_MAX,
              texto: `${fmtN(t.v)} °C`, curto: `${fmtN(t.v)}<small>°C</small>`,
              rodape: `aviso em ${t.warn} °C` };
@@ -2553,6 +2832,9 @@ medidor("potencia", "Consumo", s => {
 
 // Vazao: um card por assunto, cada um com a propria escala. Rede e disco no mesmo eixo
 // esmagariam a rede, que e ordens de grandeza mais lenta que o NVMe.
+/* "14 KB/s" vira 14 com o resto menor: de longe se le o numero, e a unidade nao compete com ele.
+   O `<small>` ja era o elemento do "pico" nos dois temas, entao a unidade entra no mesmo lugar. */
+const rateHtml = t => { const [n, u] = String(t).split(" "); return `${n}${u ? `<small> ${u}</small>` : ""}`; };
 function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
   regWidget(id, {
     nome, grupo: "dados", col: 4, h: 2, minW: 3, minH: 2,
@@ -2561,8 +2843,8 @@ function vazaoWidget(id, nome, kCima, kBaixo, rotCima, rotBaixo) {
       drawMirror(el.querySelector("svg"), hist[kCima], hist[kBaixo], [COR_ENTRA, COR_SAI]);
       const a = faixa(hist[kCima]), b = faixa(hist[kBaixo]);
       el.querySelector(".vz-leg").innerHTML =
-        `<span style="color:${COR_ENTRA}">▲ ${rotCima} <b>${fmtRate(a.atual)}</b> <small>pico ${fmtRate(a.max)}</small></span>` +
-        `<span style="color:${COR_SAI}">▼ ${rotBaixo} <b>${fmtRate(b.atual)}</b> <small>pico ${fmtRate(b.max)}</small></span>`;
+        `<span style="color:${COR_ENTRA}">▲ ${rotCima} <b>${rateHtml(fmtRate(a.atual))}</b> <small>pico ${fmtRate(a.max)}</small></span>` +
+        `<span style="color:${COR_SAI}">▼ ${rotBaixo} <b>${rateHtml(fmtRate(b.atual))}</b> <small>pico ${fmtRate(b.max)}</small></span>`;
     },
   });
   addEstilo(id, {
@@ -2604,6 +2886,445 @@ medidor("capacidade", "Armazenamento", s => {
         : meterBlock(x.nome, `${fmtBytes(x.used)} <small>de ${fmtBytes(x.total)}</small>`, x.pct, x.nivel)
       ).join(""));
     },
+  },
+});
+
+/* ---------- Tema Linha: os desenhos dos mockups ----------
+   Os dois artboards de `~/Downloads` (zip em `Linha · ...-html.zip`) desenham o que o painel JA
+   coleta -- nenhum sensor novo no `server.py`. Cada cartao entra como ESTILO de um medidor que
+   existe, com a regra de sempre: o medidor declara os itens uma vez e o estilo so desenha, e
+   `curto`/`rodape` dizem o numero grande e a linha de apoio sem remontar a lista.
+   Dois medidores nao existiam no layout agrupado e entram aqui: o Relogio (hora, data e as
+   metricas que no tema Linha saem do cabecalho) e o Tocando agora.
+   Fora do tema Linha nada disto aparece: os estilos so sao usados pelos perfis "Linha · ...". */
+
+/* Texto do canto da linha do rotulo ("90 S · escala propria", "1/5 feitos hoje"). O h2 e do card,
+   entao o texto entra como IRMAO dele e a primeira linha do card vira duas colunas; a .w-body
+   continua embaixo, inteira. Chamado a cada segundo: cria uma vez e depois so troca o texto.
+   Fora do tema Linha nao faz nada -- o mesmo medidor serve os perfis dos outros temas. */
+function linhaCab(el, extra) {
+  if (!linha()) return;
+  const card = el.parentElement, h2 = card && card.querySelector("h2");
+  if (!h2) return;
+  let sp = card.querySelector(".l-extra");
+  if (!sp) {
+    card.classList.add("l-cab");
+    sp = document.createElement("span"); sp.className = "l-extra"; h2.after(sp);
+  }
+  if (sp.innerHTML !== extra) sp.innerHTML = extra;
+}
+
+/* Geometria dos mostradores. `ptKnob` usa o mesmo angulo de `arco()` (135 graus, 270 de vao);
+   `ptTopo` conta a partir das 12 h, no sentido do relogio, que e como o relogio analogico e o
+   carretel sao desenhados nos mockups. */
+const ptKnob = (cx, cy, r, frac) => {
+  const a = (135 + 270 * Math.min(Math.max(frac || 0, 0), 1)) * Math.PI / 180;
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+};
+const ptTopo = (cx, cy, r, graus) => {
+  const t = graus * Math.PI / 180;
+  return [cx + r * Math.sin(t), cy - r * Math.cos(t)];
+};
+const linhaDe = (cx, cy, r, graus) => {
+  const [x, y] = ptTopo(cx, cy, r, graus);
+  return `M${cx},${cy} L${x.toFixed(1)},${y.toFixed(1)}`;
+};
+// Arco de progresso fechando o circulo (completo em frac = 1), pra volta do vinil
+function arcoCirculo(cx, cy, r, frac) {
+  const f = Math.min(Math.max(frac || 0, 0), 1), a = 2 * Math.PI * f - Math.PI / 2;
+  const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+  return `M${cx},${cy - r} A${r},${r} 0 ${f > 0.5 ? 1 : 0} 1 ${x.toFixed(1)},${y.toFixed(1)}`;
+}
+// Knob do mockup: trilho, valor, ponteiro e pino central. Montado uma vez (knobSvg) e depois so
+// repintado (knobPinta) -- refazer o SVG inteiro a cada segundo pisca na tela e no Moonlight.
+function knobSvg(cx, cy, r, cor) {
+  return `<path class="tr" d="${arco(cx, cy, r, 1)}" fill="none" stroke="var(--track)" stroke-width="3" stroke-linecap="round"/>` +
+         `<path class="vl" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round"/>` +
+         `<line class="pt" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>` +
+         `<circle cx="${cx}" cy="${cy}" r="5" fill="var(--page)" stroke="var(--text)" stroke-width="2"/>`;
+}
+function knobPinta(svg, cx, cy, r, frac) {
+  const f = Math.min(Math.max(frac || 0, 0), 1);
+  svg.querySelector(".vl").setAttribute("d", f > 0.004 ? arco(cx, cy, r, f) : "");
+  const [qx, qy] = ptKnob(cx, cy, 6, f), [px, py] = ptKnob(cx, cy, r - 12, f);
+  const l = svg.querySelector(".pt");
+  l.setAttribute("x1", qx.toFixed(1)); l.setAttribute("y1", qy.toFixed(1));
+  l.setAttribute("x2", px.toFixed(1)); l.setAttribute("y2", py.toFixed(1));
+}
+// Numero grande + linha de apoio: as duas chaves que `curto`/`rodape` ja guardam no item
+const lNumHtml = (v, un) => `${v}${un ? `<small>${un}</small>` : ""}`;
+
+/* Uso, estilo Encoders: os quatro mostradores do mockup e o traco dos mesmos 90 s embaixo */
+addEstilo("uso", {
+  id: "encoders", nome: "Encoders", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="len"><div class="len-fila"></div><svg class="len-tr" preserveAspectRatio="none"></svg></div>';
+    el.querySelector(".len-fila").innerHTML = SERIES_USO.map(d =>
+      `<div class="len-k" data-serie="${d.key}"><svg viewBox="0 0 140 120">${knobSvg(70, 60, 46, d.cor)}</svg>` +
+      `<span class="l-rot" style="color:${d.cor}">${d.nome}</span><span class="vl" style="color:${d.cor}">—</span></div>`).join("");
+    linhaCab(el, "90 S");
+  },
+  render(el) {
+    SERIES_USO.forEach(d => {
+      const k = el.querySelector(`.len-k[data-serie="${d.key}"]`);
+      const v = faixa(hist[d.key]).atual;
+      knobPinta(k.querySelector("svg"), 70, 60, 46, (v || 0) / 100);
+      k.querySelector(".vl").textContent = fmtN(v);
+    });
+    tracoMulti(el.querySelector(".len-tr"), SERIES_USO.map(d => ({ ...d, data: hist[d.key] })), 100);
+  },
+});
+
+/* Traco do mockup: grade tracejada e as series sem rotulo na ponta -- o numero de cada uma ja
+   esta em cima do mostrador dela (o `drawMulti` do estilo padrao poe rotulo na ponta). */
+function tracoMulti(svg, series, maxV) {
+  const w = svg.clientWidth, h = svg.clientHeight;
+  if (!w || !h) return;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const n = HISTORY, x = (i, len) => (w * (i + (n - len)) / (n - 1)).toFixed(1);
+  const y = v => (h - 4 - (h - 8) * Math.min(Math.max(v ?? 0, 0) / maxV, 1)).toFixed(1);
+  let out = "";
+  for (let i = 1; i < 4; i++) out += `<line x1="0" x2="${w}" y1="${(h * i / 4).toFixed(1)}" y2="${(h * i / 4).toFixed(1)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="1 5"/>`;
+  for (const s of series) {
+    const d = s.data || [];
+    if (d.filter(v => v != null).length < 2) continue;
+    let pts = "", pen = false;
+    d.forEach((v, i) => { if (v == null) { pen = false; return; } pts += (pen ? " " : " M") + `${x(i, d.length)},${y(v)}`; pen = true; });
+    if (pts) out += `<polyline points="${pts.trim()}" fill="none" stroke="${s.cor}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  }
+  svg.innerHTML = out;
+}
+
+/* Processador, estilo Bancada: tres aneis concentricos, ticks, barras por thread e a legenda */
+addEstilo("radial-cpu", {
+  id: "bancada", nome: "Bancada", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lbn"><div class="lbn-meio"><div class="lbn-rel"><svg viewBox="0 0 330 330" aria-hidden="true">' +
+      '<path class="tk" stroke="var(--axis)" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="tkf" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>' +
+      '<g class="aneis"></g></svg><div class="lbn-centro"><span class="v"></span><span class="r"></span></div></div>' +
+      '<div class="lbn-leg"></div></div><svg class="lbn-thr" preserveAspectRatio="none" aria-hidden="true"></svg></div>';
+    let tk = "", tkf = "";
+    for (let i = 0; i <= 40; i++) {
+      const forte = i % 10 === 0;
+      const [x0, y0] = ptTopo(165, 165, forte ? 150 : 154, i * 270 / 40 + 135);
+      const [x1, y1] = ptTopo(165, 165, 160, i * 270 / 40 + 135);
+      const d = `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} `;
+      if (forte) tkf += d; else tk += d;
+    }
+    el.querySelector(".tk").setAttribute("d", tk);
+    el.querySelector(".tkf").setAttribute("d", tkf);
+    linhaCab(el, "");
+  },
+  render(el, d) {
+    // Tres aneis de raios diferentes, um por medida; o anel mede o mesmo item da legenda
+    const g = el.querySelector(".aneis");
+    if (g.dataset.n !== String((d.itens || []).length)) {
+      g.dataset.n = String((d.itens || []).length);
+      g.innerHTML = d.itens.map((a, i) => {
+        const r = 136 - i * 22;
+        return `<path d="${arco(165, 165, r, 1)}" fill="none" stroke="var(--track)" stroke-width="2"/>` +
+               `<path class="v${i}" fill="none" stroke="${a.cor}" stroke-width="4" stroke-linecap="round"/>` +
+               `<circle class="p${i}" r="5" fill="var(--page)" stroke="${a.cor}" stroke-width="2"/>`;
+      }).join("");
+      el.querySelector(".lbn-leg").innerHTML = d.itens.map((a, i) =>
+        `<div><span class="nm" style="color:${a.cor}">${a.tag || a.nome.toUpperCase()}</span>` +
+        `<span class="vl">${lNumHtml(a.curto || a.texto, "")}${a.rodape ? `<small>${a.rodape}</small>` : ""}</span></div>`).join("");
+    }
+    (d.itens || []).forEach((a, i) => {
+      const r = 136 - i * 22, f = Math.min(Math.max(a.frac || 0, 0), 1);
+      el.querySelector(`.v${i}`).setAttribute("d", f > 0.004 ? arco(165, 165, r, f) : "");
+      const [px, py] = ptKnob(165, 165, r, f), c = el.querySelector(`.p${i}`);
+      c.setAttribute("cx", px.toFixed(1)); c.setAttribute("cy", py.toFixed(1));
+    });
+    el.querySelector(".lbn-centro .v").innerHTML = (d.centro || {}).valor || "—";
+    el.querySelector(".lbn-centro .r").textContent = (d.centro || {}).rotulo || "";
+    linhaCab(el, d.threads ? `${d.threads} THREADS` : "");
+    // Barras por thread: a mesma leitura do "Uso por thread" do classico, uma barra por thread
+    const thr = el.querySelector(".lbn-thr"), per = d.per || [];
+    const w = thr.clientWidth, h = thr.clientHeight;
+    if (!w || !h) return;
+    thr.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    let out = "";
+    per.forEach((v, i) => {
+      const x = (10 + i * (w / Math.max(per.length, 1))).toFixed(1), y = (h - (h - 4) * Math.max(v, 4) / 100).toFixed(1);
+      out += `<line x1="${x}" x2="${x}" y1="4" y2="${h - 2}" stroke="var(--track)" stroke-width="2" stroke-linecap="round"/>` +
+             `<line x1="${x}" x2="${x}" y1="${h - 2}" y2="${y}" stroke="${v > 90 ? "var(--critical)" : "var(--accent)"}" stroke-width="3" stroke-linecap="round"/>`;
+    });
+    thr.innerHTML = out;
+  },
+});
+
+/* Placa de video, estilo Encoders: os cinco mostradores do mockup */
+addEstilo("radial-gpu", {
+  id: "encoders", nome: "Encoders", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="len"><div class="len-topo"><span class="l-num"></span><span class="l-pe clk"></span></div>' +
+                   '<div class="len-fila"></div></div>';
+    linhaCab(el, "");
+  },
+  render(el, d) {
+    const itens = d.itens || [];
+    const fila = el.querySelector(".len-fila");
+    if (fila.dataset.n !== String(itens.length)) {
+      fila.dataset.n = String(itens.length);
+      fila.style.gridTemplateColumns = `repeat(${Math.max(itens.length, 1)}, minmax(0, 1fr))`;
+      fila.innerHTML = itens.map((a, i) =>
+        `<div class="len-k" data-i="${i}"><svg viewBox="0 0 112 120">${knobSvg(56, 62, 42, a.cor)}</svg>` +
+        `<span class="l-tag" style="color:${a.cor}">${a.tag || a.nome.toUpperCase()}</span>` +
+        `<span class="vl">${a.curto || a.texto}</span>${a.rodape ? `<span class="de">${a.rodape}</span>` : ""}</div>`).join("");
+    }
+    itens.forEach((a, i) => {
+      const k = fila.querySelector(`.len-k[data-i="${i}"]`);
+      knobPinta(k.querySelector("svg"), 56, 62, 42, a.frac);
+      k.querySelector(".vl").innerHTML = lNumHtml(a.curto || a.texto, "");
+    });
+    el.querySelector(".len-topo .l-num").innerHTML = (d.centro || {}).valor || "—";
+    el.querySelector(".len-topo .clk").textContent = (d.centro || {}).rotulo || "";
+    // "RTX 2060": o nome do modelo, sem a marca na frente, como no mockup
+    linhaCab(el, (d.nome || "").replace(/^.*?GeForce\s+/i, ""));
+  },
+});
+
+/* Temperaturas, estilo Faders: tres colunas verticais na mesma escala, com a marca de aviso */
+addEstilo("temperaturas", {
+  id: "faders", nome: "Faders", minW: 4, minH: 3,
+  montar(el) { el.innerHTML = '<svg class="lfd" viewBox="0 0 560 372" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>'; linhaCab(el, `0–${TEMP_MAX} °C`); },
+  render(el, d) {
+    let escala = "";
+    for (let i = 0; i <= 10; i++) {
+      const y = 334 - 30 * i;
+      escala += `M60,${y} L${i % 5 === 0 ? 78 : 70},${y} `;
+    }
+    let out = `<path d="${escala}" stroke="var(--track)" stroke-width="1.5"/>` +
+              `<text x="22" y="40" fill="var(--muted)" font-size="16">${TEMP_MAX}</text>` +
+              `<text x="34" y="340" fill="var(--muted)" font-size="16">0</text>`;
+    const x = i => 150 + i * 150;
+    (d.itens || []).forEach((t, i) => {
+      // Cor por posicao, como no mockup: o estado do sensor aparece na linha de aviso, nao na cor
+      const cor = t.nivel === "ok" ? CORES_ANEL[i % CORES_ANEL.length] : levelColor[t.nivel];
+      const f = Math.min(Math.max(t.frac || 0, 0), 1);
+      const y = 334 - 300 * f, ya = 334 - 300 * Math.min(Math.max(t.marca || 0, 0), 1);
+      out += `<line x1="${x(i)}" x2="${x(i)}" y1="34" y2="334" stroke="var(--track)" stroke-width="2"/>` +
+             `<line x1="${x(i)}" x2="${x(i)}" y1="${y.toFixed(1)}" y2="334" stroke="${cor}" stroke-width="2"/>` +
+             `<path d="M${x(i) - 22},${ya.toFixed(1)} L${x(i) + 22},${ya.toFixed(1)} M${x(i) - 30},${(ya - 6).toFixed(1)} L${x(i) - 22},${ya.toFixed(1)} L${x(i) - 30},${(ya + 6).toFixed(1)}" stroke="var(--critical)" stroke-width="1.6" fill="none"/>` +
+             `<rect x="${x(i) - 15}" y="${(y - 8).toFixed(1)}" width="30" height="16" fill="var(--page)" stroke="${cor}" stroke-width="2"/>` +
+             `<text x="${x(i) + 26}" y="${(y + 16).toFixed(1)}" fill="${cor}" font-size="52" font-weight="200">${fmtN(t.v)}°</text>` +
+             `<text x="${x(i) + 26}" y="${(y + 36).toFixed(1)}" fill="var(--muted)" font-size="15" letter-spacing="1.5">${esc((t.nome || "").toUpperCase())}</text>`;
+    });
+    el.querySelector(".lfd").innerHTML = out;
+  },
+});
+
+/* Consumo, estilo Faixa: a soma das duas pecas na escala do teto somado */
+addEstilo("potencia", {
+  id: "faixa", nome: "Faixa", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lpf"><div class="lpf-2"></div><svg class="lpf-sc" viewBox="0 0 560 96" preserveAspectRatio="none" aria-hidden="true"></svg></div>';
+    linhaCab(el, '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M9 1L3 9h4l-1 6 6-8H8z"/></svg>');
+  },
+  render(el, d) {
+    const itens = d.itens || [], teto = d.teto || 0;
+    el.querySelector(".lpf-2").innerHTML = itens.map(a =>
+      `<div><span class="l-rot" style="color:${a.cor}">${esc((a.nome || "").toUpperCase())}</span>` +
+      `<span class="vl" style="color:${a.cor}">${fmtN(a.v)}</span>` +
+      `<span class="l-pe">W de ${fmtN(a.max)}${a.nome === "CPU" ? " · TDP" : " · limite"}</span></div>`).join("");
+    linhaCab(el, d.semSensor ? "" : `<b style="color:var(--critical)">${fmtN(d.total)} W</b>`);
+    // Escala de 0 ao teto somado, 25 W por; o trecho da CPU e o da GPU se seguem, como no mockup
+    const sx = v => (560 * (teto ? v / teto : 0)).toFixed(1);
+    let out = "";
+    for (let w = 0; w <= teto; w += 25) out += `M${sx(w)},30 L${sx(w)},${w % 50 === 0 ? 20 : 25} `;
+    const cpu = teto ? ((itens[0] || {}).frac || 0) : 0, gpu = teto ? ((itens[1] || {}).frac || 0) : 0;
+    const xc = sx(teto * cpu), xg = sx(teto * (cpu + gpu));
+    out += `<line x1="0" x2="560" y1="40" y2="40" stroke="var(--track)" stroke-width="2"/>` +
+           `<line x1="0" x2="${xc}" y1="40" y2="40" stroke="${(itens[0] || {}).cor || "var(--accent)"}" stroke-width="6"/>` +
+           (itens[1] ? `<line x1="${xc}" x2="${xg}" y1="40" y2="40" stroke="${itens[1].cor}" stroke-width="6"/>` : "") +
+           `<path d="M${xg},30 L${xg},56 M${(parseFloat(xg) - 6).toFixed(1)},62 L${xg},56 L${(parseFloat(xg) + 6).toFixed(1)},62" stroke="var(--text)" stroke-width="2" fill="none"/>` +
+           `<text x="0" y="86" fill="var(--muted)" font-size="16">0</text>` +
+           `<text x="${(parseFloat(xg) + 10).toFixed(1)}" y="86" fill="var(--text)" font-size="18">CPU + GPU ${fmtN(d.total)} W</text>` +
+           `<text x="470" y="86" fill="var(--muted)" font-size="16">${fmtN(teto)} W</text>`;
+    el.querySelector(".lpf-sc").innerHTML = out;
+  },
+});
+
+/* Disco, estilo Pratos: dois carreteis que giram NA VELOCIDADE DA VAZAO (e a legenda do mockup) */
+addEstilo("vazao-disco", {
+  id: "pratos", nome: "Pratos", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lpr"><svg viewBox="0 0 560 300" aria-hidden="true">' +
+      prato(140, 128, "var(--l-entra)") + prato(420, 128, "var(--l-gpu)") +
+      '<path d="M140,232 L216,276 M344,276 L420,232" stroke="var(--muted)" stroke-width="1.6" fill="none"/>' +
+      '<circle cx="222" cy="280" r="7" fill="var(--page)" stroke="var(--muted)" stroke-width="1.6"/>' +
+      '<circle cx="338" cy="280" r="7" fill="var(--page)" stroke="var(--muted)" stroke-width="1.6"/>' +
+      '<line x1="229" x2="331" y1="287" y2="287" stroke="var(--muted)" stroke-width="1.6"/>' +
+      '<rect x="262" y="268" width="36" height="18" fill="var(--page)" stroke="var(--text)" stroke-width="2"/></svg>' +
+      '<div class="lpr-2"></div></div>';
+    linhaCab(el, "o carretel gira na velocidade da vazão");
+  },
+  render(el) {
+    const a = faixa(hist.dr), b = faixa(hist.dw);
+    el.querySelector(".lpr-2").innerHTML =
+      `<div><span class="l-rot" style="color:var(--l-entra)">LEITURA</span>` +
+      `<span class="l-num" style="color:var(--l-entra)">${fmtBytes(a.atual)}<small>/S</small></span>` +
+      `<span class="l-pe">pico ${fmtRate(a.max)}</span></div>` +
+      `<div class="dir"><span class="l-rot" style="color:var(--l-gpu)">ESCRITA</span>` +
+      `<span class="l-num" style="color:var(--l-gpu)">${fmtBytes(b.atual)}<small>/S</small></span>` +
+      `<span class="l-pe">pico ${fmtRate(b.max)}</span></div>`;
+    giraPrato(el.querySelectorAll(".l-gira-rapido"), a.atual);
+    giraPrato(el.querySelectorAll(".l-gira-lento"), b.atual);
+  },
+});
+// Um prato: aro, trilho tracejado, cubo e tres raios. O giro e do grupo (CSS), nao do desenho.
+function prato(cx, cy, cor) {
+  const r = i => 32 + i * 20;
+  let raios = "";
+  for (const g of [0, 120, 240]) {
+    const [x0, y0] = ptTopo(cx, cy, 32, g), [x1, y1] = ptTopo(cx, cy, 52, g);
+    raios += `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} `;
+  }
+  return `<g class="l-gira-lento"><circle cx="${cx}" cy="${cy}" r="104" fill="none" stroke="${cor}" stroke-width="2"/>` +
+         `<circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="var(--track)" stroke-width="2" stroke-dasharray="3 7"/>` +
+         `<circle cx="${cx}" cy="${cy}" r="24" fill="none" stroke="var(--text)" stroke-width="2.4"/>` +
+         `<path d="${raios}" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/></g>`;
+}
+// Sem vazao o carretel PARA; com vazao ele gira na razao dela, presa entre 0,35 s e 9 s por volta
+function giraPrato(grupos, taxa) {
+  const dur = taxa > 512 ? Math.min(9, Math.max(0.35, 6 * (512 * 1024 / taxa))) : 0;
+  for (const g of grupos) {
+    g.style.animationDuration = dur ? dur + "s" : "";
+    g.style.animationPlayState = dur ? "running" : "paused";
+  }
+}
+
+/* Armazenamento, estilo Cilindros: um cilindro por disco, cheio ate a altura do usado */
+addEstilo("capacidade", {
+  id: "cilindros", nome: "Cilindros", minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lcl"><svg viewBox="0 0 560 290" aria-hidden="true"></svg><div class="lcl-fila"></div></div>';
+    linhaCab(el, "usado de cada total");
+  },
+  render(el, d) {
+    const itens = d.itens || [], n = Math.max(itens.length, 1);
+    const passo = 560 / n, rx = Math.min(62, passo * 0.42);
+    el.querySelector("svg").innerHTML = itens.map((a, i) => {
+      const c = cilindro(passo * (i + 0.5), rx, a.frac);
+      const cor = a.nivel === "ok" ? CORES_ANEL[i % CORES_ANEL.length] : levelColor[a.nivel];
+      return `<path d="${c.contorno}" fill="none" stroke="var(--axis)" stroke-width="2"/>` +
+             `<path d="${c.cheio}" fill="none" stroke="${cor}" stroke-width="2.4"/>` +
+             `<path d="${c.hach}" stroke="${cor}" stroke-width="1" opacity=".45"/>`;
+    }).join("");
+    const fila = el.querySelector(".lcl-fila");
+    fila.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+    fila.innerHTML = itens.map((a, i) => {
+      const cor = a.nivel === "ok" ? CORES_ANEL[i % CORES_ANEL.length] : levelColor[a.nivel];
+      return `<div><span class="l-tag" style="color:${cor}">${esc((a.nome || "").toUpperCase())}</span>` +
+             `<div class="pct" style="color:${cor}">${a.pct == null ? "—" : fmtN(a.pct)}<small>%</small></div>` +
+             `<div class="l-pe">${a.pct == null ? "não montado" : esc(a.texto)}</div></div>`;
+    }).join("");
+  },
+});
+/* Cilindro do mockup: tampa, laterais ate a altura do usado, e hachura so onde esta cheio */
+function cilindro(cx, rx, frac) {
+  const ry = 16, top = 30, base = 240, f = Math.min(Math.max(frac || 0, 0), 1);
+  const yl = base - (base - top) * f;
+  const contorno = `M${(cx - rx).toFixed(0)},${top} A${rx.toFixed(0)},${ry} 0 1 1 ${(cx + rx).toFixed(0)},${top} A${rx.toFixed(0)},${ry} 0 1 1 ${(cx - rx).toFixed(0)},${top}` +
+                   ` M${(cx - rx).toFixed(0)},${top} L${(cx - rx).toFixed(0)},${yl.toFixed(1)} M${(cx + rx).toFixed(0)},${top} L${(cx + rx).toFixed(0)},${yl.toFixed(1)}`;
+  const cheio = `M${(cx - rx).toFixed(0)},${yl.toFixed(1)} A${rx.toFixed(0)},${ry} 0 1 1 ${(cx + rx).toFixed(0)},${yl.toFixed(1)} A${rx.toFixed(0)},${ry} 0 1 1 ${(cx - rx).toFixed(0)},${yl.toFixed(1)}` +
+                ` M${(cx - rx).toFixed(0)},${yl.toFixed(1)} L${(cx - rx).toFixed(0)},${base} A${rx.toFixed(0)},${ry} 0 0 0 ${(cx + rx).toFixed(0)},${base} L${(cx + rx).toFixed(0)},${yl.toFixed(1)}`;
+  let hach = "";
+  for (let x = cx - rx + 10; x < cx + rx; x += 10) {
+    const dy = ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
+    hach += `M${x.toFixed(0)},${(yl + dy).toFixed(1)} L${x.toFixed(0)},${(base + dy).toFixed(1)} `;
+  }
+  return { contorno, cheio, hach };
+}
+
+/* Relogio: no tema Linha o cabecalho sai e o que ele mostrava vem pra ca (hora, data, ligado,
+   carga, volume e Claude), com o relogio analogico do mockup. O AO VIVO e o ponto de conexao
+   vao pro canto do rotulo, que e o canto da tela. */
+const durCurto = s => {
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? `${d}d ${h}h` : h ? `${h}H${String(m).padStart(2, "0")}` : `${m}min`;
+};
+regWidget("relogio", {
+  nome: "Relógio", grupo: "dia", col: 4, h: 3, minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lrl"><span class="lrl-data"></span>' +
+      '<div class="lrl-hora"><svg viewBox="0 0 120 120" aria-hidden="true">' +
+        '<circle cx="60" cy="60" r="54" fill="none" stroke="var(--text)" stroke-width="2"/>' +
+        '<path class="tk" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>' +
+        '<path class="hh" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>' +
+        '<path class="mm" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<path class="ss" stroke="var(--critical)" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<circle cx="60" cy="60" r="3.2" fill="var(--page)" stroke="var(--critical)" stroke-width="1.6"/></svg>' +
+      '<span class="lrl-hh"></span><span class="lrl-ss"></span></div>' +
+      '<div class="lrl-meta"></div></div>';
+    let tk = "";
+    for (let i = 0; i < 12; i++) {
+      const [x0, y0] = ptTopo(60, 60, 47, i * 30), [x1, y1] = ptTopo(60, 60, 41, i * 30);
+      tk += `M${x0.toFixed(1)},${y0.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} `;
+    }
+    el.querySelector(".tk").setAttribute("d", tk);
+    el.querySelector(".lrl-meta").innerHTML = ["LIGADO", "CARGA", "VOLUME", "CLAUDE 5H"]
+      .map(k => `<div><span class="k">${k}</span><span class="v"></span></div>`).join("");
+    linhaCab(el, "");
+  },
+  render(el, s) {
+    const d = new Date(), H = d.getHours(), M = d.getMinutes(), S = d.getSeconds();
+    el.querySelector(".hh").setAttribute("d", linhaDe(60, 60, 26, (H % 12 + M / 60) * 30));
+    el.querySelector(".mm").setAttribute("d", linhaDe(60, 60, 38, M * 6));
+    el.querySelector(".ss").setAttribute("d", linhaDe(60, 60, 44, S * 6));
+    el.querySelector(".lrl-hh").textContent = `${String(H).padStart(2, "0")}:${String(M).padStart(2, "0")}`;
+    el.querySelector(".lrl-ss").textContent = `:${String(S).padStart(2, "0")}`;
+    el.querySelector(".lrl-data").textContent =
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const v = s.volume, cl = (s.claude || {}).five_hour;
+    const vals = el.querySelectorAll(".lrl-meta .v");
+    vals[0].textContent = durCurto(s.uptime || 0);
+    vals[1].textContent = fmtN((s.load || [])[0], 1);
+    vals[2].textContent = v ? (v.muted ? "mudo" : v.pct + "%") : "—";
+    vals[3].textContent = cl == null ? "—" : fmtN(cl) + "%";
+    vals[3].style.color = cl == null ? "" : levelColor[level(cl, 75, 90)];
+    const vivo = Object.values(redesData || {}).some(r => r && r.live);
+    linhaCab(el, `${DIAS[d.getDay()].toUpperCase()} <span class="lrl-conn${servidorOk ? "" : " off"}"></span>` +
+                (vivo ? '<span class="lrl-vivo"><i></i>AO VIVO</span>' : ""));
+  },
+});
+
+/* Tocando agora: o vinil do mockup com o arco de progresso e o espectro em quatro faixas. Reusa
+   o que ja existe -- `media` (MPRIS) pro titulo e a posicao e o canvas do visualizador (`barV`),
+   no mesmo molde do `viz-g` do Grafite. */
+regWidget("musica", {
+  nome: "Tocando agora", grupo: "midia", col: 4, h: 3, minW: 4, minH: 3,
+  montar(el) {
+    el.innerHTML = '<div class="lms"><div class="lms-t"><svg viewBox="0 0 200 200" aria-hidden="true">' +
+      '<g class="l-gira-lento">' +
+        '<circle cx="100" cy="100" r="92" fill="none" stroke="var(--text)" stroke-width="2"/>' +
+        '<circle cx="100" cy="100" r="78" fill="none" stroke="var(--track)" stroke-width="1.5"/>' +
+        '<circle cx="100" cy="100" r="66" fill="none" stroke="var(--track)" stroke-width="1.5"/>' +
+        '<circle cx="100" cy="100" r="54" fill="none" stroke="var(--track)" stroke-width="1.5"/>' +
+        '<circle cx="100" cy="100" r="30" fill="none" stroke="var(--accent)" stroke-width="2"/>' +
+        '<path d="M100,76 L100,88" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>' +
+        '<circle cx="100" cy="100" r="3" fill="var(--text)"/></g>' +
+      '<path class="arco" fill="none" stroke="var(--good)" stroke-width="3" stroke-linecap="round"/></svg>' +
+      '<div class="lms-tx"><span class="lms-tt">—</span><span class="lms-ar"></span><span class="lms-tm"></span></div>' +
+      '</div><canvas class="lms-viz" data-linha="1"></canvas></div>';
+    linhaCab(el, "");
+  },
+  render(el) {
+    const m = media, tem = !!(m && m.title);
+    el.querySelector(".lms-tt").textContent = tem ? m.title : (audio.playing ? "Som do PC" : "Nada tocando");
+    el.querySelector(".lms-ar").textContent = tem ? [m.artist, m.album].filter(Boolean).join(" · ")
+                                                   : (audio.playing ? "sem informação da música" : "");
+    const pos = tem && m.length ? Math.min(m.length, m.position + (m.status === "Playing" ? (performance.now() - mediaAt) / 1000 : 0)) : 0;
+    el.querySelector(".lms-tm").innerHTML = tem && m.length ? `${fmtMin(pos)}<i> / </i><u>${fmtMin(m.length)}</u>` : "";
+    const f = tem && m.length ? pos / m.length : 0;
+    el.querySelector(".arco").setAttribute("d", f > 0.002 ? arcoCirculo(100, 100, 98, f) : "");
+    const tocando = tem && m.status === "Playing";
+    const player = tem ? m.player.charAt(0).toUpperCase() + m.player.slice(1) : "";
+    linhaCab(el, `<span class="${tocando ? "l-on" : "l-off"}">TOCANDO</span>` +
+                `<span class="${tocando ? "l-off" : "l-on"}">PAUSA</span>` +
+                (player ? `<span class="l-pl">${esc(player.toUpperCase())}</span>` : ""));
   },
 });
 
@@ -2915,7 +3636,9 @@ function montaRede(corpo, d) {
 }
 
 addEstilo("cerebro", {
-  id: "rede", nome: "Rede", minW: 6, minH: 3,
+  // minW 4 pro card de 1/3 de tela do tema Linha: o grafo escala com o card (viewBox), entao
+  // 4 colunas so encolhem o desenho -- nao ha nada quebrando em 4 que nao quebre em 6.
+  id: "rede", nome: "Rede", minW: 4, minH: 3,
   montar: cbMontaTopo,
   render(el, s) {
     const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
@@ -2935,7 +3658,7 @@ addEstilo("cerebro", {
       const f = ((d.pesos[+ln.dataset.k] || [])[+ln.dataset.j] || 0) / maior;
       ln.setAttribute("stroke-width", (0.25 + f * 1.7).toFixed(2));
       ln.setAttribute("stroke-opacity", (f * f * 0.9).toFixed(3));
-      ln.setAttribute("stroke", +ln.dataset.k === venceu ? "var(--accent)" : "var(--grid)");
+      ln.setAttribute("stroke", +ln.dataset.k === venceu ? "var(--rede-ativo, var(--accent))" : "var(--grid)");
     }
     const lim = v => Math.min(Math.max(v || 0, 0), 1);
     const calaMax = Math.max(0.01, ...d.neuronios.map(n => n.inib || 0));
@@ -2991,6 +3714,61 @@ regWidget("agenda", {
     }).join("");
   },
 });
+
+/* ---------- Tema Linha: as duas telas ----------
+   "Linha · mostradores da maquina" e "Linha · dados, musica e texugo" sao os dois artboards,
+   na ordem de leitura deles: tres cartoes por linha, duas linhas (4 colunas x 3 linhas cada, que
+   e como a grade de 12x6 fecha). Entram como PERFIS de medidores -- o mesmo mecanismo do "Jogo"
+   e do "Noite" -- porque cada tela e uma arrumacao da grade, nao uma pagina nova: assim elas
+   ganham de graca o seletor de perfil e o editor de arrastar.
+   `semeiaLinha()` roda uma vez, ao ligar o tema: NAO sobrescreve perfil existente nem apaga
+   nenhum, e deixa a tela da maquina ativa -- a troca pra Dados e pelo seletor de sempre. */
+const PERFIS_LINHA = {
+  "Linha · Máquina": [
+    { id: "relogio",      x: 0, y: 0, w: 4, h: 3 },
+    { id: "uso",          estilo: "encoders", x: 4, y: 0, w: 4, h: 3 },
+    { id: "radial-cpu",   estilo: "bancada",  x: 8, y: 0, w: 4, h: 3 },
+    { id: "radial-gpu",   estilo: "encoders", x: 0, y: 3, w: 4, h: 3 },
+    { id: "temperaturas", estilo: "faders",   x: 4, y: 3, w: 4, h: 3 },
+    { id: "potencia",     estilo: "faixa",    x: 8, y: 3, w: 4, h: 3 },
+  ],
+  "Linha · Dados": [
+    { id: "vazao-rede",  x: 0, y: 0, w: 4, h: 3 },
+    { id: "vazao-disco", estilo: "pratos",    x: 4, y: 0, w: 4, h: 3 },
+    { id: "capacidade",  estilo: "cilindros", x: 8, y: 0, w: 4, h: 3 },
+    { id: "musica",      x: 0, y: 3, w: 4, h: 3 },
+    { id: "cerebro",     estilo: "rede",      x: 4, y: 3, w: 4, h: 3 },
+    { id: "agenda",      x: 8, y: 3, w: 4, h: 3 },
+  ],
+};
+function semeiaLinha() {
+  if (!linha()) return;
+  const p = perfis();
+  let novo = false;
+  for (const [nome, itens] of Object.entries(PERFIS_LINHA)) {
+    if (p[nome]) continue;
+    p[nome] = itens.map(it => ({ ...it })); novo = true;
+  }
+  try { if (novo) localStorage.setItem("painel.perfis", JSON.stringify(p)); } catch (e) {}
+}
+// Ligar o tema tambem LEVA pra tela da maquina: quem escolheu Linha quer ver o Linha, e nao o
+// perfil que estava ativo (que continua salvo, e volta quando o tema voltar). Os perfis do mockup
+// entram no boot seguinte, quando o tema ja esta aplicado -- `semeiaLinha()` so cria o que falta,
+// entao trocar de tema duas vezes nao duplica nem sobrescreve perfil nenhum.
+function ativaLinha() {
+  try { localStorage.setItem("painel.perfil", "Linha · Máquina"); } catch (e) {}
+}
+
+/* O canto do rotulo dos cartoes que o Linha usa SEM estilo proprio (nao ha desenho novo neles,
+   so a moldura do tema): a Rede diz a janela e a escala do grafico, e a Agenda resume o dia. */
+WIDGETS["vazao-rede"].cabExtra = el => linhaCab(el, "90 S · escala própria");
+WIDGETS.agenda.cabExtra = el => {
+  const itens = agendaData.itens || [], agora = Date.now() / 1000;
+  const feitos = itens.filter(i => i.feito).length;
+  const atras = itens.filter(i => !i.feito && i.quando && i.quando < agora).length;
+  linhaCab(el, `${feitos}/${itens.length} FEITOS HOJE` + (atras
+    ? ` <span style="color:var(--critical);border:1px solid var(--critical);padding:0 6px">${atras} ATRASADO${atras > 1 ? "S" : ""}</span>` : ""));
+};
 
 /* ---------- Paginas: painel e atalhos ---------- */
 const PAGES = [paginaDe(layout), "page-redes", "page-atalhos"];
@@ -3400,11 +4178,16 @@ function analyse(now, dt) {
   if (audio.playing && bass > 0.35 && bass > bassAvg * 1.3 && now - audio.beat > 280) audio.beat = now;
 }
 
-const VIZES = [document.getElementById("viz"), document.getElementById("viz-g")];
+/* Os canvas do visualizador nao existem todos no HTML: o card Tocando agora do tema Linha monta
+   o dele junto com a grade, entao a lista e lida a cada quadro em vez de capturada no boot. */
+const vizCanais = () => [document.getElementById("viz"), document.getElementById("viz-g"),
+                         document.querySelector("#widgets-b .lms-viz")].filter(Boolean);
 const css = getComputedStyle(document.documentElement);
 const C_ACCENT = css.getPropertyValue("--accent").trim(), C_MUTED = css.getPropertyValue("--muted").trim(), C_AXIS = css.getPropertyValue("--axis").trim();
+// Quatro faixas do espectro no tema Linha (o mockup divide as bandas em quatro cores)
+const C_FAIXAS = ["--l-c1", "--l-c2", "--l-c3", "--l-c4"].map(v => css.getPropertyValue(v).trim() || C_ACCENT);
 // Desenha so o que esta na tela: canvas de pagina escondida tem largura 0 e sai no primeiro if
-function drawViz() { for (const cv of VIZES) desenhaViz(cv); }
+function drawViz() { for (const cv of vizCanais()) desenhaViz(cv); }
 function desenhaViz(viz) {
   const w = viz.clientWidth, h = viz.clientHeight;
   if (!w || !h) return;
@@ -3413,6 +4196,15 @@ function desenhaViz(viz) {
   const ctx = viz.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
+  if (viz.dataset.linha) {
+    // Linha: as mesmas 64 bandas, de pé e em quatro faixas de cor, do jeito do mockup
+    const band = w / BARS, bw = Math.max(2, Math.min(9, band - 3)), base = h - 1, top = 4;
+    for (let i = 0; i < BARS; i++) {
+      ctx.fillStyle = C_FAIXAS[Math.min(3, Math.floor(i / (BARS / 4)))];
+      ctx.fillRect(i * band + (band - bw) / 2, base - Math.max(2, (base - top) * barV[i]), bw, Math.max(2, (base - top) * barV[i]));
+    }
+    return;
+  }
   if (viz.dataset.centro) {
     // Grafite: barras em pilula centradas na altura, as 64 bandas juntadas de duas em duas
     const n = BARS / 2, band = w / n, bw = Math.max(3, Math.min(10, band - 3)), meio = h / 2;
@@ -3617,7 +4409,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-ocultaLayouts(); montarDashB(); renderPicks(); renderTemas(); renderPerfis(); renderConfig(); edLiga();
+ocultaLayouts(); semeiaLinha(); montarDashB(); renderPicks(); renderTemas(); renderPerfis(); renderConfig(); edLiga();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);

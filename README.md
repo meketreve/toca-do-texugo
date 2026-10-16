@@ -54,6 +54,12 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 
 **Páginas**: painel → redes → atalhos, trocadas por um botão discreto no canto inferior direito. A página de atalhos volta sozinha pro painel depois de 90 s sem toque.
 
+**Temas e telas** (página de atalhos → *Tema*)
+- **Atual** é o visual de sempre, o **Grafite** (escuro e claro) vem dos mockups `Painel · Grafite` e o **Linha** dos mockups `Linha · mostradores da máquina` e `Linha · dados, música e texugo`: fundo preto, traço fino, caixa alta e a fonte Barlow Condensed, servida pelo próprio painel em `/fontes/` (SIL OFL, ver `fontes/OFL.txt`) — nenhuma dependência de CDN
+- Cada tema é uma **opção** (`painel.tema`), nunca um substituto: as cores vivem em `data-tema` e só a estrutura muda, sob a classe do tema (`.g` no Grafite, `.l` no Linha). Trocar de tema recarrega a página
+- No tema Linha o **cabeçalho sai** e o que ele mostrava (hora, data, volume, carga, ligado, Claude) vai pro card **Relógio**, com o `AO VIVO` e o ponto de conexão no canto dele
+- As duas telas do Linha entram como **perfis de medidores** (`Linha · Máquina` e `Linha · Dados`, 3×2 cartões) na primeira vez que o tema é ligado — sem sobrescrever nem apagar perfil nenhum, e a troca entre elas é a de perfil de sempre
+
 ## Como funciona
 
 ```
@@ -72,6 +78,7 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - `onedrive.py` acompanha o journal do serviço `onedrive` e lê a cota; nunca mexe no token do cliente
 - `redes.py` busca os números das redes em segundo plano, guarda o histórico diário e renova os tokens sozinho
 - `texugo.py` roda a rede de spike numa thread a 100 Hz e escolhe o comportamento do mascote
+- `fontes/` guarda a Barlow Condensed (um woff2 por peso e por subconjunto, do próprio Google Fonts) que o tema Linha usa; `/fontes/<arquivo>` serve só o que está na pasta e com cache de uma semana — o resto do servidor é sempre `no-store`, porque o painel se recarrega sozinho
 - `abrir-painel.sh` sobe o serviço e abre o Chrome em modo app, em tela cheia no `DP-0`
 - `atualizar-painel.sh` traz o que está no GitHub, reinicia o serviço só se mexeu em `.py`
   e volta sozinho se o painel não subir

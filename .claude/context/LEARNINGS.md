@@ -27,6 +27,10 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-16] [medidores] `addEstilo` entregava os stats CRUS em vez dos itens do medidor: todo estilo acrescentado depois do registro desenhava vazio (ou remontava a lista por conta própria e divergia calado). Agora `medidor()` guarda o `dadosDe` no widget e `addEstilo` embrulha com o mesmo `comDados()` — o estilo novo lê os MESMOS itens, com `curto`/`rodape`/`tag` — consequência: estilo novo não adivinha formato nem duplica lista
+- [2026-10-16] [testes] o `--screenshot` do Chrome redimensiona a PÁGINA pro tamanho do print e o `--dump-dom` não: o mesmo teste mede cartões de 510 px no relatório e 548 px no print, e parece bug de grade que não existe — print com `--window-size=1920,1080`, relatório com `1920,1167` (o Chrome desconta ~87 px de janela)
+- [2026-10-16] [testes] layout medido antes da fonte carregar não vale: o roteiro do `monta-telas.py` espera 5,2 s de tempo virtual de propósito, senão mede o layout da fonte de reserva
+
 - [2026-10-16] [testes] print headless do clássico mostra "Uso por thread" por cima de "Temperaturas" — é métrica de fonte do Chrome headless, a versão antiga sai igual; na parede está certo. Pra print com tema/perfil: servir o `index.html` com `localStorage` injetado e repassar `/api` pro 8787
 - [2026-10-16] [shell] `pkill -f "<trecho>"` mata o próprio shell quando o trecho aparece na linha de comando — ancorar: `pkill -f "^python3 …"`
 
@@ -57,6 +61,10 @@ tier: 2
 
 ## Decisões e o porquê
 
+- [2026-10-16] [tema] [✓] Linha entra como OPÇÃO, mesmo contrato do Grafite: cores em `data-tema="linha"`, estrutura sob `.l`, Atual intacto. As duas telas do mockup ("mostradores da máquina" e "dados, música e texugo") são PERFIS de medidores de 4×3 — a grade já é 12×6 e o perfil já tem seletor e editor —, semeados por `semeiaLinha()` na primeira vez que o tema liga e sem apagar perfil nenhum
+- [2026-10-16] [tema] [✓] no Linha o cabeçalho sai e o que ele mostrava vira o card Relógio: é o que faz o `calcLinhas()` fechar em 6 e a grade ficar 3×2 igual ao mockup. O AO VIVO e o ponto de conexão sobem pro canto do rótulo desse card (a barra lateral está escondida no Linha, então o ponto sumiria). E o layout clássico também cai na grade (`paginaDe`), senão quem está em "Clássico" veria a página do Atual com as cores do Linha
+- [2026-10-16] [medidores] [✓] `curto`, `rodape` e `tag` no item do medidor: os mockups pedem número grande com unidade/limite pequenos e rótulo curto ("W", "°C") no mostrador, e o estilo não pode remontar a lista pra isso — o item é declarado UMA vez e o estilo só escolhe o que usar
+- [2026-10-16] [fonte] [✓] Barlow Condensed vendorizada em `fontes/` (3 pesos × latin/latin-ext) e servida em `/fontes/<arquivo>` pelo próprio `server.py`, em vez de Google Fonts: o painel não pode depender de internet no boot e a regra da casa é não ter dependência externa. O `@font-face` fica declarado sempre, mas o navegador só baixa o arquivo quando algum elemento usa a família — no Atual e no Grafite nada usa
 - [2026-10-16] [config] [✓] página de configurações nunca recebe segredo de volta (só `definido`), e Client ID/key contam como segredo — a tela vai pelo Sunshine e pode estar na live. Segredo vazio = mantém; `null` = apaga
 
 - [2026-10-16] [tema] [✓] Grafite é OPÇÃO (`painel.tema`), não substituto: cores em `data-tema`, estrutura só sob `.g` — o Atual fica byte a byte igual. Trocar de tema recarrega a página (cores do canvas lidas uma vez, página do layout muda)

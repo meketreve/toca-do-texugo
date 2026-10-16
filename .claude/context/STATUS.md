@@ -22,12 +22,24 @@ pela página de atalhos. `atualizar-painel.sh` traz tudo isso pra máquina do pa
 atalhos (Atual / Grafite / Grafite claro, `painel.tema`). No Grafite entram barra lateral,
 cabeçalho em pílulas, o clássico remontado (`page-dash-g`), atalhos em blocos com contagem pra
 voltar, agenda com bolinha e o 4º estilo do Cérebro, **Cards**. O Atual ficou idêntico.
+**Tema Linha** (2026-10-16, dos mockups `Linha · mostradores da máquina` e `Linha · dados, música
+e texugo`): 3ª opção no mesmo seletor. Fundo preto, traço fino, caixa alta e Barlow Condensed
+vendorizada em `fontes/` e servida pelo `server.py` em `/fontes/` (sem CDN). No Linha o cabeçalho
+sai — hora, data, volume, carga, ligado e Claude viram o card **Relógio**, com o AO VIVO e o
+ponto de conexão no canto dele — e os dois artboards entram como **perfis de medidores**
+(`Linha · Máquina` e `Linha · Dados`, 3×2 cartões de 4×3), semeados na primeira vez que o tema
+liga e sem mexer em perfil existente. Cada cartão do mockup é um estilo novo de um medidor que já
+existia (Encoders, Bancada, Faders, Faixa, Pratos, Cilindros) mais dois medidores novos: Relógio e
+Tocando agora. De quebra, `addEstilo` passou a entregar os itens do medidor (antes entregava os
+stats crus e o estilo novo desenhava vazio) e o `renderMedia` subiu pro `render(s)`, valendo pros
+três layouts.
 
 ## Próxima fase
 
-Na parede: ligar o Grafite (atalhos → Tema) e conferir pelo Moonlight — toque nos botões da
-barra lateral (48 px) e nas abas CPU/RAM/GPU/VRAM, leitura do claro no tablet. O Cérebro tem 4
-estilos (Matriz, Perfis, Rede, Cards — Cards pede 7×3): escolher qual fica.
+Na parede: escolher o tema (atalhos → Tema). O Linha só precisa do serviço reiniciado uma vez
+(rota `/fontes/`); depois disso, conferir pelo Moonlight o toque nos itens da Agenda e na chave do
+Cérebro, e a leitura do cinza `#8A8AA0` no tablet. O Cérebro tem 4 estilos (Matriz, Perfis, Rede,
+Cards — Cards pede 7×3): escolher qual fica.
 
 Depois disso, o que resta pede uso, não teclado:
 
@@ -54,6 +66,8 @@ das 13h40 o cérebro zerou (idade foi a 0) sem restart nem POST meu — prováve
 
 ## Concluído (recente)
 
+- Tema Linha: os dois mockups como tema + dois perfis de medidores, com a fonte vendorizada (2026-10-16)
+- `addEstilo` passa a entregar os itens do medidor ao estilo acrescentado depois do registro (2026-10-16)
 - Estilo Rede no medidor Cérebro e bancada de testes portada pro repo (`testes/`) (2026-10-16)
 - Perfis de layout: conjuntos nomeados de medidores, com migração do formato antigo (2026-10-16)
 - `atualizar-painel.sh`: puxa o `main`, reinicia só se mudou `.py`, volta sozinho se não subir (2026-10-16)

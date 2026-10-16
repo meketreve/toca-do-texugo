@@ -49,9 +49,14 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 
 - `server.py` — HTTP + coleta: `Collector` 1×/s, `GpuReader`, `RaplReader`, `ClaudeUsage` (l. 169),
   rotas no `Handler` (`do_GET` l. 403, `do_POST` l. 479).
-- **tema**: `<script>` no `<head>` aplica `painel.tema` (`data-tema` + classe `.g`) antes do 1º
-  desenho; CSS do Grafite no fim do `<style>`; `TEMAS`/`paginaDe()` no JS — no Grafite o layout
-  clássico é `page-dash-g` (`renderDashG`), barra lateral `#rail`. Trocar tema = `location.reload()`.
+- **tema**: `<script>` no `<head>` aplica `painel.tema` (`data-tema` + classe `.g`/`.l`) antes do 1º
+  desenho; CSS do Grafite e do Linha no fim do `<style>`; `TEMAS`/`paginaDe()` no JS — no Grafite o
+  clássico é `page-dash-g`, no Linha os dois layouts caem na grade e as telas do mockup são PERFIS
+  (`semeiaLinha()`/`ativaLinha()`, antes de `/* Paginas */`). Trocar tema = `location.reload()`.
+- **Linha, peças**: `fontes/*.woff2` (Barlow Condensed, OFL) na rota `/fontes/<arquivo>`
+  (`Handler._send_fonte`, a única com cache); `linhaCab()`, `comDados()`/`addEstilo()` e os estilos
+  Encoders/Bancada/Faders/Faixa/Pratos/Cilindros + os medidores `relogio` e `musica` na seção "Tema
+  Linha: os desenhos dos mockups", depois do medidor `capacidade`.
 - **configurações**: `page-config` (`cfrAbre`, `CFR` no `index.html`) ↔ `GET/POST /api/config/redes`
   ↔ `redes.config_publica()`/`grava_config()` (`CAMPOS` diz o que é segredo; segredo nunca volta).
 - `index.html` — página inteira. Cabeçalho 418, `render(s)` 796, `renderClaude` 912, `renderConfig`
