@@ -880,82 +880,82 @@ try {
   .l .widget.l-cab > .w-body { grid-column: 1 / -1; grid-row: 2; }
 
   /* Pecas comuns dos desenhos: rotulo grande em cima do numero, numero fino, rodape apagado */
-  .l .l-num { font-size: 84px; font-weight: 200; line-height: .95; font-variant-numeric: tabular-nums; }
-  .l .l-num small { font-size: 28px; font-weight: 300; margin-left: 6px; }
-  .l .l-rot { font-size: 18px; letter-spacing: .12em; }
-  .l .l-pe { font-size: 16px; color: var(--muted); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
-  .l .l-tag { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
-  .l .l-cheio { min-height: 0; height: 100%; }
+  .l-num { font-size: 84px; font-weight: 200; line-height: .95; font-variant-numeric: tabular-nums; }
+  .l-num small { font-size: 28px; font-weight: 300; margin-left: 6px; }
+  .l-rot { font-size: 18px; letter-spacing: .12em; }
+  .l-pe { font-size: 16px; color: var(--muted); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  .l-tag { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
+  .l-cheio { min-height: 0; height: 100%; }
 
   /* Relogio: data, mostrador analogico, hora grande e a linha de metricas do cabecalho */
-  .l .lrl { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 4px; height: 100%; }
-  .l .lrl-data { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: .02em; }
-  .l .lrl-hora { display: flex; align-items: center; gap: 22px; min-height: 0; }
-  .l .lrl-hora svg { width: 118px; height: 118px; flex: none; }
-  .l .lrl-hh { font-size: 150px; font-weight: 200; line-height: .9; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-  .l .lrl-ss { font-size: 46px; color: var(--accent); align-self: flex-end; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
-  .l .lrl-meta { grid-row: 4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .l .lrl-meta > div { display: grid; gap: 2px; align-content: start; min-width: 0; }
-  .l .lrl-meta .k { font-size: 15px; letter-spacing: .12em; color: var(--muted); }
-  .l .lrl-meta .v { font-size: 34px; font-weight: 300; line-height: 1.05; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .l .lrl-vivo { display: inline-flex; align-items: center; gap: 7px; color: var(--critical); border: 1px solid var(--critical); padding: 0 8px; font-size: 15px; letter-spacing: .1em; }
-  .l .lrl-vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
-  .l .lrl-conn { width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
-  .l .lrl-conn.off { background: var(--critical); }
+  .lrl { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 4px; height: 100%; }
+  .lrl-data { font-size: 64px; font-weight: 200; line-height: 1; letter-spacing: .02em; }
+  .lrl-hora { display: flex; align-items: center; gap: 22px; min-height: 0; }
+  .lrl-hora svg { width: 118px; height: 118px; flex: none; }
+  .lrl-hh { font-size: 150px; font-weight: 200; line-height: .9; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .lrl-ss { font-size: 46px; color: var(--accent); align-self: flex-end; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+  .lrl-meta { grid-row: 4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .lrl-meta > div { display: grid; gap: 2px; align-content: start; min-width: 0; }
+  .lrl-meta .k { font-size: 15px; letter-spacing: .12em; color: var(--muted); }
+  .lrl-meta .v { font-size: 34px; font-weight: 300; line-height: 1.05; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .lrl-vivo { display: inline-flex; align-items: center; gap: 7px; color: var(--critical); border: 1px solid var(--critical); padding: 0 8px; font-size: 15px; letter-spacing: .1em; }
+  .lrl-vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--critical); }
+  .lrl-conn { width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
+  .lrl-conn.off { background: var(--critical); }
 
   /* Tocando agora: vinil, titulo e espectro */
-  .l .lms { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; height: 100%; }
-  .l .lms-t { display: flex; gap: 20px; align-items: center; min-width: 0; flex: none; }
-  .l .lms-t svg { width: 160px; height: 160px; flex: none; }
-  .l .lms-tx { display: grid; gap: 2px; min-width: 0; }
-  .l .lms-tt { font-size: 40px; font-weight: 300; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .l .lms-ar { font-size: 21px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .l .lms-tm { font-size: 46px; font-weight: 200; color: var(--good); margin-top: 6px; font-variant-numeric: tabular-nums; }
-  .l .lms-tm i { color: var(--axis); font-style: normal; }
-  .l .lms-tm u { color: var(--muted); text-decoration: none; }
-  .l .lms-viz { width: 100%; height: 100%; min-height: 0; display: block; }
+  .lms { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; height: 100%; }
+  .lms-t { display: flex; gap: 20px; align-items: center; min-width: 0; flex: none; }
+  .lms-t svg { width: 160px; height: 160px; flex: none; }
+  .lms-tx { display: grid; gap: 2px; min-width: 0; }
+  .lms-tt { font-size: 40px; font-weight: 300; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lms-ar { font-size: 21px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lms-tm { font-size: 46px; font-weight: 200; color: var(--good); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .lms-tm i { color: var(--axis); font-style: normal; }
+  .lms-tm u { color: var(--muted); text-decoration: none; }
+  .lms-viz { width: 100%; height: 100%; min-height: 0; display: block; }
   .l .l-extra .l-on { color: var(--good); border: 1px solid var(--good); padding: 0 6px; }
   .l .l-extra .l-off { color: var(--axis); }
   .l .l-extra .l-pl { color: var(--muted); }
 
   /* Encoders (Uso e Placa de video) */
-  .l .len { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; height: 100%; }
-  .l .len-topo { display: flex; align-items: baseline; gap: 14px; }
-  .l .len-fila { display: grid; gap: 8px; align-items: center; min-height: 0; }
-  .l .len-k { display: grid; justify-items: center; gap: 2px; min-width: 0; }
-  .l .len-k svg { width: 100%; height: 100%; max-height: 118px; min-height: 0; }
-  .l .len-k .vl { font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
-  .l .len-k .de { font-size: 15px; color: var(--muted); white-space: nowrap; }
-  .l .len-tr { width: 100%; height: 100%; min-height: 40px; }
+  .len { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 4px; height: 100%; }
+  .len-topo { display: flex; align-items: baseline; gap: 14px; }
+  .len-fila { display: grid; gap: 8px; align-items: center; min-height: 0; }
+  .len-k { display: grid; justify-items: center; gap: 2px; min-width: 0; }
+  .len-k svg { width: 100%; height: 100%; max-height: 118px; min-height: 0; }
+  .len-k .vl { font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
+  .len-k .de { font-size: 15px; color: var(--muted); white-space: nowrap; }
+  .len-tr { width: 100%; height: 100%; min-height: 40px; }
 
   /* Bancada (Processador): tres aneis concentricos, ticks e as barras por thread */
-  .l .lbn { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; height: 100%; }
-  .l .lbn-meio { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 10px; align-items: center; min-height: 0; }
-  .l .lbn-rel { position: relative; height: 100%; min-height: 0; }
-  .l .lbn-rel svg { width: 100%; height: 100%; }
-  .l .lbn-centro { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; }
-  .l .lbn-thr { width: 100%; height: 46px; flex: none; }
+  .lbn { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 4px; height: 100%; }
+  .lbn-meio { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 10px; align-items: center; min-height: 0; }
+  .lbn-rel { position: relative; height: 100%; min-height: 0; }
+  .lbn-rel svg { width: 100%; height: 100%; }
+  .lbn-centro { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; }
+  .lbn-thr { width: 100%; height: 46px; flex: none; }
 
   /* Faders (Temperaturas) e Faixa (Consumo) */
-  .l .lfd { width: 100%; height: 100%; min-height: 0; display: block; }
-  .l .lpf { display: grid; grid-template-rows: minmax(0, 1fr) 96px; gap: 8px; height: 100%; }
-  .l .lpf-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-content: start; }
-  .l .lpf-2 .vl { font-size: 120px; font-weight: 200; line-height: .85; font-variant-numeric: tabular-nums; }
-  .l .lpf-sc { width: 100%; height: 96px; }
+  .lfd { width: 100%; height: 100%; min-height: 0; display: block; }
+  .lpf { display: grid; grid-template-rows: minmax(0, 1fr) 96px; gap: 8px; height: 100%; }
+  .lpf-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-content: start; }
+  .lpf-2 .vl { font-size: 120px; font-weight: 200; line-height: .85; font-variant-numeric: tabular-nums; }
+  .lpf-sc { width: 100%; height: 96px; }
 
   /* Pratos (Disco) e Cilindros (Armazenamento) */
-  .l .lpr { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
-  .l .lpr svg { width: 100%; height: 100%; min-height: 0; display: block; }
-  .l .lpr-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  .l .lpr-2 .dir { align-items: flex-end; }
-  .l .lcl { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
-  .l .lcl svg { width: 100%; height: 100%; min-height: 0; display: block; }
-  .l .lcl-fila { display: grid; gap: 10px; text-align: center; }
-  .l .lcl-fila .pct { font-size: 56px; font-weight: 200; line-height: 1; }
-  .l .lcl-fila .pct small { font-size: 24px; color: var(--muted); }
+  .lpr { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
+  .lpr svg { width: 100%; height: 100%; min-height: 0; display: block; }
+  .lpr-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .lpr-2 .dir { align-items: flex-end; }
+  .lcl { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; height: 100%; }
+  .lcl svg { width: 100%; height: 100%; min-height: 0; display: block; }
+  .lcl-fila { display: grid; gap: 10px; text-align: center; }
+  .lcl-fila .pct { font-size: 56px; font-weight: 200; line-height: 1; }
+  .lcl-fila .pct small { font-size: 24px; color: var(--muted); }
   @keyframes l-gira { to { transform: rotate(360deg); } }
-  .l .l-gira-lento { transform-box: fill-box; transform-origin: center; animation: l-gira 9s linear infinite; }
-  .l .l-gira-rapido { transform-box: fill-box; transform-origin: center; animation: l-gira 2.4s linear infinite; }
+  .l-gira-lento { transform-box: fill-box; transform-origin: center; animation: l-gira 9s linear infinite; }
+  .l-gira-rapido { transform-box: fill-box; transform-origin: center; animation: l-gira 2.4s linear infinite; }
 
   /* Agenda: o item vira uma linha com quadradinho desenhado e a data numa pilula */
   .l .ag { gap: 0; }
@@ -1004,27 +1004,27 @@ try {
   .l .vz-leg small { font-size: 16px; color: var(--muted); }
 
   /* Arranjo interno dos cartoes de medidor: cada bloco empilha rotulo, numero e apoio */
-  .l .len-fila, .l .lpf-2 > div, .l .lpr-2 > div, .l .lcl-fila > div, .l .lbn-leg > div {
+  .len-fila, .lpf-2 > div, .lpr-2 > div, .lcl-fila > div, .lbn-leg > div {
     display: grid; justify-items: start; align-content: start; min-width: 0;
   }
-  .l .widget[data-w="uso"] .len { grid-template-rows: minmax(0, 1fr) 130px; }
-  .l .widget[data-w="uso"] .len-fila { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .l .widget[data-w="uso"] .len-k .vl { font-size: 72px; }
-  .l .widget[data-w="radial-gpu"] .len-k .vl { font-size: 34px; }
-  .l .lpr-2 > div { align-content: center; }
-  .l .lpr-2 .l-num { font-size: 64px; }
-  .l .lpr-2 > .dir { justify-items: end; }
-  .l .lcl-fila > div { justify-items: center; }
-  .l .lbn-leg > div { gap: 12px; }
-  .l .len-topo { margin-top: 6px; }
-  .l .len-topo .l-num { font-size: 110px; color: var(--l-gpu); }
-  .l .len-topo .clk { align-self: baseline; }
-  .l .lbn-centro .v { font-size: 88px; font-weight: 200; line-height: .9; color: var(--l-cpu); font-variant-numeric: tabular-nums; }
-  .l .lbn-centro .v small { font-size: 34px; }
-  .l .lbn-centro .r { font-size: 22px; color: var(--muted); letter-spacing: .06em; }
-  .l .lbn-leg > div .nm { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
-  .l .lbn-leg > div .vl { font-size: 40px; font-weight: 200; line-height: 1.1; white-space: nowrap; }
-  .l .lbn-leg > div .vl small { font-size: 17px; color: var(--muted); margin-left: 4px; }
+  .widget[data-w="uso"] .len { grid-template-rows: minmax(0, 1fr) 130px; }
+  .widget[data-w="uso"] .len-fila { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .widget[data-w="uso"] .len-k .vl { font-size: 72px; }
+  .widget[data-w="radial-gpu"] .len-k .vl { font-size: 34px; }
+  .lpr-2 > div { align-content: center; }
+  .lpr-2 .l-num { font-size: 64px; }
+  .lpr-2 > .dir { justify-items: end; }
+  .lcl-fila > div { justify-items: center; }
+  .lbn-leg > div { gap: 12px; }
+  .len-topo { margin-top: 6px; }
+  .len-topo .l-num { font-size: 110px; color: var(--l-gpu); }
+  .len-topo .clk { align-self: baseline; }
+  .lbn-centro .v { font-size: 88px; font-weight: 200; line-height: .9; color: var(--l-cpu); font-variant-numeric: tabular-nums; }
+  .lbn-centro .v small { font-size: 34px; }
+  .lbn-centro .r { font-size: 22px; color: var(--muted); letter-spacing: .06em; }
+  .lbn-leg > div .nm { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
+  .lbn-leg > div .vl { font-size: 40px; font-weight: 200; line-height: 1.1; white-space: nowrap; }
+  .lbn-leg > div .vl small { font-size: 17px; color: var(--muted); margin-left: 4px; }
   /* Paginas que o mockup nao desenha (redes, atalhos, editor, configuracoes): so as cores que
      estavam fixas no codigo do Atual e que apareceriam fora do tom -- os botoes ja usam as
      variaveis de superficie do tema. */
@@ -2069,6 +2069,10 @@ function edSegue() {
 }
 function setPerfil(nome) {
   if (!perfis()[nome]) return;
+  // Perfil de tema pede o tema: escolher "Linha · Dados" no seletor de perfil com o tema desligado
+  // mostrava os cartoes na fonte e nas cores de outro tema -- o dado aparecia, mas nao era a tela
+  // do mockup. Quem escolhe a tela quer a tela inteira, entao o tema vai junto.
+  if (PERFIL_TEMA[nome] && temaAtual() !== PERFIL_TEMA[nome]) return setTema(PERFIL_TEMA[nome], nome);
   try { localStorage.setItem("painel.perfil", nome); } catch (e) {}
   montarDashB(); renderConfig(); renderPerfis(); edSegue();
 }
@@ -2214,9 +2218,9 @@ function menuNomePerfil(barra) {
 }
 
 // Trocar de tema recarrega: as cores do canvas sao lidas uma vez, e a pagina do layout muda
-function setTema(t) {
+function setTema(t, perfil) {
   try { t === "atual" ? localStorage.removeItem("painel.tema") : localStorage.setItem("painel.tema", t); } catch (e) {}
-  if (t === "linha") ativaLinha();  // as duas telas do mockup entram junto com o tema
+  if (t === "linha") ativaLinha(perfil);  // as duas telas do mockup entram junto com o tema
   location.reload();
 }
 function renderTemas() {
@@ -3758,12 +3762,15 @@ function semeiaLinha() {
   }
   try { if (novo) localStorage.setItem("painel.perfis", JSON.stringify(p)); } catch (e) {}
 }
-// Ligar o tema tambem LEVA pra tela da maquina: quem escolheu Linha quer ver o Linha, e nao o
-// perfil que estava ativo (que continua salvo, e volta quando o tema voltar). Os perfis do mockup
-// entram no boot seguinte, quando o tema ja esta aplicado -- `semeiaLinha()` so cria o que falta,
-// entao trocar de tema duas vezes nao duplica nem sobrescreve perfil nenhum.
-function ativaLinha() {
-  try { localStorage.setItem("painel.perfil", "Linha · Máquina"); } catch (e) {}
+// Nome do perfil -> tema a que ele pertence. Hoje so o Linha tem tela propria, mas quem escolhe o
+// perfil no seletor da pagina de atalhos nao sabe disso: `setPerfil()` liga o tema por aqui.
+const PERFIL_TEMA = Object.fromEntries(Object.keys(PERFIS_LINHA).map(n => [n, "linha"]));
+/* Ligar o tema tambem LEVA pra tela da maquina: quem escolheu Linha quer ver o Linha, e nao o
+   perfil que estava ativo (que continua salvo, e volta quando o tema voltar). Os perfis do mockup
+   entram no boot seguinte, quando o tema ja esta aplicado -- `semeiaLinha()` so cria o que falta,
+   entao trocar de tema duas vezes nao duplica nem sobrescreve perfil nenhum. */
+function ativaLinha(nome) {
+  try { localStorage.setItem("painel.perfil", nome || "Linha · Máquina"); } catch (e) {}
 }
 
 /* O canto do rotulo dos cartoes que o Linha usa SEM estilo proprio (nao ha desenho novo neles,

@@ -76,17 +76,25 @@ REDES = {"youtube": {"configured": True, "ok": True, "followers": 4321, "seg": "
 DADOS = {"stats": STATS, "agenda": AGENDA, "redes": REDES, "shortcuts": [],
          "texugo": json.loads(CEREBRO.read_text())}
 
-# tema + layout por arquivo. Com tema Linha o roteiro tambem semeia os dois perfis do mockup;
+# A fixture do perfil tem que existir ANTES do localStorage que o roteiro injeta: ela e uma copia
+# MINIMA do que o app semeia com o tema Linha. O que se testa aqui e o TEMA seguindo o perfil
+# escolhido; o desenho da tela do Linha o `teste-linha-2.html` cobre.
+PERFIL_LINHA_FIXO = {"Linha · Dados": [{"id": "vazao-rede", "x": 0, "y": 0, "w": 4, "h": 3}]}
+
+# Uma tela por arquivo. Com tema Linha o painel semeia sozinho os dois perfis do mockup no boot;
 # sem ele nem mexe em `painel.perfis`, pra o painel cair no "Padrão" de sempre.
-# O ultimo arquivo e o teste de ponta a ponta: a 1a carga limpa o localStorage, a 2a (depois do
-# reload que o `setTema()` dispara) ja reporta com o tema trocado -- de graca, no mesmo arquivo.
+# `clica_tema`/`clica_perfil` sao testes de ponta a ponta: a 1a carga clica no botao (o mesmo
+# caminho do dedo), o `setTema()` recarrega e e a pagina RECARREGADA que reporta -- de graca, no
+# mesmo arquivo (por isso a semente so limpa o localStorage na primeira carga).
 TELAS = [
-    ("teste-linha-1.html", "linha", "agrupado", "Linha · Máquina", None),
-    ("teste-linha-2.html", "linha", "agrupado", "Linha · Dados", None),
-    ("teste-atual.html", "atual", "classico", None, None),
-    ("teste-agrupado.html", "atual", "agrupado", None, None),
-    ("teste-grafite.html", "grafite", "classico", None, None),
-    ("teste-tema.html", None, "classico", None, "linha"),
+    dict(arquivo="teste-linha-1.html", tema="linha", layout="agrupado", perfil="Linha · Máquina"),
+    dict(arquivo="teste-linha-2.html", tema="linha", layout="agrupado", perfil="Linha · Dados"),
+    dict(arquivo="teste-atual.html", layout="classico"),
+    dict(arquivo="teste-agrupado.html", layout="agrupado"),
+    dict(arquivo="teste-grafite.html", tema="grafite", layout="classico"),
+    dict(arquivo="teste-tema.html", layout="classico", clica_tema="linha"),
+    dict(arquivo="teste-perfil-tema.html", layout="agrupado", perfil="Padrão",
+         perfis=PERFIL_LINHA_FIXO, clica_perfil="Linha · Dados"),
 ]
 
 # Ordem dos botoes na pagina de atalhos -- tem que casar com `TEMAS` no index.html; se mudar,
@@ -120,8 +128,17 @@ window.fetch = url => {
 
 # Na tela do teste de tema, a primeira carga clica no botao do tema (o mesmo caminho do dedo:
 # `setTema()` grava, ativa o perfil e recarrega) e e a pagina RECARREGADA que reporta.
-TROCA = """<script>
+TROCA_TEMA = """<script>
 setTimeout(() => { document.querySelector('#temas button:nth-child(__N__)').click(); }, 1200);
+</script>
+"""
+# Mesma coisa pelo seletor de PERFIL: escolher "Linha · Dados" com outro tema ligado tem que
+# ligar o tema do perfil, senao a tela sai com a fonte e as cores erradas.
+TROCA_PERFIL = """<script>
+setTimeout(() => {
+  const b = [...document.querySelectorAll("#perfis button")].find(x => x.querySelector(".lb").textContent === "__NOME__");
+  if (b) b.click();
+}, 1200);
 </script>
 """
 
@@ -183,17 +200,28 @@ setTimeout(() => {
 </script>
 """
 
-for arquivo, tema, layout, perfil, troca in TELAS:
+for tela in TELAS:
+    tema = tela.get("tema")
     tema_js = "" if not tema or tema == "atual" else f'localStorage.setItem("painel.tema", "{tema}");'
     # O perfil ativo e o que a tela mostra: sem ele o painel cairia no "Padrão" (o perfil de
     # nascenca), e nao na tela do mockup que `ativaLinha()` deixa ativa ao ligar o tema.
+    perfil = tela.get("perfil")
     perfil_js = f'localStorage.setItem("painel.perfil", "{perfil}");' if perfil else ""
+    perfis = tela.get("perfis")
+    perfis_js = f'localStorage.setItem("painel.perfis", JSON.stringify({json.dumps(perfis, ensure_ascii=False)}));' if perfis else ""
     semente = (SEMENTE.replace("__DADOS__", json.dumps(DADOS, ensure_ascii=False))
-                      .replace("__TEMA__", tema_js).replace("__LAYOUT__", layout).replace("__PERFIL__", perfil_js))
+                      .replace("__TEMA__", tema_js).replace("__LAYOUT__", tela["layout"])
+                      .replace("__PERFIL__", perfil_js + perfis_js))
     # 5200 ms: o roteiro so mede depois que a fonte trocou, senao mede o layout do fallback
     roteiro = ROTEIRO.replace("__ESPERA__", "5200")
-    extra = TROCA.replace("__N__", str(TEMAS_ORDEM.index(troca) + 1)) if troca else ""
+    clica = tela.get("clica_tema") or tela.get("clica_perfil")
+    if tela.get("clica_tema"):
+        extra = TROCA_TEMA.replace("__N__", str(TEMAS_ORDEM.index(tela["clica_tema"]) + 1))
+    elif tela.get("clica_perfil"):
+        extra = TROCA_PERFIL.replace("__NOME__", tela["clica_perfil"])
+    else:
+        extra = ""
     out = (src.replace("<head>", "<head>" + semente, 1)
               .replace("</body>", extra + roteiro + "</body>", 1))
-    (SP / arquivo).write_text(out)
-print("telas prontas:", ", ".join(a for a, *_ in TELAS))
+    (SP / tela["arquivo"]).write_text(out)
+print("telas prontas:", ", ".join(t["arquivo"] for t in TELAS))
