@@ -295,7 +295,7 @@
   .ed-cat .ed-grp.cheio { opacity: .5; }
   .ed-cat button[data-novo] { margin-left: 12px; }
   .ed-canvas {
-    display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 62px; gap: 8px;
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px;
     border: 1px solid var(--border); border-radius: 12px; padding: 8px; overflow-y: auto;
     align-content: start; position: relative;
   }
@@ -597,6 +597,21 @@
 <button id="pager" aria-label="Trocar de página"></button>
 <div id="mascot" aria-hidden="true"><canvas width="16" height="9"></canvas></div>
 
+<script>
+/* Recarrega quando o index.html muda. Fica num <script> SEPARADO e antes do principal: erro de
+   sintaxe ou estouro no principal mata so ele, e a correcao seguinte ainda chega sozinha --
+   junto com o resto, um parentese errado deixava a parede travada ate reabrir o Chrome. */
+(() => {
+  let version = null;
+  setInterval(async () => {
+    try {
+      const v = (await (await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json()).index;
+      if (version != null && v !== version) location.reload();
+      version = v;
+    } catch (e) {}
+  }, 5000);
+})();
+</script>
 <script>
 const HISTORY = 90; // segundos de historico nos graficos
 // Toda requisicao curta tem tempo limite: uma conexao pendurada (ex.: servidor reiniciando) nao pode travar o painel
@@ -1456,6 +1471,32 @@ function edCarrega() {
 }
 // O canvas mostra exatamente as linhas que cabem na tela: o que se ve aqui e o que cabe la
 function edLinhas() { return LINHAS; }
+/* A celula do canvas tem a MESMA proporcao da celula do painel: com linha de altura fixa um
+   bloco 12x5 virava faixa achatada e nao dava pra julgar o tamanho de verdade. A grade do
+   painel ocupa a mesma area da pagina do editor (as duas sao a 2a linha do .app). */
+const ED_GAP = 8;
+let edLinhaPx = 62;
+function edMedeCanvas(cv, linhas) {
+  cv.style.width = "";
+  const r = cv.getBoundingClientRect();
+  if (!r.width) return;
+  const box = document.getElementById("widgets-b");
+  const pw = box.clientWidth || document.getElementById("page-editor").clientWidth;
+  const ph = box.clientHeight || document.getElementById("page-editor").clientHeight;
+  const g = parseFloat(getComputedStyle(box).columnGap) || 16;
+  const razao = ((ph - (linhas - 1) * g) / linhas) / ((pw - (COLS - 1) * g) / COLS);
+  const borda = 2 * ED_GAP + 2;  // padding + borda do canvas
+  let col = (r.width - borda - (COLS - 1) * ED_GAP) / COLS;
+  let lin = col * razao;
+  const alt = r.height - borda;
+  // Nao coube na altura: encolhe a largura junto, pra proporcao nao quebrar
+  if (linhas * lin + (linhas - 1) * ED_GAP > alt) {
+    lin = (alt - (linhas - 1) * ED_GAP) / linhas;
+    col = lin / razao;
+    cv.style.width = `${COLS * col + (COLS - 1) * ED_GAP + borda}px`;
+  }
+  edLinhaPx = Math.max(20, lin);
+}
 function edRender() {
   const cat = document.getElementById("ed-cat"), cv = document.getElementById("ed-canvas");
   cat.innerHTML = '<div class="ajuda">Toque para pôr na primeira vaga, ou arraste até o lugar.</div>';
@@ -1485,9 +1526,13 @@ function edRender() {
     }
   }
   const linhas = edLinhas();
-  cv.style.gridTemplateRows = `repeat(${linhas}, 62px)`;
+  edMedeCanvas(cv, linhas);
+  cv.style.gridTemplateRows = `repeat(${linhas}, ${edLinhaPx}px)`;
   let html = "";
-  for (let i = 0; i < linhas * COLS; i++) html += '<div class="ed-cel"></div>';
+  // Celula com lugar fixo: no fluxo automatico o bloco empurrava as celulas que cobre pra
+  // linhas extras embaixo, e o canvas parecia ter o dobro das linhas do painel
+  for (let i = 0; i < linhas * COLS; i++)
+    html += `<div class="ed-cel" style="grid-area:${Math.floor(i / COLS) + 1}/${i % COLS + 1}"></div>`;
   cv.innerHTML = html;
   edLista.forEach((it, i) => {
     const d = document.createElement("div");
@@ -1547,10 +1592,10 @@ function encaixe(it, eid, i) {
 function edCelula(ev) {
   const cv = document.getElementById("ed-canvas");
   const r = cv.getBoundingClientRect();
-  const larg = (r.width - 16 - 11 * 8) / COLS;
+  const larg = (r.width - 2 * ED_GAP - 2 - (COLS - 1) * ED_GAP) / COLS;
   return {
-    x: Math.max(0, Math.min(COLS - 1, Math.floor((ev.clientX - r.left - 8) / (larg + 8)))),
-    y: Math.max(0, Math.floor((ev.clientY - r.top - 8 + cv.scrollTop) / 70)),
+    x: Math.max(0, Math.min(COLS - 1, Math.floor((ev.clientX - r.left - ED_GAP) / (larg + ED_GAP)))),
+    y: Math.max(0, Math.floor((ev.clientY - r.top - ED_GAP + cv.scrollTop) / (edLinhaPx + ED_GAP))),
   };
 }
 function edSalva() {
@@ -2736,16 +2781,10 @@ loadShortcuts(); setInterval(loadShortcuts, 20000);
 loadRedes(); setInterval(loadRedes, 30000);
 loadAgenda(); setInterval(loadAgenda, 30000);
 loadTexugo(); setInterval(loadTexugo, 1000);
-let version = null;
-setInterval(async () => {
-  try {
-    const v = (await (await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json()).index;
-    if (version != null && v !== version) location.reload();
-    version = v;
-  } catch (e) {}
-}, 5000);
 window.addEventListener("resize", () => {
-  if (calcLinhas()) { montarDashB(); if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); } }
+  if (calcLinhas()) montarDashB();
+  // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
+  if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
   tick();
   if (PAGES[page] === "page-redes") renderRedes();
 });

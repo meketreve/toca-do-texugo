@@ -27,6 +27,10 @@ tier: 2
 
 ## Erros a não repetir
 
+
+- [2026-10-16] [front] o painel recarrega SOZINHO a cada save do `index.html`: um parêntese errado foi direto pra parede e, como o poll do `/api/version` morria junto, ela travou até reabrir o Chrome. O poll agora mora num `<script>` próprio; mesmo assim, conferir antes de salvar — extrair os `<script>` e `node --check`
+- [2026-10-16] [editor] células do canvas no fluxo automático da grade: o bloco empurrava as que cobre pra linhas extras e o canvas parecia ter o dobro das linhas — célula com `grid-area` fixo, e linha com a proporção da célula do painel (`edMedeCanvas`)
+
 - [2026-10-16] [texugo-snn] sensor `noite` nasceu com o sinal trocado (`0.5 - 0.5·cos` → pico às 15 h) e ninguém viu porque na matriz "noite aceso" parece normal — sensor novo de relógio: conferir o valor numa hora conhecida no `/api/texugo`
 
 - [2026-10-16] [front] migração de formato NÃO pode normalizar na hora de gravar: o `normaliza()` corta altura e y pelo `LINHAS`, que depende do tamanho da janela NAQUELE instante — gravar o resultado cravaria uma tela pequena pra sempre. A migração dos perfis guarda o valor antigo como está e normaliza só na leitura
@@ -50,6 +54,7 @@ tier: 2
 - [2026-09-28] [rede] não servir na rede: o servidor só escuta em `127.0.0.1` e confere o `Host` — o tablet vê o painel pelo vídeo do Sunshine, não por HTTP
 
 ## Decisões e o porquê
+
 
 - [2026-10-16] [texugo-snn] [✓] o perfil do Cérebro lê o peso MENOS a média da coluna (o mesmo sensor nos outros comportamentos), com piso 0,20 — peso cru faz todo comportamento "preferir" o sensor que se correlaciona com tudo, e sem piso um cérebro de 0 spike já exibe gosto por sorteio (medido: em 500 nascimentos o desvio máximo foi 0,186; gosto aprendido fica entre 0,24 e 0,53)
 - [2026-10-15] [texugo-snn] [✓] cérebro no Python (`texugo.py`, thread a 100 Hz), não no `index.html` — STDP precisa de passo de ~10 ms pra janela temporal significar algo (a 1×/s do Collector tudo seria simultâneo) e no servidor os pesos sobrevivem a recarregar a página
