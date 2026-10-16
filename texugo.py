@@ -414,6 +414,8 @@ class Texugo:
                            "limiar": round(self.limiares[k], 2),
                            "carga": round(_lim(self.v[k] / max(self.limiares[k], 1e-6)), 3),
                            "voto": round(self.votos[k], 2),
+                           # quanto o vencedor da vez calou este -- o painel desenha quem esta mudo
+                           "inib": round(self.inib[k], 3),
                            "relativo": round(rel[k], 2)}
                           for k, n in enumerate(self.nomes)],
             "sensores": [{"nome": n, "rotulo": SENSORES[n],

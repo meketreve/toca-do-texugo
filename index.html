@@ -256,6 +256,13 @@
   .cb-pfcab { color: var(--muted); font-size: 12px; }
   .cb-pfcab .nm, .cb-pfcab .sit { text-transform: none; color: var(--muted); }
   .cb-pfcab .z { background: none; height: auto; white-space: nowrap; }
+  /* Rede: duas camadas de neuronios e as sinapses. Escala com o card, nao com pixel fixo. */
+  .rede-corpo { display: block; }
+  .rede { width: 100%; height: 100%; display: block; }
+  .rede .no { fill: var(--accent); stroke: #4a4a48; stroke-width: .8; }
+  .rede .sai.venceu { stroke: var(--accent); stroke-width: 2; }
+  .rede .rot { fill: var(--text-2); font-size: 9px; }
+  .rede .cam { fill: var(--muted); font-size: 8px; }
 
   /* Estilos alternativos: os mesmos dados como numero ou barra */
   .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -2140,6 +2147,80 @@ addEstilo("cerebro", {
       const sit = perfil.length ? perfil.map(x => x.rotulo).join(" · ") : "—";
       if (p.sit.textContent !== sit) p.sit.textContent = sit;
       p.sit.classList.toggle("vazio", !perfil.length);
+    });
+  },
+});
+
+/* Rede: a representação clássica de rede neural — camada de entrada, camada de saída e as
+   sinapses entre as duas. São DUAS camadas, sem oculta: 16 sensores e 6 comportamentos, todos
+   contra todos, 96 sinapses. O desenho é bipartido porque a rede é bipartida.
+   96 linhas iguais viram cabeleira e não dizem nada, então grossura e opacidade saem do peso,
+   escaladas pelo MAIOR peso da matriz e elevadas ao quadrado: as fracas somem sozinhas e as que
+   o bicho aprendeu ficam. O que pisca é a ativação: o sensor acende com o valor dele, o neurônio
+   com a carga da membrana (fração do próprio limiar), e quem está calado pela inibição lateral
+   fica tracejado — é esse mecanismo que decide o vencedor. */
+const REDE = { w: 430, h: 240, xe: 118, xs: 300, r: 4.5, rs: 8 };
+function montaRede(corpo, d) {
+  const { w, h, xe, xs, r, rs } = REDE;
+  const ne = Math.max(1, d.sensores.length - 1), ns = Math.max(1, d.neuronios.length - 1);
+  const ye = j => 10 + j * (195 / ne), ys = k => 30 + k * (155 / ns);
+  let sin = "", ent = "", sai = "";
+  d.sensores.forEach((sv, j) => d.neuronios.forEach((n, k) => {
+    sin += `<line class="sin" data-j="${j}" data-k="${k}" x1="${xe}" y1="${ye(j).toFixed(1)}"` +
+           ` x2="${xs}" y2="${ys(k).toFixed(1)}"/>`;
+  }));
+  d.sensores.forEach((sv, j) => {
+    ent += `<circle class="no ent" cx="${xe}" cy="${ye(j).toFixed(1)}" r="${r}"/>` +
+           `<text class="rot" x="${xe - 9}" y="${(ye(j) + 2.4).toFixed(1)}" text-anchor="end">${esc(sv.rotulo)}</text>`;
+  });
+  d.neuronios.forEach((n, k) => {
+    sai += `<circle class="no sai" cx="${xs}" cy="${ys(k).toFixed(1)}" r="${rs}"/>` +
+           `<text class="rot" x="${xs + 14}" y="${(ys(k) + 2.4).toFixed(1)}">${esc(cbNome(n.nome))}</text>`;
+  });
+  corpo.className = "cb-corpo rede-corpo";
+  corpo.innerHTML = `<svg class="rede" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">` +
+    `<g>${sin}</g>${ent}${sai}` +
+    `<text class="cam" x="${xe}" y="${h - 2}" text-anchor="middle">entrada · ${d.sensores.length}</text>` +
+    `<text class="cam" x="${xs}" y="${h - 2}" text-anchor="middle">saída · ${d.neuronios.length}</text></svg>`;
+  return { sin: [...corpo.querySelectorAll(".sin")], ent: [...corpo.querySelectorAll(".ent")],
+           sai: [...corpo.querySelectorAll(".sai")] };
+}
+
+addEstilo("cerebro", {
+  id: "rede", nome: "Rede", minW: 6, minH: 3,
+  montar: cbMontaTopo,
+  render(el, s) {
+    const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
+    if (!d.neuronios) {
+      if (!cb._rede) corpo.innerHTML = '<div class="ag-vazio">Lendo o cérebro…</div>';
+      return;
+    }
+    // Monta uma vez: 96 linhas remontadas a cada segundo repintariam o card inteiro no Moonlight
+    if (!cb._rede) cb._rede = montaRede(corpo, d);
+    cbTopoRender(el, d);
+    const g = cb._rede;
+    const venceu = d.neuronios.findIndex(n => n.nome === d.comportamento);
+    let maior = 0;
+    d.pesos.forEach(linha => linha.forEach(p => { if (p > maior) maior = p; }));
+    maior = maior || 1;
+    for (const ln of g.sin) {
+      const f = ((d.pesos[+ln.dataset.k] || [])[+ln.dataset.j] || 0) / maior;
+      ln.setAttribute("stroke-width", (0.25 + f * 1.7).toFixed(2));
+      ln.setAttribute("stroke-opacity", (f * f * 0.9).toFixed(3));
+      ln.setAttribute("stroke", +ln.dataset.k === venceu ? "var(--accent)" : "var(--grid)");
+    }
+    const lim = v => Math.min(Math.max(v || 0, 0), 1);
+    const calaMax = Math.max(0.01, ...d.neuronios.map(n => n.inib || 0));
+    d.sensores.forEach((sv, j) => g.ent[j].setAttribute("fill-opacity", (0.1 + lim(sv.valor) * 0.9).toFixed(2)));
+    d.neuronios.forEach((n, k) => {
+      const c = g.sai[k];
+      c.setAttribute("fill-opacity", (0.1 + lim(n.carga) * 0.9).toFixed(2));
+      c.setAttribute("r", k === venceu ? REDE.rs + 2 : REDE.rs);
+      c.classList.toggle("venceu", k === venceu);
+      // Inibicao e RELATIVA: medido em 120 amostras, 86% dos neuronios ficam acima de 0.3 o tempo
+      // todo (corte fixo tracejava todo mundo), mas o espalhamento entre eles e 0.68 na mediana --
+      // o que informa e quem esta mais calado que os outros AGORA, nao um limiar absoluto.
+      c.setAttribute("stroke-opacity", (1 - 0.8 * ((n.inib || 0) / calaMax)).toFixed(2));
     });
   },
 });

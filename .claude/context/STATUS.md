@@ -21,7 +21,12 @@ pela página de atalhos. `atualizar-painel.sh` traz tudo isso pra máquina do pa
 
 ## Próxima fase
 
-A fila de código acabou. O que resta pede uso, não teclado:
+O medidor Cérebro tem 3 estilos: Matriz (peso cru), Perfis (o que aprendeu, em palavras) e
+**Rede** (`index.html:2162`) — a representação clássica: 16 sensores à esquerda, 6 comportamentos
+à direita, 96 sinapses com grossura e opacidade do peso, e as ativações piscando em cima. São
+DUAS camadas, sem oculta. Julgar na parede qual dos três fica no layout.
+
+Depois disso, o que resta pede uso, não teclado:
 
 1. **Rodar o cérebro alguns dias** e ver que personalidade aparece — o medidor Cérebro no estilo
    Perfis agora diz em palavras o que cada neurônio aprendeu, então dá pra julgar sem ler peso.
@@ -32,7 +37,8 @@ A fila de código acabou. O que resta pede uso, não teclado:
    decisão de 2026-10-15 valendo: fome/sono viram SENSORES, nunca recompensa.
 
 Antes de qualquer uma: `git merge` do `main-3ouquh` no `main` e `bash atualizar-painel.sh` na
-máquina do painel — são 4 commits que ainda não rodaram em lugar nenhum.
+máquina do painel — são 5 commits que ainda não rodaram em lugar nenhum, e o
+`texugo.py` mudou (publica `inib`), então o restart é obrigatório.
 
 ## Pendências e bloqueios
 
@@ -44,6 +50,7 @@ máquina do painel — são 4 commits que ainda não rodaram em lugar nenhum.
 
 ## Concluído (recente)
 
+- Estilo Rede no medidor Cérebro e bancada de testes portada pro repo (`testes/`) (2026-10-16)
 - Perfis de layout: conjuntos nomeados de medidores, com migração do formato antigo (2026-10-16)
 - `atualizar-painel.sh`: puxa o `main`, reinicia só se mudou `.py`, volta sozinho se não subir (2026-10-16)
 - Catálogo do editor agrupado e estilo Perfis no medidor Cérebro (2026-10-16)

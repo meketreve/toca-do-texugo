@@ -28,6 +28,8 @@ tier: 2
 ## Erros a não repetir
 
 - [2026-10-16] [front] migração de formato NÃO pode normalizar na hora de gravar: o `normaliza()` corta altura e y pelo `LINHAS`, que depende do tamanho da janela NAQUELE instante — gravar o resultado cravaria uma tela pequena pra sempre. A migração dos perfis guarda o valor antigo como está e normaliza só na leitura
+- [2026-10-16] [front] `.cb-corpo` É a grade da matriz do Cérebro (2 colunas): estilo novo que põe um filho só cai dentro da 1ª coluna e desenha espremido — ou pede `grid-column: 1 / -1` (Perfis) ou vira bloco (Rede). Dois estilos caíram nisso
+- [2026-10-16] [texugo-snn] a inibição lateral vive perto do teto: medido em 120 amostras, 86% dos neurônios ficam acima de 0,3 o tempo todo, então corte fixo marca todo mundo. O que informa é o RELATIVO — o espalhamento entre eles é 0,68 na mediana, e o vencedor é o menos inibido em 70% das amostras
 - [2026-10-15] [front] menu flutuante dentro de container com rolagem: comparar com `scrollHeight` (conteúdo todo) deixa o menu de um bloco da última linha abrir cortado — a conta é com a parte VISÍVEL, `scrollTop + clientHeight`
 - [2026-10-15] [medidores] estilo alternativo que remonta a própria lista de dados DIVERGE calado: a temperatura do NVMe virou "SSD NVMe" num estilo e "NVMe" no outro. Medidor declara os itens uma vez (`medidor()`), estilo só desenha
 - [2026-10-15] [front] `const` em zona morta temporal derruba o script inteiro: `ESTILOS_MEDIDOR` declarado depois das chamadas `gaugeWidget(...)` dava `Cannot access before initialization` e a página virava relógio `--:--`. Primitivas antes dos medidores no arquivo

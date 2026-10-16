@@ -40,6 +40,7 @@ server.py
 | Build / teste / lint | não tem (Python puro + HTML); testar abrindo `http://127.0.0.1:8787` |
 | Rodar | `systemctl --user restart toca-do-texugo.service` (depois de mexer nos `.py`) |
 | Abrir o painel | `bash abrir-painel.sh` (sobe o serviço e abre o Chrome em modo app no monitor do `config.json`) |
+| Testar sem o painel | `testes/README.md` (Chromium headless) |
 | Ver log | `journalctl --user -u toca-do-texugo -f` |
 | Atualizar a máquina do painel | `bash atualizar-painel.sh` (puxa o `main`; `--voltar` desfaz) |
 
@@ -60,13 +61,16 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 - `redes.py` — uma classe por rede (`PROVIDERS`) + `Redes`: histórico diário e token renovado só.
 - `agenda.py` — long polling do bot do Telegram; o "feito" é local do painel, nunca volta pro bot.
 - `texugo.py` — cérebro do mascote (spike + STDP, 100 Hz): `Sensores`, `passo()`, `_vencedor()`
-  (z de Poisson). Teste solto: `python3 texugo.py 12 6`.
+  (z de Poisson), e `_publica` manda sensores, neurônios (carga, voto, `inib`, z) e pesos.
+  Teste solto: `python3 texugo.py 12 6`.
 - `onedrive.py` — lê o journal do serviço `onedrive` e a cota (cache de 1 h).
 - `abrir-painel.sh` — sobe o serviço e abre o Chrome em tela cheia; se a janela já existe, só
   reposiciona e dá o toggle (destrava o congelamento por composição). `docs/` — prints do README.
 - `atualizar-painel.sh` — `fetch` + `merge --ff-only` do `main`, restart só se mudou `.py`, e
   `reset --hard` de volta se o painel não responder depois. Sha anterior em
   `~/.config/toca-do-texugo/atualizar-anterior`.
+- `testes/` — bancada: Chromium headless contra uma cópia do `index.html` com roteiro
+  injetado, e o `atualizar-painel.sh` contra remoto falso. Leia o `testes/README.md`.
 - `.githooks/pre-commit` — barra credencial no commit (`git config core.hooksPath .githooks`).
 
 ## Pontos de entrada e fluxos principais

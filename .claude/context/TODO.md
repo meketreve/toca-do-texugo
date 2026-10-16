@@ -10,6 +10,7 @@ active: true
 
 Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
+- [ ] Escolher na parede qual estilo do Cérebro fica: Matriz, Perfis ou Rede
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar `ETA_STDP` se ficar
       rápido ou lento demais; hoje é 0.004 por disparo)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo
@@ -22,6 +23,8 @@ Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever
 
 ## Concluído
 
+- [x] ~~Estilo Rede no Cérebro (duas camadas, sinapses pelo peso, ativação ao vivo) e
+      bancada de testes em `testes/`~~
 - [x] ~~Perfis de layout: `{nome: [medidores]}` em `painel.perfis`, troca pela página de atalhos,
       cria/apaga no editor e migração do `painel.widgets` antigo~~
 - [x] ~~Perfis no medidor Cérebro: estilo "Perfis" com a situação preferida em palavras, a surpresa
