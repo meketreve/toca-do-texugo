@@ -8,10 +8,8 @@ active: true
 
 ## Agora
 
-Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão feitos.
+Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
-- [ ] **Perfis de layout**: conjuntos nomeados de medidores ("jogo", "trabalho", "noite") e a troca
-      entre eles; hoje só existe um, em `localStorage["painel.widgets"]` (lê/grava em `painel.widgets`)
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar `ETA_STDP` se ficar
       rápido ou lento demais; hoje é 0.004 por disparo)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo
@@ -24,6 +22,8 @@ Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão fe
 
 ## Concluído
 
+- [x] ~~Perfis de layout: `{nome: [medidores]}` em `painel.perfis`, troca pela página de atalhos,
+      cria/apaga no editor e migração do `painel.widgets` antigo~~
 - [x] ~~Perfis no medidor Cérebro: estilo "Perfis" com a situação preferida em palavras, a surpresa
       de cada neurônio e quem está puxando o comando~~
 - [x] ~~Grupos no catálogo do editor: campo `grupo` no `regWidget`, cabeçalho que abre e fecha e

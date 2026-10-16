@@ -38,7 +38,8 @@
   .page.enter { animation: page-in .25s ease-out; }
   @keyframes page-in { from { opacity: 0; transform: translateY(8px); } }
   #page-dash { grid-template-rows: auto minmax(0, 1fr) auto; }
-  #page-atalhos { grid-template-rows: auto auto auto minmax(0, 1fr); align-content: start; }
+  /* Uma linha por secao: atalhos, layout, perfil e a lista de medidores (que rola) */
+  #page-atalhos { grid-template-rows: auto auto auto auto minmax(0, 1fr); align-content: start; }
   .page-title { margin: 4px 6px 0; font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
 
   /* Botao discreto de trocar pagina */
@@ -266,7 +267,7 @@
   .num .f { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 
   /* Editor de grade: catalogo a esquerda, canvas a direita */
-  #page-editor { grid-template-rows: auto minmax(0, 1fr) auto; }
+  #page-editor { grid-template-rows: auto auto minmax(0, 1fr) auto; }
   .ed { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--gap); min-height: 0; }
   .ed-cat { display: grid; gap: 8px; align-content: start; overflow-y: auto; }
   .ed-cat button {
@@ -318,6 +319,17 @@
   .ed-bloco .rz { cursor: nwse-resize; font-size: 18px; padding: 0 2px; touch-action: none; }
   .ed-bloco .est { cursor: pointer; padding: 0 6px; color: var(--text-2); }
   .ed-aviso { align-self: center; color: var(--warning); font-size: 17px; }
+  /* Barra de perfis do editor: chip grande o bastante pro toque impreciso do Moonlight */
+  .perfil-bar { display: flex; align-items: center; gap: 12px; position: relative; }
+  .perfil-bar .lb { color: var(--muted); font-size: 15px; }
+  .perfil-bar .chips { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+  .perfil-bar .chip {
+    font: inherit; font-size: 16px; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  }
+  .perfil-bar .chip.sel { border-color: var(--accent); background: var(--accent-wash); color: var(--accent); }
+  .perfil-bar .chip.apaga { margin-left: auto; color: var(--muted); }
+  .perfil-menu { top: 48px; left: 0; }
   .ed-bloco .tira { cursor: pointer; font-size: 18px; padding: 0 4px; }
   .cfg {
     display: grid; grid-template-columns: 1fr auto auto auto auto auto auto; gap: 10px; align-items: center;
@@ -540,6 +552,7 @@
 
   <main class="page" id="page-editor" hidden>
     <h2 class="page-title">Editor do layout agrupado</h2>
+    <div class="perfil-bar"><span class="lb">Perfil</span><div class="chips" id="ed-perfis"></div></div>
     <div class="ed">
       <div class="ed-cat" id="ed-cat"></div>
       <div class="ed-canvas" id="ed-canvas"></div>
@@ -561,6 +574,10 @@
     <section class="layout-pick">
       <h2 class="page-title">Layout do painel</h2>
       <div class="picks" id="picks"></div>
+    </section>
+    <section class="layout-pick">
+      <h2 class="page-title">Perfil de medidores</h2>
+      <div class="picks" id="perfis"></div>
     </section>
     <section class="layout-pick">
       <h2 class="page-title">Medidores do layout agrupado</h2>
@@ -1134,16 +1151,70 @@ function normaliza(lista) {
       };
     });
 }
-function layoutB() {
+/* ---------- Perfis de medidores ----------
+   Conjuntos nomeados pro layout agrupado ("Jogo", "Noite"), cada um com seus medidores e suas
+   posicoes. Ate aqui existia UM so, em `painel.widgets`; agora sao {nome: [itens]} em
+   `painel.perfis`, e o nome do ativo em `painel.perfil`.
+   O `painel.widgets` antigo vira o perfil "Padrão" na primeira leitura e FICA onde esta: nao
+   custa nada e e a rede de seguranca se a migracao sair torta. */
+const PERFIL_PADRAO = "Padrão";
+/* Nomes prontos porque o painel e tocado pelo tablet, onde nao ha teclado. Quem estiver no PC
+   ainda pode digitar outro ("outro nome…" no menu). */
+const NOMES_PERFIL = ["Jogo", "Trabalho", "Noite", "Stream", "Foco"];
+
+function perfis() {
   try {
-    const v = JSON.parse(localStorage.getItem("painel.widgets"));
-    if (Array.isArray(v)) return normaliza(v);
+    const v = JSON.parse(localStorage.getItem("painel.perfis"));
+    if (v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length) return v;
   } catch (e) {}
-  return normaliza(LAYOUT_B_PADRAO);
+  let antigo = null;
+  try {
+    const a = JSON.parse(localStorage.getItem("painel.widgets"));
+    if (Array.isArray(a)) antigo = a;
+  } catch (e) {}
+  return { [PERFIL_PADRAO]: antigo || LAYOUT_B_PADRAO };
+}
+function perfilAtual() {
+  const p = perfis(), n = localStorage.getItem("painel.perfil");
+  return n && p[n] ? n : Object.keys(p)[0];
+}
+function salvarPerfis(p, ativo) {
+  try {
+    localStorage.setItem("painel.perfis", JSON.stringify(p));
+    if (ativo) localStorage.setItem("painel.perfil", ativo);
+  } catch (e) {}
+  montarDashB(); renderConfig(); renderPerfis();
+}
+function layoutB() {
+  const l = perfis()[perfilAtual()];
+  return normaliza(Array.isArray(l) ? l : LAYOUT_B_PADRAO);
 }
 function salvarB(lista) {
-  try { localStorage.setItem("painel.widgets", JSON.stringify(lista)); } catch (e) {}
-  montarDashB(); renderConfig();
+  const p = perfis(), nome = perfilAtual();
+  p[nome] = lista;
+  salvarPerfis(p, nome);
+}
+// O editor pode estar aberto quando o perfil troca: a grade dele tem que seguir a troca
+function edSegue() {
+  if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
+}
+function setPerfil(nome) {
+  if (!perfis()[nome]) return;
+  try { localStorage.setItem("painel.perfil", nome); } catch (e) {}
+  montarDashB(); renderConfig(); renderPerfis(); edSegue();
+}
+function novoPerfil(nome) {
+  const p = perfis();
+  if (!nome || p[nome]) return;
+  // Copia do atual, nao vazio: tirar o que sobra e menos trabalho que montar tudo de novo no toque
+  p[nome] = layoutB().map(it => ({ ...it }));
+  salvarPerfis(p, nome); edSegue();
+}
+function apagarPerfil(nome) {
+  const p = perfis();
+  if (!p[nome] || Object.keys(p).length < 2) return;  // o ultimo nao sai: o painel ficaria sem grade
+  delete p[nome];
+  salvarPerfis(p, Object.keys(p)[0]); edSegue();
 }
 
 /* Quantas linhas cabem na tela. A altura minima util de uma linha e ~150 px: abaixo disso
@@ -1213,6 +1284,62 @@ function setLayout(id) {
   renderPicks();
   showPage(0);
 }
+/* Os dois lugares onde o perfil aparece: botão grande na página de atalhos (é por lá que se
+   troca no dia a dia) e a barra do editor, que além de trocar cria e apaga. */
+function renderPerfis() {
+  const p = perfis(), atual = perfilAtual(), nomes = Object.keys(p);
+  const box = document.getElementById("perfis");
+  if (box) {
+    box.innerHTML = "";
+    for (const n of nomes) {
+      const b = document.createElement("button");
+      b.innerHTML = '<span class="ic">▦</span><span class="lb"></span>';
+      b.querySelector(".lb").textContent = n;
+      if (n === atual) b.classList.add("sel");
+      b.addEventListener("click", () => setPerfil(n));
+      box.appendChild(b);
+    }
+  }
+  const barra = document.getElementById("ed-perfis");
+  if (!barra) return;
+  barra.innerHTML = "";
+  for (const n of nomes) {
+    const b = document.createElement("button");
+    b.className = "chip" + (n === atual ? " sel" : "");
+    b.dataset.perfil = n;
+    b.textContent = n;
+    barra.appendChild(b);
+  }
+  const mais = document.createElement("button");
+  mais.className = "chip"; mais.dataset.novo = "1"; mais.textContent = "+ novo";
+  barra.appendChild(mais);
+  // O último perfil não ganha botão de apagar: sem nenhum, o painel ficaria sem grade
+  if (nomes.length > 1) {
+    const x = document.createElement("button");
+    x.className = "chip apaga"; x.dataset.apaga = atual;
+    x.textContent = "apagar “" + atual + "”";
+    barra.appendChild(x);
+  }
+}
+
+// Menu de nome pro perfil novo: os prontos que ainda não foram usados, e digitar como saída
+function menuNomePerfil(barra) {
+  const usados = perfis();
+  const m = document.createElement("div");
+  m.className = "ed-menu perfil-menu";
+  m.innerHTML = "<b>Nome do perfil</b>" +
+    NOMES_PERFIL.filter(n => !usados[n]).map(n => `<button data-nome="${esc(n)}">${esc(n)}</button>`).join("") +
+    '<button data-nome="?">outro nome…</button>';
+  m.addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-nome]");
+    if (!b) return;
+    m.remove();
+    const n = b.dataset.nome === "?" ? (prompt("Nome do perfil") || "").trim() : b.dataset.nome;
+    if (n) novoPerfil(n);
+  });
+  barra.appendChild(m);
+}
+
 function renderPicks() {
   const box = document.getElementById("picks");
   box.innerHTML = "";
@@ -1427,6 +1554,16 @@ function edSalva() {
 function edLiga() {
   const cv = document.getElementById("ed-canvas"), cat = document.getElementById("ed-cat");
 
+  // Chips de perfil: botao comum, entao `click` -- `pointerdown` so e regra no catalogo e no canvas
+  document.getElementById("ed-perfis").addEventListener("click", ev => {
+    const b = ev.target.closest("button");
+    if (!b) return;
+    document.querySelectorAll(".perfil-menu").forEach(m => m.remove());
+    if (b.dataset.perfil) return setPerfil(b.dataset.perfil);
+    if (b.dataset.novo) return menuNomePerfil(document.querySelector(".perfil-bar"));
+    if (b.dataset.apaga && confirm(`Apagar o perfil “${b.dataset.apaga}”?`)) apagarPerfil(b.dataset.apaga);
+  });
+
   cat.addEventListener("pointerdown", ev => {
     const g = ev.target.closest("button[data-grp]");
     if (g) {
@@ -1496,9 +1633,9 @@ function edLiga() {
     document.getElementById("mascot").hidden = false;
     showPage(ATALHOS);
   });
+  // Restaura so o perfil ativo: os outros nao tem nada a ver com isso
   document.getElementById("ed-reset").addEventListener("click", () => {
-    try { localStorage.removeItem("painel.widgets"); } catch (e) {}
-    montarDashB(); renderConfig(); edCarrega(); edRender();
+    salvarB(normaliza(LAYOUT_B_PADRAO)); edCarrega(); edRender();
   });
 }
 // O editor nao entra no rodizio do botao de pagina: e tela de ajuste, nao de olhar
@@ -2208,10 +2345,7 @@ function renderRedesMini() {
 document.getElementById("redes-mini").addEventListener("click", () => showPage(PAGES.indexOf("page-redes")));
 document.getElementById("pager").addEventListener("click", () => showPage((page + 1) % PAGES.length));
 document.getElementById("page-atalhos").addEventListener("pointerdown", armBack);
-document.getElementById("cfg-reset").addEventListener("click", () => {
-  try { localStorage.removeItem("painel.widgets"); } catch (e) {}
-  montarDashB(); renderConfig();
-});
+document.getElementById("cfg-reset").addEventListener("click", () => salvarB(normaliza(LAYOUT_B_PADRAO)));
 
 /* ---------- Audio: PCM do servidor -> FFT -> barras ---------- */
 const AUDIO_RATE = 24000, FFT_N = 2048, BARS = 64;
@@ -2513,7 +2647,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-ocultaLayouts(); montarDashB(); renderPicks(); renderConfig(); edLiga();
+ocultaLayouts(); montarDashB(); renderPicks(); renderPerfis(); renderConfig(); edLiga();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);

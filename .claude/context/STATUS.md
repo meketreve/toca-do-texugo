@@ -15,17 +15,24 @@ o boot nos dois modos e guarda os pesos em `~/.config/toca-do-texugo/texugo-cere
 O catálogo do editor agora é agrupado (Máquina, Rede e disco, Texugo, Dia), com cabeçalho que
 abre e fecha e contador de quantos medidores do grupo ainda estão fora do painel. O medidor
 Cérebro ganhou um 2º estilo, **Perfis**: a situação preferida de cada comportamento em palavras,
-a surpresa (z) do neurônio agora e, no topo, qual sensor está puxando o comando.
+a surpresa (z) do neurônio agora e, no topo, qual sensor está puxando o comando. E os medidores
+viraram **perfis nomeados** (`painel.perfis`): "Jogo" e "Noite" com grades diferentes, trocando
+pela página de atalhos. `atualizar-painel.sh` traz tudo isso pra máquina do painel.
 
 ## Próxima fase
 
-**Perfis de layout** (`index.html:1123` lê, `1129` grava, `setLayout` 1191, editor 1265):
-conjuntos nomeados ("jogo", "trabalho", "noite"), cada um com seus medidores e posições, e a
-troca pelo painel. Hoje só existe UM conjunto, em `localStorage["painel.widgets"]`, e um nome
-de layout em `painel.layout` — o perfil precisa virar `{nome: [medidores]}` com migração do
-formato atual (ver `normaliza()`, que já aceita formas antigas).
-→ verify: criar dois perfis com medidores diferentes, trocar entre eles, recarregar a página e
-ver cada um voltar igual.
+A fila de código acabou. O que resta pede uso, não teclado:
+
+1. **Rodar o cérebro alguns dias** e ver que personalidade aparece — o medidor Cérebro no estilo
+   Perfis agora diz em palavras o que cada neurônio aprendeu, então dá pra julgar sem ler peso.
+   Se as preferências não saírem do lugar em uma semana, subir o `ETA_STDP` (hoje 0.004).
+2. **Decidir se a tela de configuração por botões sai** (`renderConfig`), já que o editor de grade
+   faz o mesmo e agora os dois mexem no perfil ativo.
+3. **Página "cuidar do texugo"** (tamagotchi) é a próxima coisa grande, se for pra ter uma — com a
+   decisão de 2026-10-15 valendo: fome/sono viram SENSORES, nunca recompensa.
+
+Antes de qualquer uma: `git merge` do `main-3ouquh` no `main` e `bash atualizar-painel.sh` na
+máquina do painel — são 4 commits que ainda não rodaram em lugar nenhum.
 
 ## Pendências e bloqueios
 
@@ -37,6 +44,7 @@ ver cada um voltar igual.
 
 ## Concluído (recente)
 
+- Perfis de layout: conjuntos nomeados de medidores, com migração do formato antigo (2026-10-16)
 - `atualizar-painel.sh`: puxa o `main`, reinicia só se mudou `.py`, volta sozinho se não subir (2026-10-16)
 - Catálogo do editor agrupado e estilo Perfis no medidor Cérebro (2026-10-16)
 - Cérebro do texugo: STDP + covariância + homeostase, medidor e chave de modo (2026-10-15)
