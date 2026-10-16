@@ -26,6 +26,7 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-15] [front] menu flutuante dentro de container com rolagem: comparar com `scrollHeight` (conteúdo todo) deixa o menu de um bloco da última linha abrir cortado — a conta é com a parte VISÍVEL, `scrollTop + clientHeight`
 - [2026-10-15] [medidores] estilo alternativo que remonta a própria lista de dados DIVERGE calado: a temperatura do NVMe virou "SSD NVMe" num estilo e "NVMe" no outro. Medidor declara os itens uma vez (`medidor()`), estilo só desenha
 - [2026-10-15] [front] `const` em zona morta temporal derruba o script inteiro: `ESTILOS_MEDIDOR` declarado depois das chamadas `gaugeWidget(...)` dava `Cannot access before initialization` e a página virava relógio `--:--`. Primitivas antes dos medidores no arquivo
 - [2026-10-15] [front] o editor escuta `pointerdown`, não `click` — `.click()` sintético em teste não dispara nada e parece bug que não existe

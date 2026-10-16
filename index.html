@@ -262,9 +262,25 @@
   .ed-cat .ajuda { color: var(--muted); font-size: 15px; padding: 2px 2px 6px; }
   .ed-canvas {
     display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 62px; gap: 8px;
-    border: 1px solid var(--border); border-radius: 12px; padding: 8px; overflow-y: auto; align-content: start;
+    border: 1px solid var(--border); border-radius: 12px; padding: 8px; overflow-y: auto;
+    align-content: start; position: relative;
   }
   .ed-cel { border: 1px dashed var(--grid); border-radius: 6px; }
+  /* Menu de estilo: alvo grande porque o toque pelo Moonlight e impreciso */
+  .ed-menu {
+    position: absolute; z-index: 6; min-width: 190px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
+    box-shadow: 0 10px 26px #0009; display: grid; gap: 4px;
+  }
+  .ed-menu b { font-size: 13px; color: var(--muted); font-weight: 400; padding: 2px 8px 4px; }
+  .ed-menu button {
+    font: inherit; font-size: 16px; text-align: left; padding: 10px 12px; border-radius: 7px;
+    border: 1px solid transparent; background: #1d1d1c; color: var(--fg);
+    display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+  }
+  .ed-menu button.on { border-color: var(--accent); color: var(--accent); }
+  .ed-menu button:disabled { color: var(--muted); background: #191918; }
+  .ed-menu button small { color: var(--muted); font-size: 13px; }
   .ed-bloco {
     background: var(--accent-wash); border: 1px solid var(--accent); border-radius: 10px;
     padding: 8px 10px; display: grid; grid-template-rows: auto 1fr auto; cursor: grab;
@@ -1239,6 +1255,7 @@ function edAviso(txt) {
 
 const cabe = (it) => it.x >= 0 && it.y >= 0 && it.x + it.w <= COLS && it.y + it.h <= LINHAS && it.h >= 1 && it.w >= 1;
 const bate = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+let estMenu = null;   // indice do bloco com o menu de estilo aberto
 function livre(it, menos) {
   return cabe(it) && !edLista.some((o, i) => i !== menos && o.x != null && bate(it, o));
 }
@@ -1286,11 +1303,52 @@ function edRender() {
     d.style.gridRow = `${it.y + 1} / span ${it.h}`;
     d.innerHTML = '<span class="tit"></span><span></span>' +
       `<span class="pe"><span class="tira" data-tira="${i}">✕</span>` +
-      `<span class="est" data-est="${i}">⟳ ${estiloDe(it).nome}</span>` +
+      `<span class="est" data-est="${i}">${estiloDe(it).nome} ▾</span>` +
       `<span>${it.w}×${it.h}</span><span class="rz" data-rz="${i}">◢</span></span>`;
     d.querySelector(".tit").textContent = WIDGETS[it.id].nome;
     cv.appendChild(d);
+    if (estMenu === i) ajeitaMenu(cv, cv.appendChild(edMenuEstilo(it, i, d)), d);
   });
+}
+
+/* Menu de estilo. Era um botao que ciclava: com 3 estilos ja incomodava no toque e com 6 seria
+   inviavel. De quebra mostra QUANTO cada estilo precisa, em vez de recusar calado quando o
+   estilo novo nao cabe no espaco atual do bloco. */
+function edMenuEstilo(it, i, bloco) {
+  const m = document.createElement("div");
+  m.className = "ed-menu";
+  m.style.left = bloco.offsetLeft + "px";
+  m.style.top = (bloco.offsetTop + bloco.offsetHeight + 4) + "px";
+  const atual = estiloDe(it).id;
+  m.innerHTML = "<b>Estilo</b>" + WIDGETS[it.id].estilos.map(e => {
+    const t = encaixe(it, e.id, i);
+    const nota = !t ? "não cabe" : (t.w !== it.w || t.h !== it.h) ? `${t.w}×${t.h}` : "";
+    return `<button data-pick="${i}" data-eid="${e.id}" class="${e.id === atual ? "on" : ""}"` +
+           `${t ? "" : " disabled"}>${e.nome}<small>${nota}</small></button>`;
+  }).join("");
+  return m;
+}
+
+/* Bloco na ultima linha ou na borda direita jogaria o menu pra fora do canvas, que tem rolagem:
+   cabendo, abre embaixo; nao cabendo, abre em cima, e sempre dentro da largura. */
+function ajeitaMenu(cv, m, bloco) {
+  const alt = m.offsetHeight, larg = m.offsetWidth;
+  const abaixo = bloco.offsetTop + bloco.offsetHeight + 4;
+  const acima = bloco.offsetTop - alt - 4;
+  // Compara com a parte VISIVEL (clientHeight + scrollTop), nao com a altura total do conteudo:
+  // com scrollHeight o menu de um bloco na ultima linha "cabia" e abria cortado na borda.
+  const fundoVisivel = cv.scrollTop + cv.clientHeight;
+  m.style.top = (abaixo + alt > fundoVisivel && acima >= cv.scrollTop ? acima : abaixo) + "px";
+  m.style.left = Math.max(0, Math.min(bloco.offsetLeft, cv.clientWidth - larg - 8)) + "px";
+}
+
+/* Onde o bloco fica se trocar pra esse estilo, ou null se nao couber. O estilo tem minimo
+   proprio, entao trocar pode precisar crescer o bloco. */
+function encaixe(it, eid, i) {
+  const t = { ...it, estilo: eid };
+  t.w = Math.max(minW(t), t.w); t.h = Math.max(minH(t), t.h);
+  t.x = Math.min(t.x, COLS - t.w);
+  return livre(t, i) ? t : null;
 }
 function edCelula(ev) {
   const cv = document.getElementById("ed-canvas");
@@ -1327,16 +1385,16 @@ function edLiga() {
   cv.addEventListener("pointerdown", ev => {
     const tira = ev.target.dataset.tira;
     if (tira != null) { edLista.splice(+tira, 1); return edSalva(); }
-    const est = ev.target.dataset.est;
-    if (est != null) {
-      const it = edLista[+est], es = WIDGETS[it.id].estilos;
-      const prox = es[(es.findIndex(e => e.id === estiloDe(it).id) + 1) % es.length];
-      const tent = { ...it, estilo: prox.id };
-      tent.w = Math.max(minW(tent), tent.w); tent.h = Math.max(minH(tent), tent.h);
-      tent.x = Math.min(tent.x, COLS - tent.w);
-      if (livre(tent, +est)) { Object.assign(it, tent); return edSalva(); }
-      return;  // nao cabe no espaco atual: deixa como esta em vez de empurrar os vizinhos
+    const pick = ev.target.closest("[data-pick]");
+    if (pick) {
+      const i = +pick.dataset.pick, t = encaixe(edLista[i], pick.dataset.eid, i);
+      estMenu = null;
+      if (t) { Object.assign(edLista[i], t); return edSalva(); }
+      return edRender();
     }
+    const est = ev.target.dataset.est;
+    if (est != null) { estMenu = estMenu === +est ? null : +est; return edRender(); }
+    if (estMenu !== null) { estMenu = null; edRender(); }
     const bloco = ev.target.closest(".ed-bloco");
     if (!bloco) return;
     const i = +bloco.dataset.i, it = edLista[i], c = edCelula(ev);
