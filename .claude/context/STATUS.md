@@ -13,23 +13,19 @@ com STDP que escolhe o comportamento do mascote no lugar da tabela de probabilid
 modo `instinto`; a chave está no medidor "Cérebro", que sai do catálogo do editor. Aprende desde
 o boot nos dois modos e guarda os pesos em `~/.config/toca-do-texugo/texugo-cerebro.json`.
 O catálogo do editor agora é agrupado (Máquina, Rede e disco, Texugo, Dia), com cabeçalho que
-abre e fecha e contador de quantos medidores do grupo ainda estão fora do painel.
+abre e fecha e contador de quantos medidores do grupo ainda estão fora do painel. O medidor
+Cérebro ganhou um 2º estilo, **Perfis**: a situação preferida de cada comportamento em palavras,
+a surpresa (z) do neurônio agora e, no topo, qual sensor está puxando o comando.
 
 ## Próxima fase
 
-Duas coisas, nessa ordem (a 1ª é menor e fecha o que acabou de entrar):
-
-1. **Perfis no medidor Cérebro** (`index.html:1835`, dado em `texugo.py` `_publica`): hoje a matriz
-   é 16×6 de opacidade, legível mas crua. Melhorar a leitura do que cada neurônio aprendeu —
-   ordenar sensor por peso, dizer em palavras a "situação preferida" de cada comportamento,
-   mostrar quem está puxando o comando agora.
-2. **Perfis de layout** (`index.html:1123` lê, `1129` grava, `setLayout` 1191, editor 1265):
-   conjuntos nomeados ("jogo", "trabalho", "noite"), cada um com seus medidores e posições, e a
-   troca pelo painel. Hoje só existe UM conjunto, em `localStorage["painel.widgets"]`, e um nome
-   de layout em `painel.layout` — o perfil precisa virar `{nome: [medidores]}` com migração do
-   formato atual (ver `normaliza()`, que já aceita formas antigas).
+**Perfis de layout** (`index.html:1123` lê, `1129` grava, `setLayout` 1191, editor 1265):
+conjuntos nomeados ("jogo", "trabalho", "noite"), cada um com seus medidores e posições, e a
+troca pelo painel. Hoje só existe UM conjunto, em `localStorage["painel.widgets"]`, e um nome
+de layout em `painel.layout` — o perfil precisa virar `{nome: [medidores]}` com migração do
+formato atual (ver `normaliza()`, que já aceita formas antigas).
 → verify: criar dois perfis com medidores diferentes, trocar entre eles, recarregar a página e
-ver cada um voltar igual; e o medidor Cérebro dizendo qual sensor está no comando.
+ver cada um voltar igual.
 
 ## Pendências e bloqueios
 
@@ -41,6 +37,7 @@ ver cada um voltar igual; e o medidor Cérebro dizendo qual sensor está no coma
 
 ## Concluído (recente)
 
+- Catálogo do editor agrupado e estilo Perfis no medidor Cérebro (2026-10-16)
 - Cérebro do texugo: STDP + covariância + homeostase, medidor e chave de modo (2026-10-15)
 - Projeto movido de volta pro SSD; service, autostart e lançador do menu corrigidos (2026-10-12)
 - `core.hooksPath .githooks` religado neste clone — o `pre-commit` estava desligado (2026-10-12)

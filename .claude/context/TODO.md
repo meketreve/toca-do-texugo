@@ -10,8 +10,6 @@ active: true
 
 Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão feitos.
 
-- [ ] **Perfis no medidor Cérebro**: ler melhor o que cada neurônio aprendeu — sensor ordenado por
-      peso, "situação preferida" em palavras, quem está puxando o comando agora (`regWidget("cerebro")`)
 - [ ] **Perfis de layout**: conjuntos nomeados de medidores ("jogo", "trabalho", "noite") e a troca
       entre eles; hoje só existe um, em `localStorage["painel.widgets"]` (lê/grava em `painel.widgets`)
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar `ETA_STDP` se ficar
@@ -26,6 +24,8 @@ Perfis. O G4 e a camada de medidor (`medidor()`/`ESTILOS_MEDIDOR`) já estão fe
 
 ## Concluído
 
+- [x] ~~Perfis no medidor Cérebro: estilo "Perfis" com a situação preferida em palavras, a surpresa
+      de cada neurônio e quem está puxando o comando~~
 - [x] ~~Grupos no catálogo do editor: campo `grupo` no `regWidget`, cabeçalho que abre e fecha e
       contador de quantos ainda estão fora do painel~~
 - [x] ~~Seletor de estilo no editor, no lugar do botão que ciclava; mostra "não cabe" e o tamanho

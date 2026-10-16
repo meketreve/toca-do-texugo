@@ -239,6 +239,22 @@
   .cb-cab .cb-cel { background: none; text-align: center; overflow: hidden; height: auto;
                     text-overflow: ellipsis; white-space: nowrap; }
   .cb-cab .cb-cel.ativo { box-shadow: none; color: var(--accent); font-weight: 600; }
+  .cb-puxa { color: var(--accent); font-size: 15px; }
+  /* Perfis: uma linha por comportamento. Ocupa as duas colunas da grade da matriz, que e o
+     layout do .cb-corpo -- assim o estilo novo nao precisa mexer no estilo antigo. */
+  .cb-perfis { grid-column: 1 / -1; display: grid; gap: 5px; align-content: start; }
+  .cb-pf { display: grid; grid-template-columns: 74px minmax(36px, 1fr) 40px minmax(0, 1.7fr);
+           gap: 8px; align-items: center; }
+  .cb-pf .nm { text-transform: capitalize; color: var(--text-2); }
+  .cb-pf.ativo .nm { color: var(--accent); font-weight: 600; }
+  .cb-pf .z { height: 10px; border-radius: 3px; background: #242423; overflow: hidden; }
+  .cb-pf .z i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+  .cb-pf .zv { color: var(--muted); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .cb-pf .sit { color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cb-pf .sit.vazio { color: var(--muted); }
+  .cb-pfcab { color: var(--muted); font-size: 12px; }
+  .cb-pfcab .nm, .cb-pfcab .sit { text-transform: none; color: var(--muted); }
+  .cb-pfcab .z { background: none; height: auto; white-space: nowrap; }
 
   /* Estilos alternativos: os mesmos dados como numero ou barra */
   .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -1832,25 +1848,81 @@ async function texugoModo(modo) {
   await loadTexugo();
 }
 
+/* O topo e o mesmo nos dois estilos: e onde mora a chave cerebro/instinto, que nao pode sumir
+   dependendo do estilo escolhido. */
+function cbMontaTopo(el) {
+  el.innerHTML = '<div class="cb"><div class="cb-topo">' +
+    '<span class="cb-comp"></span><span class="cb-puxa"></span><span class="cb-idade"></span>' +
+    '<span class="cb-modo"><button data-modo="cerebro">cérebro</button>' +
+    '<button data-modo="instinto">instinto</button>' +
+    '<button data-acao="esquecer">esquecer</button></span>' +
+    '</div><div class="cb-corpo"></div></div>';
+  el.addEventListener("click", async ev => {
+    const b = ev.target.closest(".cb-modo button");
+    if (!b) return;
+    if (b.dataset.acao === "esquecer") {
+      try { await fetch("/api/texugo/esquecer", { method: "POST", headers: { "X-Dash": "1" } }); } catch (e) {}
+      return loadTexugo();
+    }
+    texugoModo(b.dataset.modo);
+  });
+}
+
+/* Qual sensor esta empurrando este neuronio AGORA: peso x taxa do sensor. E exatamente o que a
+   membrana integra em `texugo.py` (`carga += linha[j]` a cada spike que entra), entao o numero
+   nao e uma metafora -- e a corrente de entrada mesmo. */
+function cbPuxa(d, i) {
+  const linha = (d.pesos || [])[i] || [];
+  let qual = null, melhor = 0;
+  (d.sensores || []).forEach((sv, j) => {
+    const f = (linha[j] || 0) * (sv.taxa || 0);
+    if (f > melhor) { melhor = f; qual = sv; }
+  });
+  return qual;
+}
+
+/* O que distingue ESTE comportamento dos outros: o peso do sensor menos a media da coluna. Peso
+   cru nao serve -- as linhas ja somam igual (`_normaliza`), mas sensor que se correlaciona com
+   tudo fica alto em todas as linhas, e ai todo comportamento "prefere" o mesmo.
+   O piso existe por causa do ruido de nascenca: os pesos nascem sorteados (gauss em 30% da media
+   0,15), entao um cerebro de 0 spike JA tem um "preferido" por sorteio. Medido em 500
+   nascimentos, o maior desvio de coluna deu p50 0,071, p99 0,130 e maximo 0,186 -- com piso 0,13,
+   6% dos cerebros novos inventavam um gosto; com 0,20, nenhum dos 500. E gosto aprendido de
+   verdade fica entre 0,24 e 0,53 (teste solto do `texugo.py`), ou seja, passa folgado.
+   Preferir esconder gosto fraco a inventar gosto: a matriz continua mostrando o peso cru. */
+const CB_PISO = 0.20;
+function cbPerfil(d, i) {
+  const linha = (d.pesos || [])[i] || [], n = (d.pesos || []).length || 1;
+  return (d.sensores || [])
+    .map((sv, j) => ({ rotulo: sv.rotulo,
+                       dif: (linha[j] || 0) - d.pesos.reduce((a, l) => a + (l[j] || 0), 0) / n }))
+    .filter(x => x.dif >= CB_PISO)
+    .sort((a, b) => b.dif - a.dif)
+    .slice(0, 2);
+}
+
+/* O nome do comportamento e identificador: vai gravado no texugo-cerebro.json e e por ele que o
+   mascote casa a animacao (`case "dancar"`). Entao o acento entra so na hora de mostrar. */
+const CB_NOMES = { dancar: "dançar" };
+const cbNome = n => CB_NOMES[n] || n;
+
+// Linha de cima dos dois estilos: comportamento, quem o esta puxando e o tempo de aprendizado
+function cbTopoRender(el, d) {
+  const i = (d.neuronios || []).findIndex(n => n.nome === d.comportamento);
+  const puxa = i < 0 ? null : cbPuxa(d, i);
+  const h = Math.floor(d.idade / 3600), m = Math.floor((d.idade % 3600) / 60);
+  el.querySelector(".cb-comp").textContent = cbNome(d.comportamento);
+  el.querySelector(".cb-puxa").textContent = puxa ? `← ${puxa.rotulo}` : "";
+  el.querySelector(".cb-idade").textContent =
+    (d.modo === "cerebro" ? `conf ${Math.round(d.confianca * 100)}% · ` : "só observando · ") +
+    `aprendendo há ${h ? h + " h " : ""}${m} min · ${d.spikes} spikes`;
+  el.querySelectorAll(".cb-modo button").forEach(b => b.classList.toggle("on", b.dataset.modo === d.modo));
+}
+
 regWidget("cerebro", {
   nome: "Cérebro", grupo: "texugo", col: 6, h: 3, minW: 4, minH: 2,
-  montar(el) {
-    el.innerHTML = '<div class="cb"><div class="cb-topo">' +
-      '<span class="cb-comp"></span><span class="cb-idade"></span>' +
-      '<span class="cb-modo"><button data-modo="cerebro">cérebro</button>' +
-      '<button data-modo="instinto">instinto</button>' +
-      '<button data-acao="esquecer">esquecer</button></span>' +
-      '</div><div class="cb-corpo"></div></div>';
-    el.addEventListener("click", async ev => {
-      const b = ev.target.closest(".cb-modo button");
-      if (!b) return;
-      if (b.dataset.acao === "esquecer") {
-        try { await fetch("/api/texugo/esquecer", { method: "POST", headers: { "X-Dash": "1" } }); } catch (e) {}
-        return loadTexugo();
-      }
-      texugoModo(b.dataset.modo);
-    });
-  },
+  estiloNome: "Matriz",
+  montar: cbMontaTopo,
   // A grade e montada UMA vez e depois so tem estilo trocado. Refazer 96 celulas com innerHTML a
   // cada segundo fazia o alvo do toque sumir debaixo do dedo (o painel e tela de toque) e
   // repintava o card inteiro no video do Moonlight.
@@ -1872,15 +1944,10 @@ regWidget("cerebro", {
         cab: [...corpo.querySelectorAll(".cb-cab .cb-cel")],
         nomes: [...corpo.querySelectorAll(".cb-lin:not(.cb-cab) .cb-nome")],
         linhas: [...corpo.querySelectorAll(".cb-lin:not(.cb-cab) .cb-pesos")].map(p => [...p.children]),
-        botoes: [...el.querySelectorAll(".cb-modo button")],
       };
     }
-    const g = cb._grade, h = Math.floor(d.idade / 3600), m = Math.floor((d.idade % 3600) / 60);
-    el.querySelector(".cb-comp").textContent = d.comportamento;
-    el.querySelector(".cb-idade").textContent =
-      (d.modo === "cerebro" ? `conf ${Math.round(d.confianca * 100)}% · ` : "só observando · ") +
-      `aprendendo há ${h ? h + " h " : ""}${m} min · ${d.spikes} spikes`;
-    g.botoes.forEach(b => b.classList.toggle("on", b.dataset.modo === d.modo));
+    const g = cb._grade;
+    cbTopoRender(el, d);
     g.cab.forEach((c, i) => c.classList.toggle("ativo", d.neuronios[i].nome === d.comportamento));
     d.sensores.forEach((sv, j) => {
       g.nomes[j].classList.toggle("forte", sv.valor > 0.35);
@@ -1891,6 +1958,51 @@ regWidget("cerebro", {
         cel.firstChild.style.opacity = (0.08 + pesos[i] * 0.92).toFixed(2);
         cel.classList.toggle("topo", pesos[i] === forte && pesos[i] > 0.25);
       });
+    });
+  },
+});
+
+/* Perfis: a matriz 16x6 é legível mas crua -- dá pra ver que um neurônio aprendeu ALGUMA coisa e
+   não o quê. Aqui é uma linha por comportamento, com a situação preferida em palavras, a surpresa
+   do neurônio agora (o z que decide o vencedor) e quem está puxando ele. Mesma regra da matriz:
+   monta a estrutura uma vez e depois só troca texto e largura. */
+addEstilo("cerebro", {
+  id: "perfis", nome: "Perfis", minW: 4, minH: 2,
+  montar: cbMontaTopo,
+  render(el, s) {
+    const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
+    if (!d.neuronios) {
+      if (!cb._pf) corpo.innerHTML = '<div class="ag-vazio">Lendo o cérebro…</div>';
+      return;
+    }
+    if (!cb._pf) {
+      corpo.innerHTML = '<div class="cb-perfis">' +
+        '<div class="cb-pf cb-pfcab"><span class="nm"></span>' +
+        '<span class="z">surpresa agora</span><span class="zv"></span>' +
+        '<span class="sit">situação preferida</span></div>' +
+        d.neuronios.map(n =>
+        `<div class="cb-pf"><span class="nm">${esc(cbNome(n.nome))}</span>` +
+        '<span class="z"><i></i></span><span class="zv"></span><span class="sit"></span></div>').join("") +
+        "</div>";
+      cb._pf = [...corpo.querySelectorAll(".cb-pf:not(.cb-pfcab)")].map(r => ({
+        row: r, bar: r.querySelector(".z i"), zv: r.querySelector(".zv"), sit: r.querySelector(".sit"),
+      }));
+    }
+    cbTopoRender(el, d);
+    // Nenhum gosto acima do piso = cérebro novo demais. Isso é um fato do cérebro inteiro, então
+    // vai UMA vez na linha de cima, junto dos outros (conf, idade, spikes) — não seis vezes.
+    const algum = d.neuronios.some((n, i) => cbPerfil(d, i).length);
+    if (!algum) el.querySelector(".cb-idade").textContent += " · ainda sem gosto formado";
+    d.neuronios.forEach((n, i) => {
+      const p = cb._pf[i], perfil = cbPerfil(d, i);
+      p.row.classList.toggle("ativo", n.nome === d.comportamento);
+      // z de Poisson: 0 é "disparando como sempre", >2 é empolgação de verdade. A barra satura em 4
+      p.bar.style.width = (Math.max(0, Math.min(n.relativo / 4, 1)) * 100).toFixed(0) + "%";
+      const zv = n.relativo > 0 ? "+" + n.relativo.toFixed(1) : n.relativo.toFixed(1);
+      if (p.zv.textContent !== zv) p.zv.textContent = zv;
+      const sit = perfil.length ? perfil.map(x => x.rotulo).join(" · ") : "—";
+      if (p.sit.textContent !== sit) p.sit.textContent = sit;
+      p.sit.classList.toggle("vazio", !perfil.length);
     });
   },
 });

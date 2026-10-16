@@ -48,8 +48,8 @@ Mexeu em `.py` → restart. Mexeu em `index.html` → nada: recarrega sozinho (`
 - `server.py` — HTTP + coleta: `Collector` 1×/s, `GpuReader`, `RaplReader`, `ClaudeUsage` (l. 169),
   rotas no `Handler` (`do_GET` l. 403, `do_POST` l. 479).
 - `index.html` — página inteira. Cabeçalho 418, `render(s)` 796, `renderClaude` 912, `renderConfig`
-  1216, **editor de grade** 1265, medidores 1499, cérebro 1835, agenda 1898, `renderRedes` 2030;
-  mascote em canvas no fim (`chooseNext`/`doCerebro` decidem o comportamento).
+  1216, **editor de grade** 1265, medidores 1499, cérebro 1853 (estilo Matriz 1922, Perfis 1969),
+  agenda 2010, `renderRedes` 2142; mascote no fim (`chooseNext`/`doCerebro` escolhem o jeito).
 - camada de medidor: `medidor(id, nome, dadosDe, opts)` + `ESTILOS_MEDIDOR` (anéis/barras/números);
   o medidor declara os itens UMA vez e os estilos leem os mesmos. Cada um diz seu `grupo`
   (`GRUPOS`, l. 1052), que é por onde o catálogo do editor se organiza — sem grupo cai em "Outros".

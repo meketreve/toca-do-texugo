@@ -46,6 +46,7 @@ tier: 2
 
 ## Decisões e o porquê
 
+- [2026-10-16] [texugo-snn] [✓] o perfil do Cérebro lê o peso MENOS a média da coluna (o mesmo sensor nos outros comportamentos), com piso 0,20 — peso cru faz todo comportamento "preferir" o sensor que se correlaciona com tudo, e sem piso um cérebro de 0 spike já exibe gosto por sorteio (medido: em 500 nascimentos o desvio máximo foi 0,186; gosto aprendido fica entre 0,24 e 0,53)
 - [2026-10-15] [texugo-snn] [✓] cérebro no Python (`texugo.py`, thread a 100 Hz), não no `index.html` — STDP precisa de passo de ~10 ms pra janela temporal significar algo (a 1×/s do Collector tudo seria simultâneo) e no servidor os pesos sobrevivem a recarregar a página
 - [2026-10-15] [texugo-snn] [✓] entrada são os sinais do painel, não pixel da tela — na máquina o monitor do painel só mostra o painel, então capturar a tela seria circular; os stats já dão 16 canais prontos
 - [2026-10-15] [texugo-snn] [✓] sem recompensa: afagar o texugo não treina (STDP puro + homeostase) — a homeostase é que garante que nenhum comportamento morra, que era a preocupação; a personalidade sai sem supervisão
