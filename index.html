@@ -2953,19 +2953,21 @@ function arcoCirculo(cx, cy, r, frac) {
   const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
   return `M${cx},${cy - r} A${r},${r} 0 ${f > 0.5 ? 1 : 0} 1 ${x.toFixed(1)},${y.toFixed(1)}`;
 }
-// Knob do mockup: trilho, valor, ponteiro e pino central. Montado uma vez (knobSvg) e depois so
-// repintado (knobPinta) -- refazer o SVG inteiro a cada segundo pisca na tela e no Moonlight.
+/* Knob do mockup: trilho, valor, ponteiro e pino central. Montado uma vez (knobSvg) e depois so
+   repintado (knobPinta) -- refazer o SVG inteiro a cada segundo pisca na tela e no Moonlight.
+   As classes do desenho levam `knob-` de proposito: `vl` e o numero grande que fica EMBAIXA do
+   desenho, e um `querySelector(".vl")` solto achava a peca do SVG e deixava o numero parado. */
 function knobSvg(cx, cy, r, cor) {
-  return `<path class="tr" d="${arco(cx, cy, r, 1)}" fill="none" stroke="var(--track)" stroke-width="3" stroke-linecap="round"/>` +
-         `<path class="vl" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round"/>` +
-         `<line class="pt" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>` +
+  return `<path class="knob-tr" d="${arco(cx, cy, r, 1)}" fill="none" stroke="var(--track)" stroke-width="3" stroke-linecap="round"/>` +
+         `<path class="knob-vl" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round"/>` +
+         `<line class="knob-pt" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round"/>` +
          `<circle cx="${cx}" cy="${cy}" r="5" fill="var(--page)" stroke="var(--text)" stroke-width="2"/>`;
 }
 function knobPinta(svg, cx, cy, r, frac) {
   const f = Math.min(Math.max(frac || 0, 0), 1);
-  svg.querySelector(".vl").setAttribute("d", f > 0.004 ? arco(cx, cy, r, f) : "");
+  svg.querySelector(".knob-vl").setAttribute("d", f > 0.004 ? arco(cx, cy, r, f) : "");
   const [qx, qy] = ptKnob(cx, cy, 6, f), [px, py] = ptKnob(cx, cy, r - 12, f);
-  const l = svg.querySelector(".pt");
+  const l = svg.querySelector(".knob-pt");
   l.setAttribute("x1", qx.toFixed(1)); l.setAttribute("y1", qy.toFixed(1));
   l.setAttribute("x2", px.toFixed(1)); l.setAttribute("y2", py.toFixed(1));
 }
@@ -2994,7 +2996,9 @@ addEstilo("uso", {
 });
 
 /* Traco do mockup: grade tracejada e as series sem rotulo na ponta -- o numero de cada uma ja
-   esta em cima do mostrador dela (o `drawMulti` do estilo padrao poe rotulo na ponta). */
+   esta em cima do mostrador dela (o `drawMulti` do estilo padrao poe rotulo na ponta).
+   O `points` da polilinha e uma lista de PARES de coordenadas: o "M" do `path` nao entra aqui,
+   senao a lista toda e invalida e o traco nao sai (foi o que aconteceu na primeira versao). */
 function tracoMulti(svg, series, maxV) {
   const w = svg.clientWidth, h = svg.clientHeight;
   if (!w || !h) return;
@@ -3007,8 +3011,8 @@ function tracoMulti(svg, series, maxV) {
     const d = s.data || [];
     if (d.filter(v => v != null).length < 2) continue;
     let pts = "", pen = false;
-    d.forEach((v, i) => { if (v == null) { pen = false; return; } pts += (pen ? " " : " M") + `${x(i, d.length)},${y(v)}`; pen = true; });
-    if (pts) out += `<polyline points="${pts.trim()}" fill="none" stroke="${s.cor}" stroke-width="1.6" stroke-linejoin="round"/>`;
+    d.forEach((v, i) => { if (v == null) { pen = false; return; } pts += `${pts ? " " : ""}${x(i, d.length)},${y(v)}`; pen = true; });
+    if (pts) out += `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="1.6" stroke-linejoin="round"/>`;
   }
   svg.innerHTML = out;
 }
@@ -3035,25 +3039,29 @@ addEstilo("radial-cpu", {
     linhaCab(el, "");
   },
   render(el, d) {
-    // Tres aneis de raios diferentes, um por medida; o anel mede o mesmo item da legenda
-    const g = el.querySelector(".aneis");
-    if (g.dataset.n !== String((d.itens || []).length)) {
-      g.dataset.n = String((d.itens || []).length);
-      g.innerHTML = d.itens.map((a, i) => {
+    // Tres aneis de raios diferentes, um por medida; o anel mede o mesmo item da legenda.
+    // So a ESTRUTURA e montada uma vez: os valores da legenda sao reescritos a cada passo, senao
+    // o cartao mostra o numero do primeiro render pra sempre (o centro ja era assim).
+    const itens = d.itens || [], g = el.querySelector(".aneis"), leg = el.querySelector(".lbn-leg");
+    if (g.dataset.n !== String(itens.length)) {
+      g.dataset.n = String(itens.length);
+      g.innerHTML = itens.map((a, i) => {
         const r = 136 - i * 22;
         return `<path d="${arco(165, 165, r, 1)}" fill="none" stroke="var(--track)" stroke-width="2"/>` +
                `<path class="v${i}" fill="none" stroke="${a.cor}" stroke-width="4" stroke-linecap="round"/>` +
                `<circle class="p${i}" r="5" fill="var(--page)" stroke="${a.cor}" stroke-width="2"/>`;
       }).join("");
-      el.querySelector(".lbn-leg").innerHTML = d.itens.map((a, i) =>
+      leg.innerHTML = itens.map(a =>
         `<div><span class="nm" style="color:${a.cor}">${a.tag || a.nome.toUpperCase()}</span>` +
-        `<span class="vl">${lNumHtml(a.curto || a.texto, "")}${a.rodape ? `<small>${a.rodape}</small>` : ""}</span></div>`).join("");
+        `<span class="vl"></span></div>`).join("");
     }
-    (d.itens || []).forEach((a, i) => {
+    itens.forEach((a, i) => {
       const r = 136 - i * 22, f = Math.min(Math.max(a.frac || 0, 0), 1);
       el.querySelector(`.v${i}`).setAttribute("d", f > 0.004 ? arco(165, 165, r, f) : "");
       const [px, py] = ptKnob(165, 165, r, f), c = el.querySelector(`.p${i}`);
       c.setAttribute("cx", px.toFixed(1)); c.setAttribute("cy", py.toFixed(1));
+      if (leg.children[i]) leg.children[i].querySelector(".vl").innerHTML =
+        lNumHtml(a.curto || a.texto, "") + (a.rodape ? `<small>${a.rodape}</small>` : "");
     });
     el.querySelector(".lbn-centro .v").innerHTML = (d.centro || {}).valor || "—";
     el.querySelector(".lbn-centro .r").textContent = (d.centro || {}).rotulo || "";

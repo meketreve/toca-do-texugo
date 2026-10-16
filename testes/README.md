@@ -32,7 +32,7 @@ python3 testes/monta-cerebro.py index.html
 "$CHROME" --headless=new --window-size=1920,1240 --virtual-time-budget=5000 \
   --dump-dom http://127.0.0.1:8799/teste-cerebro.html | grep -o '"erros":\[[^]]*\]'
 
-python3 testes/monta-telas.py index.html
+python3 testes/monta-telas.py index.html --real   # + as telas do Linha com o dado da propria maquina
 "$CHROME" --headless=new --window-size=1920,1080 --virtual-time-budget=6000 \
   --screenshot=/tmp/tela.png http://127.0.0.1:8799/teste-linha-1.html
 
@@ -54,5 +54,10 @@ defeitos de layout que o relatório não pegava.
   enquanto o `--dump-dom` deixa o Chrome descontar ~87 px de janela (`--window-size=1920,1167` →
   viewport de 1080). Misturar os dois faz o print mostrar cartões 40 px mais altos que o relatório
   e parece bug de grade que não existe.
+- **Cartão não desenhado não é erro.** O `renderDashB` engole a exceção de um medidor e um medidor
+  que nunca foi desenhado não gera exceção nenhuma: o cartão fica só com o rótulo. Por isso o
+  relatório do `monta-telas.py` traz três checagens que não são de erro — `desenho` (o cartão tem
+  conteúdo?), `muda` (o conteúdo acompanha o dado, quando o dado muda?) e `traco` (a polilinha tem
+  geometria?). Cada uma delas já pegou um defeito que passou por print e por `"erros":[]`.
 - O relatório do `monta-telas.py` só mede depois de 5,2 s de tempo virtual de propósito: antes
   disso o layout ainda é o da fonte de reserva, e as alturas não são as da tela.

@@ -187,6 +187,49 @@ setTimeout(() => {
                largura: Math.round(q.width), altura: Math.round(q.height),
                rotulo: c.querySelector("h2").textContent, canto: (c.querySelector(".l-extra") || {}).textContent || "" };
     });
+    // O cartao tem que ACOMPANHAR o dado: desenha de novo com um dado mexido e compara o texto.
+    // Foi o teste que faltava quando o numero do encoder lia o `.vl` do proprio desenho (ficava
+    // "—" pra sempre) e quando a legenda da bancada so era montada no primeiro render.
+    const antes = {};
+    for (const k of Object.keys(hist)) { antes[k] = hist[k].length; hist[k].push(k[0] === "d" ? 500000 : 100000); }
+    const gAntes = { media, comportamento: texugoData.comportamento,
+                     feito: agendaData.itens && agendaData.itens[0] && agendaData.itens[0].feito };
+    if (media) media = { ...media, title: "Outra música", status: "Playing" };
+    texugoData.comportamento = "dormir";
+    if (agendaData.itens && agendaData.itens[0]) agendaData.itens[0].feito = !gAntes.feito;
+    const mexido = JSON.parse(JSON.stringify(DADOS.stats));
+    Object.assign(mexido.cpu, { pct: 88, power: 99, temp: 71 });
+    Object.assign(mexido.mem, { pct: 77 });
+    Object.assign(mexido.gpu, { util: 66, temp: 68, power: 111, fan: 77, mem_used: 5529 });
+    mexido.nvme_temp = 61; mexido.volume = { pct: 12, muted: false };
+    mexido.claude = { ...mexido.claude, five_hour: 9 };
+    // os discos e a cota tambem: o Armazenamento nao le nada disso, e sem mexer aqui ele acusava
+    // "NAO MUDOU" so porque o dado dele nao tinha mudado
+    mexido.disks = mexido.disks.map(d => ({ ...d, pct: 91, used: (d.used || 0) * 2 }));
+    if (mexido.onedrive && mexido.onedrive.quota)
+      mexido.onedrive = { ...mexido.onedrive, quota: { used: 4e9, total: 5e9 } };
+    r.muda = [];
+    for (const [id, m] of montados) {
+      const txt = m.body.textContent;
+      try { m.e.render(m.body, mexido); } catch (e) { r.muda.push([id, "erro: " + (e && e.message)]); continue; }
+      r.muda.push([id, txt === m.body.textContent ? "NAO MUDOU" : "ok"]);
+    }
+    // O traco do Uso: com as series variando, a polilinha tem que ter geometria. O `points` e uma
+    // lista de PARES de coordenadas -- o "M" do `path` nao entra, senao a lista toda e invalida e
+    // o traco nao sai (o cartao continua bonito, com a grade e o numero, e ninguem ve a falta)
+    r.traco = null;
+    if (page === 0 && montados.has("uso")) {   // pagina escondida nao tem geometria pra medir
+      const guarda = {};
+      for (const k of ["cpu", "ram", "gpu", "vram"]) { guarda[k] = hist[k]; hist[k] = Array.from({ length: 90 }, (_, i) => 20 + (i * 7) % 60); }
+      const uso = montados.get("uso");
+      uso.e.render(uso.body, DADOS.stats);
+      r.traco = [...uso.body.querySelectorAll(".len-tr polyline")].map(p => Math.round(p.getBBox().height));
+      for (const k of ["cpu", "ram", "gpu", "vram"]) hist[k] = guarda[k];
+    }
+    media = gAntes.media; texugoData.comportamento = gAntes.comportamento;
+    if (agendaData.itens && agendaData.itens[0]) agendaData.itens[0].feito = gAntes.feito;
+    for (const k of Object.keys(hist)) { hist[k].length = antes[k]; }
+    for (const [, m] of montados) { try { m.e.render(m.body, DADOS.stats); } catch (e) {} }
     // `rola` > cliente = o desenho passou do espaco do cartao (o .w-body corta, nao estoura a
     // tela). A folga de 3 px e das linhas fracionarias da grade, que arredondam pra cima.
     const estourou = m => m.body.scrollHeight > m.body.clientHeight + 3;
