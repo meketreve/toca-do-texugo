@@ -1025,6 +1025,13 @@ try {
   .l .lbn-leg > div .nm { font-size: 14px; letter-spacing: .12em; padding: 0 6px; border: 1px solid currentColor; }
   .l .lbn-leg > div .vl { font-size: 40px; font-weight: 200; line-height: 1.1; white-space: nowrap; }
   .l .lbn-leg > div .vl small { font-size: 17px; color: var(--muted); margin-left: 4px; }
+  /* Paginas que o mockup nao desenha (redes, atalhos, editor, configuracoes): so as cores que
+     estavam fixas no codigo do Atual e que apareceriam fora do tom -- os botoes ja usam as
+     variaveis de superficie do tema. */
+  .l .shortcuts button:active, .l .picks button:active, .l .ag-item:active { background: var(--elev); }
+  .l .ed-menu button { background: var(--elev); }
+  .l .ed-menu button:disabled { background: var(--surface); }
+  .l .ed-cat .ed-grp { color: var(--text-2); }
 </style>
 </head>
 <body>
