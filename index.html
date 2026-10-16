@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Toca do Texugo</title>
+<script>
+/* Tema aplicado antes do primeiro desenho: depois, o painel piscaria no tema velho a cada boot */
+try {
+  const t = localStorage.getItem("painel.tema");
+  if (t === "grafite" || t === "grafite-claro") {
+    document.documentElement.dataset.tema = t;
+    document.documentElement.classList.add("g");
+  }
+} catch (e) {}
+</script>
 <style>
   :root {
     color-scheme: dark;
@@ -60,7 +70,7 @@
   header .spacer { flex: 1; }
   header .meta { color: var(--text-2); font-size: 18px; }
   header .meta b { color: var(--text); font-weight: 600; }
-  header .meta.stale, header .meta.stale b { color: var(--muted); }  /* app de desktop fechado: numero parado */
+  header .stale, header .stale b { color: var(--muted); }  /* app de desktop fechado: numero parado */
   .conn { font-size: 18px; color: var(--text); display: none; }
   .conn.show { display: inline; }
   .conn::before { content: "⚠ "; color: var(--critical); }
@@ -446,18 +456,332 @@
   }
   .bubble.love { color: #e86a92; }
   @keyframes rise { from { opacity: 0; translate: 0 6px; } 15% { opacity: 1; } to { opacity: 0; translate: 0 -40px; } }
+  /* ---------- Tema Grafite (escuro e claro) ----------
+     Valores do mockup "Painel · Grafite". `data-tema` troca as cores; a classe `.g` liga a
+     estrutura propria do tema (barra lateral, pilulas, classico remontado). O tema "Atual" nao
+     tem nenhuma das duas e fica exatamente como era. */
+  :root[data-tema="grafite"] {
+    --page: #111111; --surface: #2B2B2B; --elev: #363636; --border: transparent;
+    --text: #F2F2F2; --text-2: #B5B5B5; --muted: #8C8C8C; --grid: #3A3A3A; --axis: #3A3A3A;
+    --accent: #A8E6C6; --accent-wash: rgba(168,230,198,0.13); --track: #424242;
+    --accent-bg: #A8E6C6; --accent-txt: #10251B; --pill: #D9D9D9; --pill-txt: #1E1E1E;
+    --warning: #E2CE91; --critical: #E0918D; --good: #A8E6C6;
+    --sombra: none; --brilho: 0 0 0 2px #A8E6C6, 0 0 18px rgba(168,230,198,0.30);
+  }
+  /* No claro a menta de preenchimento e a de linha sao duas: a clara some em cima do bege */
+  :root[data-tema="grafite-claro"] {
+    color-scheme: light;
+    --page: #E5E2DB; --surface: #F0EDE8; --elev: #E3E0D9; --border: transparent;
+    --text: #2B2B2B; --text-2: #57534D; --muted: #77736C; --grid: #DAD6CE; --axis: #DAD6CE;
+    --accent: #3E9670; --accent-wash: rgba(62,150,112,0.12); --track: #D6D2CA;
+    --accent-bg: #B4E0C9; --accent-txt: #1F5C46; --pill: #CAC7C0; --pill-txt: #2B2B2B;
+    --warning: #B08A1E; --critical: #C0504A; --good: #3E9670;
+    --sombra: inset 0 1px 0 rgba(255,255,255,0.85), 0 10px 24px rgba(90,80,70,0.10);
+    --brilho: 0 0 0 2px #7FD0A8, 0 0 18px rgba(127,208,168,0.45);
+  }
+
+  /* Barra lateral: troca o botao discreto de pagina por navegacao que se ve */
+  #rail { display: none; }
+  .g .app { grid-template-columns: 76px minmax(0, 1fr); padding: 20px; }
+  .g .app > header { grid-column: 2; grid-row: 1; }
+  .g .app > main { grid-column: 2; grid-row: 2; }
+  .g #pager { display: none; }
+  .g #rail {
+    grid-column: 1; grid-row: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    background: var(--surface); box-shadow: var(--sombra); border-radius: 24px; padding: 14px 0;
+  }
+  #rail .logo { width: 48px; height: 48px; border-radius: 50%; background: var(--pill); display: grid; place-items: center; }
+  #rail .sep { width: 32px; height: 2px; border-radius: 1px; background: var(--grid); }
+  #rail button {
+    width: 48px; height: 48px; border-radius: 14px; border: 0; padding: 0; cursor: pointer;
+    display: grid; place-items: center; background: transparent; color: var(--text-2);
+  }
+  #rail button svg { width: 22px; height: 22px; }
+  #rail button.on { background: var(--accent-bg); color: var(--accent-txt); box-shadow: var(--brilho); }
+  #rail .fim { flex: 1; }
+  #rail .conn-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; }
+  #rail .conn-dot i { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  #rail .conn-dot.off { border-color: var(--critical); }
+  #rail .conn-dot.off i { background: var(--critical); }
+
+  /* Cabecalho em pilulas */
+  .g header { align-items: center; gap: 12px; min-height: 56px; }
+  .g .clock { font-size: 46px; font-weight: 700; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .g .clock .seg { color: var(--muted); font-weight: 500; font-size: 30px; }
+  .g .date { font-size: 20px; margin-left: 6px; }
+  .g header .meta {
+    position: relative; display: inline-block; height: 40px; line-height: 40px; padding: 0 16px 0 32px;
+    border-radius: 999px; background: var(--surface); box-shadow: var(--sombra); font-size: 17px; white-space: nowrap;
+  }
+  .g header .meta::before {
+    content: ""; position: absolute; left: 16px; top: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+  }
+  .g header .meta.cl::before { background: var(--accent); }
+  .g header .meta.live { display: inline-flex; align-items: center; padding-left: 16px; }
+  .g header .meta.live::before { display: none; }
+  .g .meta-grp { display: contents; }
+  .g .meta-grp .sep { display: none; }
+
+  /* Cards: sem borda, canto de 24 px, titulo em pilula */
+  .g .card { border-color: transparent; border-radius: 24px; box-shadow: var(--sombra); padding: 20px 22px; }
+  .g .card h2, .g .page-title {
+    display: inline-flex; align-items: center; width: fit-content; height: 30px; padding: 0 16px; margin: 0 0 12px;
+    border-radius: 999px; background: var(--pill); color: var(--pill-txt); font-size: 15px; font-weight: 600; letter-spacing: 0;
+  }
+  .g .page-title { margin: 4px 0 0; }
+  .g .widget > h2, .g .rede-head h2 { margin: 0; }
+  .g .readout { background: var(--elev); border-color: transparent; }
+  .g .art { background: var(--elev); border-radius: 18px; }
+  .g .shortcuts button:active, .g .picks button:active { background: var(--elev); }
+  .g .picks button { border-radius: 20px; box-shadow: var(--sombra); }
+  .g .picks button.sel { background: var(--elev); border-color: transparent; box-shadow: var(--brilho); }
+  .g .cfg, .g .cfg-pe button, .g .ed-cat button, .g .perfil-bar .chip { border-radius: 16px; }
+  .g .cfg button { background: var(--elev); }
+  .g .ed-menu button { background: var(--elev); }
+  .g .ed-menu button:disabled { background: var(--surface); }
+  .g .cb-lin:not(.cb-cab) .cb-cel, .g .cb-pf:not(.cb-pfcab) .z { background: var(--track); }
+  .g .cb-modo { gap: 8px; }
+  .g .cb-modo button {
+    font-size: 15px; font-weight: 600; padding: 8px 16px; border-radius: 999px; border: 0;
+    background: var(--elev); color: var(--text-2);
+  }
+  .g .cb-modo button.on { background: var(--accent-bg); color: var(--accent-txt); }
+  .g .cb-modo button[data-acao] { background: transparent; box-shadow: inset 0 0 0 1px var(--grid); font-weight: 400; }
+
+  /* Agenda: bolinha de marcar no lugar do caractere */
+  .g .ag { gap: 4px; }
+  .g .ag-item { grid-template-columns: 30px 1fr auto; align-items: center; padding: 10px 14px 10px 10px; border-radius: 999px; font-size: 19px; }
+  .g .ag-item:active { background: var(--elev); }
+  .g .ag-item .bx {
+    font-size: 0; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--muted);
+    display: grid; place-items: center;
+  }
+  .g .ag-item.ok .bx { background: var(--accent-bg); border-color: var(--accent-bg); }
+  .g .ag-item.ok .bx::after {
+    content: ""; width: 10px; height: 5px; border: solid var(--accent-txt); border-width: 0 0 2px 2px;
+    transform: translateY(-1px) rotate(-45deg);
+  }
+  .g .ag-item.atrasado .bx { border-color: var(--critical); }
+  .g .ag-item .qd { font-size: 15px; font-weight: 600; }
+  .g .ag-item.atrasado .qd { color: var(--critical); }
+  .g .ag-item.hoje .qd { color: var(--accent); }
+
+  /* Atalhos: bloco grande com o icone num circulo, nome e o programa embaixo */
+  .atalhos-topo { display: flex; align-items: center; gap: 12px; }
+  .volta { display: none; }
+  .g .volta {
+    display: inline-flex; align-items: center; gap: 10px; margin-left: auto; height: 40px; padding: 0 16px;
+    border-radius: 999px; background: var(--surface); box-shadow: var(--sombra); font-size: 16px; color: var(--text-2);
+  }
+  .g .volta b { color: var(--text); font-variant-numeric: tabular-nums; min-width: 3.2em; }
+  .g .volta i { display: block; width: 120px; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .g .volta u { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .shortcuts .ic svg, .shortcuts .sb { display: none; }
+  .g .shortcuts button {
+    border-radius: 24px; min-height: 184px; padding: 18px 22px; gap: 2px; box-shadow: var(--sombra);
+    grid-template-rows: auto 1fr auto auto; place-items: start; align-content: stretch; text-align: left;
+  }
+  .g .shortcuts .ic {
+    width: 64px; height: 64px; border-radius: 50%; background: var(--elev); color: var(--text);
+    display: grid; place-items: center; font-size: 32px;
+  }
+  .g .shortcuts .ic.tem-svg .em { display: none; }
+  .g .shortcuts .ic svg { display: block; width: 30px; height: 30px; }
+  .g .shortcuts .lb { grid-row: 3; font-size: 26px; font-weight: 700; color: var(--text); text-align: left; }
+  .g .shortcuts .sb { display: block; grid-row: 4; font-size: 15px; color: var(--muted); }
+  .g .shortcuts button.on { background: var(--elev); box-shadow: var(--brilho); }
+  .g .shortcuts button.on .ic { background: var(--accent-bg); color: var(--accent-txt); }
+  .g .shortcuts button.on .sb { color: var(--accent); }
+  .g .shortcuts button.perigo .ic { color: var(--critical); background: color-mix(in srgb, var(--critical) 20%, var(--elev)); }
+  .g .shortcuts button.ok { border-color: transparent; box-shadow: var(--brilho); }
+  .g .shortcuts button.err { border-color: transparent; box-shadow: 0 0 0 2px var(--critical); }
+  /* Layout e tema lado a lado: cada botao fica do tamanho de antes (1/5 da largura) */
+  .picks-duplo { display: grid; grid-template-columns: 2fr 3fr; gap: var(--gap); }
+  .picks-duplo > div { display: grid; gap: var(--gap); align-content: start; }
+  .picks-duplo #picks { grid-template-columns: repeat(2, 1fr); }
+  .picks-duplo #temas { grid-template-columns: repeat(3, 1fr); }
+
+  /* ---------- Classico remontado (so no tema Grafite) ---------- */
+  #page-dash-g { grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .gd-cima { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); min-height: 0; }
+  .gd-baixo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); min-height: 0; }
+  #page-dash-g .card { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden; }
+  #page-dash-g .card h2 { margin: 0; flex: none; }
+  .gd-lin { display: flex; align-items: center; gap: 12px; }
+  .gd-esp { flex: 1; }
+  .gd-mudo { font-size: 14px; color: var(--muted); }
+  .gd-abas { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--elev); }
+  .gd-abas button {
+    height: 40px; min-width: 76px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 16px; font-weight: 600; background: transparent; color: var(--text-2);
+  }
+  .gd-abas button.on { background: var(--accent-bg); color: var(--accent-txt); }
+  .gd-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  .gd-kpi { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 3px solid var(--grid); cursor: pointer; min-width: 0; }
+  .gd-kpi.on { border-bottom-color: var(--accent); }
+  .gd-kpi .nm { font-size: 15px; color: var(--muted); }
+  .gd-kpi .v { font-size: 46px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gd-kpi .v small { font-size: 22px; font-weight: 500; color: var(--text-2); margin-left: 4px; }
+  .gd-kpi .sb { font-size: 15px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gd-graf { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; flex: 1; min-height: 0; }
+  .gd-esc { display: flex; flex-direction: column; justify-content: space-between; font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .gd-graf .spark-wrap { height: auto; margin: 0; }
+  #gd-graf polyline { stroke-width: 3; }
+  .gd-pe { display: flex; align-items: center; gap: 16px; }
+  .gd-chip {
+    height: 30px; padding: 0 14px; border-radius: 999px; background: var(--elev); color: var(--text-2);
+    font-size: 14px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .gd-thr { display: flex; align-items: flex-end; gap: 4px; height: 34px; }
+  .gd-thr span { width: 7px; border-radius: 4px; background: var(--accent); }
+  .gd-thr span.q { background: var(--critical); }
+
+  .gd-rl { display: flex; flex-direction: column; justify-content: center; gap: 8px; flex: 1; min-height: 0; }
+  .gd-r { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 8px 10px 8px 8px; border-radius: 999px; }
+  .gd-r.live { background: var(--elev); box-shadow: var(--brilho); }
+  .gd-r .ci { width: 48px; height: 48px; border-radius: 50%; background: var(--elev); color: var(--text-2); display: grid; place-items: center; }
+  .gd-r.live .ci { background: var(--accent-bg); color: var(--accent-txt); }
+  .gd-r .ci svg { width: 22px; height: 22px; }
+  .gd-r .tx { display: flex; flex-direction: column; min-width: 0; }
+  .gd-r .nm { font-size: 19px; font-weight: 600; }
+  .gd-r .sb { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gd-r.live .sb { color: var(--text); }
+  .gd-r .sb.av { color: var(--warning); }
+  .gd-r .nu { display: flex; flex-direction: column; align-items: flex-end; padding-right: 10px; font-variant-numeric: tabular-nums; }
+  .gd-r .nu b { font-size: 26px; }
+  .gd-r .nu b.sem { color: var(--muted); }
+  .gd-r .nu span { font-size: 14px; font-weight: 600; color: var(--accent); }
+  .gd-r .nu span.cai { color: var(--critical); }
+  .gd-ver {
+    height: 52px; flex: none; border: 0; border-radius: 999px; background: var(--pill); color: var(--pill-txt); cursor: pointer;
+    font: inherit; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .gd-ver svg { width: 18px; height: 18px; }
+
+  .gd-w { display: flex; align-items: baseline; gap: 10px; }
+  .gd-w b { font-size: 58px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .gd-w b small { font-size: 26px; font-weight: 500; color: var(--text-2); margin-left: 4px; }
+  .gd-w span { font-size: 15px; color: var(--text-2); }
+  .gd-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gd-chips .gd-chip { height: 34px; font-size: 15px; }
+  .gd-chips .gd-chip i { width: 8px; height: 8px; border-radius: 50%; }
+  .gd-chips .gd-chip b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .gd-fan { font-size: 15px; color: var(--text-2); }
+  .gd-fan b { color: var(--text); }
+  .gd-bars { display: flex; flex-direction: column; gap: 10px; }
+  .gd-en .gd-bars { margin-top: auto; }
+  .gd-bar { display: flex; flex-direction: column; gap: 5px; }
+  .gd-bar .lh { display: flex; justify-content: space-between; gap: 10px; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .gd-bar .lh > span:first-child { color: var(--text-2); }
+  .gd-bar .lh small { color: var(--muted); font-size: inherit; }
+  .gd-bar .tr { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .gd-bar .tr i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .gd-od { margin-top: auto; background: var(--elev); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: none; }
+  .gd-od-t { display: flex; align-items: center; gap: 10px; }
+  .gd-od-t .tt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .gd-od-t b { font-size: 17px; }
+  .gd-od-t small { font-size: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gd-sw { width: 44px; height: 26px; border-radius: 999px; background: var(--track); position: relative; flex: none; }
+  .gd-sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); }
+  .gd-sw.on { background: var(--accent-bg); }
+  .gd-sw.on::after { left: auto; right: 3px; background: var(--accent-txt); }
+  .gd-sw.av { background: var(--warning); }
+  .gd-cota { position: relative; height: 44px; border-radius: 999px; background: var(--pill); overflow: hidden; }
+  .gd-cota i { position: absolute; inset: 0 auto 0 0; background: var(--accent-bg); }
+  .gd-cota span {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; color: var(--pill-txt); font-variant-numeric: tabular-nums;
+  }
+
+  .gd-net { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .gd-net .k { font-size: 14px; color: var(--muted); }
+  .gd-net .v { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gd-net .v small { font-size: 16px; font-weight: 500; color: var(--text-2); margin-left: 4px; }
+  .gd-net .spark-wrap { height: 36px; margin-top: 2px; }
+  .gd-div { height: 2px; border-radius: 1px; background: var(--grid); flex: none; }
+  .gd-procs { display: flex; flex-direction: column; gap: 7px; flex: 1; min-height: 0; overflow: hidden; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .gd-procs .pr { display: grid; grid-template-columns: minmax(0, 1fr) 64px 76px; column-gap: 10px; }
+  .gd-procs .pr.h { font-size: 13px; color: var(--muted); }
+  .gd-procs .n { text-align: right; color: var(--text-2); }
+  .gd-procs .pr.h .n { color: var(--muted); }
+  .gd-procs .p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .gd-src {
+    height: 30px; padding: 0 12px; border-radius: 999px; background: var(--elev); font-size: 14px; color: var(--text-2);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .gd-src::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .gd-np-t { display: flex; gap: 14px; align-items: center; min-width: 0; flex: none; }
+  .gd-np-t .art { width: 84px; height: 84px; flex: none; font-size: 30px; }
+  .gd-np-t > div:last-child { min-width: 0; }
+  .gd-np-t .np-title { font-size: 21px; font-weight: 700; margin: 0; }
+  .gd-np-t .np-artist { font-size: 15px; }
+  .gd-viz { flex: 1; min-height: 0; }
+  #viz-g { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .gd-prog { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+  .gd-prog .meter { flex: 1; height: 8px; margin: 0; }
+  .gd-prog .meter > i { transition: width 1s linear; }
+
+  /* ---------- Cerebro, estilo Cards ----------
+     Quem esta no comando a esquerda; um card por comportamento a direita. Funciona nos dois
+     temas -- `--elev` e `--brilho` so existem no Grafite, dai os valores de reserva. */
+  .cb-cards .cb-comp, .cb-cards .cb-puxa { display: none; }
+  /* A grade da matriz no .cb-corpo encolhe a linha ao conteudo: aqui os cards ocupam o card todo */
+  .cb-cards .cb-corpo { overflow: hidden; grid-template-rows: minmax(0, 1fr); align-content: stretch; }
+  .cd {
+    grid-column: 1 / -1; display: grid; gap: 12px; height: 100%; min-height: 0;
+    grid-template-columns: minmax(0, 1.15fr) repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .cd-cmd {
+    grid-row: 1 / -1; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; min-width: 0; overflow: hidden;
+    border-radius: 18px; border: 2px solid var(--accent); box-shadow: var(--brilho, none);
+  }
+  .cd-k { font-size: 14px; color: var(--muted); }
+  .cd-nome { font-size: 52px; font-weight: 700; line-height: 1.05; }
+  .cd-conf { display: grid; grid-template-columns: 1fr auto; gap: 6px; font-size: 15px; color: var(--text-2); margin-bottom: 10px; }
+  .cd-conf b { color: var(--text); }
+  .cd-conf .cd-bar { grid-column: 1 / -1; height: 8px; }
+  .cd-bar { display: block; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .cd-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .cd-puxa { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cd-chip {
+    display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px;
+    background: var(--elev, #262625); font-size: 15px; color: var(--text-2); white-space: nowrap;
+  }
+  .cd-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .cd-chip b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .cd-n { background: var(--elev, #222221); border-radius: 18px; padding: 12px 14px; display: grid; align-content: start; gap: 6px; min-width: 0; overflow: hidden; }
+  .cd-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; min-width: 0; }
+  .cd-cab b { font-size: 19px; flex: none; }
+  .cd-n.on .cd-cab b { color: var(--accent); }
+  .cd-fr { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cd-s { display: grid; grid-template-columns: minmax(0, 1fr) minmax(40px, .9fr) 34px; gap: 8px; align-items: center; font-size: 14px; }
+  .cd-s .nm { color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cd-s .vl { text-align: right; color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .cd-s.fraco { opacity: .45; }
 </style>
 </head>
 <body>
 <div class="app">
+  <nav id="rail" aria-label="Páginas">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><ellipse cx="12" cy="13" rx="8" ry="7" fill="var(--pill-txt)"/><path d="M12 6v13" stroke="var(--pill)" stroke-width="3.2" stroke-linecap="round"/><circle cx="8.6" cy="13" r="1.1" fill="var(--pill)"/><circle cx="15.4" cy="13" r="1.1" fill="var(--pill)"/></svg></span>
+    <span class="sep"></span>
+    <button data-ir="0" aria-label="Painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 9h8V3h-8z"/></svg></button>
+    <button data-ir="1" aria-label="Redes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></button>
+    <button data-ir="2" aria-label="Atalhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg></button>
+    <span class="sep"></span>
+    <button data-ir="editor" aria-label="Editor de grade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg></button>
+    <span class="fim"></span>
+    <span class="conn-dot" id="conn-dot" role="img" aria-label="Servidor do painel"><i></i></span>
+  </nav>
   <header>
     <span class="clock" id="clock">--:--:--</span>
     <span class="date" id="date"></span>
     <span class="conn" id="conn">sem conexão com o servidor do painel</span>
     <span class="spacer"></span>
     <span class="meta live" id="live" hidden><i class="dot"></i><span id="live-txt"></span></span>
-    <span class="meta" id="claude" hidden>Claude 5 h <b id="cl-fh">—</b><span id="cl-fh-r" hidden>, reseta <b>—</b></span>
-      · semana <b id="cl-sd">—</b><span id="cl-sd-r" hidden>, reseta <b>—</b></span></span>
+    <span class="meta-grp" id="claude" hidden><span class="meta cl">Claude 5 h <b id="cl-fh">—</b><span id="cl-fh-r" hidden>, reseta <b>—</b></span></span>
+      <span class="meta cl"><span class="sep">· </span>semana <b id="cl-sd">—</b><span id="cl-sd-r" hidden>, reseta <b>—</b></span></span></span>
     <span class="meta">Volume <b id="vol">—</b></span>
     <span class="meta">Carga <b id="load">—</b></span>
     <span class="meta">Ligado há <b id="uptime">—</b></span>
@@ -552,6 +876,41 @@
   </section>
   </main>
 
+  <main class="page" id="page-dash-g" hidden>
+    <section class="gd-cima">
+      <div class="card gd-sis">
+        <div class="gd-lin"><h2>Sistema</h2><span class="gd-esp"></span><div class="gd-abas" id="gd-abas" role="tablist" aria-label="Gráfico"><button data-k="cpu" role="tab">CPU</button><button data-k="ram" role="tab">RAM</button><button data-k="gpu" role="tab">GPU</button><button data-k="vram" role="tab">VRAM</button></div></div>
+        <div class="gd-kpis" id="gd-kpis"><div class="gd-kpi" data-k="cpu"><span class="nm">Processador</span><span class="v">—</span><span class="sb"></span></div><div class="gd-kpi" data-k="ram"><span class="nm">Memória RAM</span><span class="v">—</span><span class="sb"></span></div><div class="gd-kpi" data-k="gpu"><span class="nm">Placa de vídeo</span><span class="v">—</span><span class="sb"></span></div><div class="gd-kpi" data-k="vram"><span class="nm">Memória de vídeo</span><span class="v">—</span><span class="sb"></span></div></div>
+        <div class="gd-graf"><div class="gd-esc"><span>100%</span><span>50%</span><span>0</span></div>
+          <div class="spark-wrap"><svg class="spark" id="gd-graf"></svg><div class="readout" hidden></div></div></div>
+        <div class="gd-pe"><span class="gd-chip">últimos 90 s · toque para ver o valor</span><span class="gd-esp"></span>
+          <span class="gd-mudo" id="gd-thn"></span><span class="gd-thr" id="gd-thr" role="img" aria-label="Uso por thread da CPU"></span></div>
+      </div>
+      <div class="card gd-redes">
+        <div class="gd-lin"><h2>Redes</h2><span class="gd-esp"></span><span class="gd-mudo">Δ 30 dias</span></div>
+        <div class="gd-rl" id="gd-rl"></div>
+        <button class="gd-ver" id="gd-ver">Ver detalhes das redes <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </section>
+    <section class="gd-baixo">
+      <div class="card gd-en"><h2>Energia e calor</h2><div class="gd-w" id="gd-w"></div><div class="gd-chips" id="gd-temps"></div>
+        <div class="gd-fan" id="gd-fan"></div><div class="gd-bars" id="gd-pot"></div></div>
+      <div class="card gd-ar"><h2>Armazenamento</h2><div class="gd-bars" id="gd-discos"></div><div class="gd-mudo" id="gd-io"></div>
+        <div class="gd-od" id="gd-od" hidden></div></div>
+      <div class="card gd-rp"><h2>Rede e processos</h2>
+        <div class="gd-net">
+          <div><div class="k">↓ Download</div><div class="v" id="gd-rx">—</div><div class="spark-wrap"><svg class="spark" data-spark="grx"></svg><div class="readout" hidden></div></div></div>
+          <div><div class="k">↑ Upload</div><div class="v" id="gd-tx">—</div><div class="spark-wrap"><svg class="spark" data-spark="gtx"></svg><div class="readout" hidden></div></div></div>
+        </div>
+        <div class="gd-div"></div><div class="gd-procs" id="gd-procs"></div></div>
+      <div class="card gd-np"><div class="gd-lin"><h2>Tocando agora</h2><span class="gd-esp"></span><span class="gd-src" id="gnp-src" hidden></span></div>
+        <div class="gd-np-t"><div class="art"><img id="gnp-art" alt="" hidden><span id="gnp-noart">♪</span></div>
+          <div><div class="np-title" id="gnp-title">Nada tocando</div><div class="np-artist" id="gnp-artist"></div></div></div>
+        <div class="viz-wrap gd-viz"><canvas id="viz-g" data-centro="1"></canvas></div>
+        <div class="gd-prog" id="gnp-prog" hidden><span id="gnp-pos"></span><div class="meter"><i id="gnp-bar"></i></div><span id="gnp-len"></span></div></div>
+    </section>
+  </main>
+
   <main class="page" id="page-dash-b" hidden>
     <section class="widgets" id="widgets-b"></section>
     <div class="fora-aviso" id="fora-aviso" hidden></div>
@@ -576,11 +935,12 @@
   </main>
 
   <main class="page" id="page-atalhos" hidden>
-    <h2 class="page-title">Atalhos</h2>
+    <div class="atalhos-topo"><h2 class="page-title">Atalhos</h2>
+      <span class="volta" id="volta">volta ao painel em <b></b><i><u></u></i></span></div>
     <section class="shortcuts" id="shortcuts"></section>
-    <section class="layout-pick">
-      <h2 class="page-title">Layout do painel</h2>
-      <div class="picks" id="picks"></div>
+    <section class="layout-pick picks-duplo">
+      <div><h2 class="page-title">Layout do painel</h2><div class="picks" id="picks"></div></div>
+      <div><h2 class="page-title">Tema</h2><div class="picks" id="temas"></div></div>
     </section>
     <section class="layout-pick">
       <h2 class="page-title">Perfil de medidores</h2>
@@ -847,6 +1207,9 @@ attachReadout(sparks.gpu, v => fmtN(v) + "%");
 attachReadout(sparks.vram, v => fmtN(v) + "%");
 attachReadout(sparks.rx, fmtRate);
 attachReadout(sparks.tx, fmtRate);
+attachReadout(sparks.grx, fmtRate);
+attachReadout(sparks.gtx, fmtRate);
+attachReadout(document.getElementById("gd-graf"), v => fmtN(v) + "%");
 
 function render(s) {
   const c = s.cpu, m = s.mem, g = s.gpu;
@@ -862,9 +1225,10 @@ function render(s) {
   document.getElementById("vol").textContent = v ? (v.muted ? "mudo" : v.pct + "%") : "—";
 
   renderClaude(s.claude, s.t);
+  marcaMudo(v && v.muted);
   pcHot = c.pct > 90 || c.temp > 85 || (g != null && g.temp > 84);
   
-  if (layout === "agrupado") renderDashB(s); else renderDashA(s);
+  if (layout === "agrupado") renderDashB(s); else if (grafite()) renderDashG(s); else renderDashA(s);
 }
 
 /* Layout classico: o painel de sempre, intocado */
@@ -934,6 +1298,138 @@ function renderDashA(s) {
 
   renderOneDrive(s.onedrive);
   renderMedia(s.media);
+}
+
+/* ---------- Classico remontado (tema Grafite) ----------
+   Os mesmos dados do classico na disposicao do mockup "Painel · Grafite": o card Sistema junta
+   os quatro medidores de cima e tem abas que escolhem a serie do grafico grande; Redes sobe pro
+   lado dele; embaixo, energia, armazenamento, rede e processos, e o que esta tocando. */
+let gdAba = "cpu";
+// "320 KB/s" -> ["320", "KB/s"]: numero grande e unidade pequena, como no mockup
+const valUni = txt => { const i = txt.lastIndexOf(" "); return i < 0 ? [txt, ""] : [txt.slice(0, i), txt.slice(i + 1)]; };
+const gdCor = l => l === "ok" ? "" : levelColor[l];
+function gdBar(k, vHtml, pct, cor) {
+  return `<div class="gd-bar"><div class="lh"><span>${k}</span><span>${vHtml}</span></div>` +
+         `<div class="tr"><i style="width:${Math.min(Math.max(pct ?? 0, 0), 100).toFixed(1)}%${cor ? ";background:" + cor : ""}"></i></div></div>`;
+}
+function gdGrafico() {
+  const svg = document.getElementById("gd-graf");
+  drawSpark(svg, hist[gdAba], 100);
+  const g = svg._geo;
+  if (!g) return;
+  const lin = (y, tr) => `<line x1="0" x2="${g.w}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--grid)" stroke-width="1"${tr ? ' stroke-dasharray="4 6"' : ""}/>`;
+  svg.insertAdjacentHTML("afterbegin", lin(g.y(100)) + lin(g.y(50), true) + lin(g.y(0)));
+}
+function gdMarca() {
+  document.querySelectorAll("#gd-abas button").forEach(b => {
+    b.classList.toggle("on", b.dataset.k === gdAba);
+    b.setAttribute("aria-selected", b.dataset.k === gdAba);
+  });
+  document.querySelectorAll("#gd-kpis .gd-kpi").forEach(k => k.classList.toggle("on", k.dataset.k === gdAba));
+  gdGrafico();
+}
+for (const id of ["gd-abas", "gd-kpis"]) document.getElementById(id).addEventListener("click", ev => {
+  const b = ev.target.closest("[data-k]");
+  if (b) { gdAba = b.dataset.k; gdMarca(); }
+});
+document.getElementById("gd-ver").addEventListener("click", () => showPage(PAGES.indexOf("page-redes")));
+
+function renderDashG(s) {
+  const c = s.cpu, m = s.mem, g = s.gpu, $ = id => document.getElementById(id);
+  const vp = g ? 100 * g.mem_used / g.mem_total : null;
+  const kpis = {
+    cpu: [`${fmtN(c.pct)}<small>%</small>`, `${c.threads} threads · ${fmtN((c.freq || 0) / 1000, 2)} GHz · ${fmtN(c.temp)} °C`],
+    ram: [`${fmtN(m.used / GiB, 1)}<small>de ${fmtN(m.total / GiB, 0)} GB</small>`, `${fmtN(m.pct)}% em uso · swap ${fmtBytes(m.swap_used)}`],
+    gpu: g ? [`${fmtN(g.util)}<small>%</small>`, `${esc(g.name || "GPU")} · ${fmtN(g.clock)} MHz · ${fmtN(g.temp)} °C`] : ["—", "GPU sem leitura (nvidia-smi)"],
+    vram: g ? [`${fmtN(g.mem_used / 1024, 1)}<small>de ${fmtN(g.mem_total / 1024, 0)} GB</small>`, `${fmtN(vp)}% em uso`] : ["—", ""],
+  };
+  for (const el of document.querySelectorAll("#gd-kpis .gd-kpi")) {
+    const [v, sb] = kpis[el.dataset.k];
+    el.querySelector(".v").innerHTML = v;
+    el.querySelector(".sb").innerHTML = sb;
+  }
+  gdMarca();
+  $("gd-thn").textContent = `${c.per.length} threads`;
+  $("gd-thr").innerHTML = c.per.map(v =>
+    `<span${level(v, 75, 95) === "crit" ? ' class="q"' : ""} style="height:${Math.max(4, Math.round(34 * Math.min(v, 100) / 100))}px"></span>`).join("");
+
+  // Energia e calor
+  const tot = c.power != null && g ? c.power + g.power : c.power ?? (g ? g.power : null);
+  $("gd-w").innerHTML = `<b>${fmtN(tot)}<small>W</small></b><span>${c.power != null && g ? "CPU + GPU agora" : g ? "GPU agora" : "CPU agora"}</span>`;
+  const chip = (k, t, w, cr) => t == null ? "" :
+    `<span class="gd-chip"><i style="background:${levelColor[level(t, w, cr)]}"></i>${k} <b>${fmtN(t)}°</b></span>`;
+  $("gd-temps").innerHTML = chip("CPU", c.temp, 80, 90) + (g ? chip("GPU", g.temp, 78, 86) : "") + chip("NVMe", s.nvme_temp, 65, 75);
+  $("gd-fan").innerHTML = g ? `Ventoinha da GPU <b>${fmtN(g.fan)}%</b> · Encoder <b>${fmtN(g.enc)}%</b>` : "";
+  let pot = "";
+  if (c.power != null) {
+    const cp = c.tdp ? 100 * c.power / c.tdp : 0;
+    pot += gdBar("CPU", `<b>${fmtN(c.power)} W</b>${c.tdp ? ` <small>de ${c.tdp}</small>` : ""}`, cp, gdCor(level(cp, 85, 100)));
+  }
+  if (g) {
+    const gp = 100 * g.power / g.power_limit;
+    pot += gdBar("GPU", `<b>${fmtN(g.power)} W</b> <small>de ${fmtN(g.power_limit)}</small>`, gp, gdCor(level(gp, 85, 97)));
+  }
+  $("gd-pot").innerHTML = pot;
+
+  // Armazenamento
+  $("gd-discos").innerHTML = s.disks.map(d => d.pct == null ? gdBar(esc(d.label), "não montado", 0)
+    : gdBar(esc(d.label), `<b>${fmtBytes(d.used)}</b> <small>de ${fmtBytes(d.total)}</small>`, d.pct, gdCor(level(d.pct, 85, 95)))).join("");
+  $("gd-io").textContent = `leitura ${fmtRate(s.diskio.read)} · escrita ${fmtRate(s.diskio.write)}`;
+  gdOneDrive(s.onedrive);
+
+  // Rede e processos
+  for (const [k, v] of [["rx", s.net.rx], ["tx", s.net.tx]]) {
+    const [n, u] = valUni(fmtRate(v));
+    $("gd-" + k).innerHTML = `${n}<small>${u}</small>`;
+  }
+  const netMax = Math.max(64 * 1024, ...hist.rx, ...hist.tx) * 1.15;  // mesma escala nos dois
+  drawSpark(sparks.grx, hist.rx, netMax); drawSpark(sparks.gtx, hist.tx, netMax);
+  const pr = $("gd-procs");
+  pr.innerHTML = '<div class="pr h"><span>Programa</span><span class="n">CPU</span><span class="n">RAM</span></div>' +
+    s.procs.map(p => `<div class="pr"><span class="p">${esc(p.name)}</span><span class="n">${fmtN(p.cpu, 1)}%</span><span class="n">${fmtBytes(p.mem)}</span></div>`).join("");
+  // So as linhas que cabem no card
+  const lim = pr.getBoundingClientRect().bottom + 0.5;
+  while (pr.childElementCount > 1 && pr.lastElementChild.getBoundingClientRect().bottom > lim) pr.lastElementChild.remove();
+
+  renderRedesG();
+  renderMedia(s.media);
+}
+
+const GD_OD = { ok: "sincronizado", syncing: "sincronizando…", error: "erro na sincronização",
+                offline: "sem conexão", stopped: "serviço parado", starting: "iniciando" };
+function gdOneDrive(o) {
+  const box = document.getElementById("gd-od");
+  box.hidden = !o || !o.installed || !o.status;
+  if (box.hidden) return;
+  const txt = (GD_OD[o.status] || o.status) + (o.status === "ok" && o.last_sync ? " · " + agoS(o.last_sync) : "");
+  const sw = o.status === "ok" || o.status === "syncing" ? "on" : o.status === "stopped" ? "" : "av";
+  const q = o.quota;
+  box.innerHTML = `<div class="gd-od-t"><span class="tt"><b>OneDrive</b><small>${esc(txt)}</small></span>` +
+    `<span class="gd-sw ${sw}" role="img" aria-label="${esc(txt)}"></span></div>` +
+    (q ? `<div class="gd-cota"><i style="width:${(100 * q.used / q.total).toFixed(1)}%"></i>` +
+         `<span>${fmtBytes(q.used)} de ${fmtBytes(q.total)} na nuvem</span></div>` : "");
+}
+
+// Redes no card do lado do Sistema. Δ e a diferenca na serie diaria (30 dias de historico)
+function renderRedesG() {
+  const box = document.getElementById("gd-rl");
+  if (box.offsetParent === null) return;  // pagina escondida: nao gasta
+  const icon = r => `<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">${r.icon}</svg>`;
+  const html = REDES.map(r => {
+    const d = redesData[r.id] || {}, L = d.live, tem = d.followers != null;
+    const ser = (d.series || []).filter(v => v != null);
+    const delta = ser.length > 1 ? ser[ser.length - 1] - ser[0] : 0;
+    let sb = d.handle ? esc(d.handle.startsWith("@") ? d.handle : "@" + d.handle) : "", av = false;
+    if (L) sb = `AO VIVO · ${fmtN(L.viewers)} assistindo · ${fmtDur((Date.now() - new Date(L.started)) / 1000)}`;
+    else if (!d.configured) { sb = "falta credencial no redes.json"; av = true; }
+    else if (d.ok === false) { sb = esc(d.error || "erro na última leitura"); av = true; }
+    else if (d.latest && d.latest.views != null) sb = `último vídeo · ${fmtK(d.latest.views)} views`;
+    return `<div class="gd-r${L ? " live" : ""}"><span class="ci">${icon(r)}</span>` +
+      `<span class="tx"><span class="nm">${r.nome}</span><span class="sb${av ? " av" : ""}">${sb}</span></span>` +
+      `<span class="nu"><b${tem ? "" : ' class="sem"'}>${tem ? fmtN(d.followers) : "—"}</b>` +
+      `<span${delta < 0 ? ' class="cai"' : ""}>${delta ? signed(delta) : ""}</span></span></div>`;
+  }).join("");
+  if (box._html !== html) { box.innerHTML = html; box._html = html; }  // so repinta se mudou
 }
 
 /* OneDrive: estado da sync, cota e ultimas atividades (abraunegg/onedrive via journal) */
@@ -1009,34 +1505,42 @@ function renderMedia(m) {
     media = m; mediaAt = performance.now();
   }
   const $ = id => document.getElementById(id);
-  const img = $("np-art");
+  // O classico e o classico remontado (Grafite) mostram o mesmo: "g" na frente e o do Grafite
+  const ambos = (id, txt) => { $(id).textContent = txt; $("g" + id).textContent = txt; };
+  const player = m ? m.player.charAt(0).toUpperCase() + m.player.slice(1) : "";
   if (m) {
-    const player = m.player.charAt(0).toUpperCase() + m.player.slice(1);
     $("np-src").textContent = `${player} · ${m.status === "Playing" ? "tocando" : "pausado"}`;
-    $("np-title").textContent = m.title || "Sem título";
-    $("np-artist").textContent = [m.artist, m.album].filter(Boolean).join(" · ");
+    ambos("np-title", m.title || "Sem título");
+    ambos("np-artist", [m.artist, m.album].filter(Boolean).join(" · "));
   } else {
     $("np-src").textContent = "Tocando agora";
-    $("np-title").textContent = audio.playing ? "Som do PC" : "Nada tocando";
-    $("np-artist").textContent = audio.playing ? "sem informação da música" : "";
+    ambos("np-title", audio.playing ? "Som do PC" : "Nada tocando");
+    ambos("np-artist", audio.playing ? "sem informação da música" : "");
   }
+  $("gnp-src").textContent = player;
+  $("gnp-src").hidden = !m;
   const art = m && /^https?:/.test(m.art) ? m.art : "";
-  if (img.dataset.src !== art) {
-    img.dataset.src = art; img.hidden = true; $("np-noart").hidden = false;
+  for (const pre of ["", "g"]) {
+    const img = $(pre + "np-art");
+    if (img.dataset.src === art) continue;
+    img.dataset.src = art; img.hidden = true; $(pre + "np-noart").hidden = false;
     if (art) img.src = art;
   }
   mediaProgress();
 }
-document.getElementById("np-art").addEventListener("load", e => {
-  e.target.hidden = false; document.getElementById("np-noart").hidden = true;
+for (const pre of ["", "g"]) document.getElementById(pre + "np-art").addEventListener("load", e => {
+  e.target.hidden = false; document.getElementById(pre + "np-noart").hidden = true;
 });
 function mediaProgress() {
-  const prog = document.getElementById("np-prog");
-  prog.hidden = !(media && media.length > 0);
-  if (prog.hidden) return;
+  const $ = id => document.getElementById(id);
+  const tem = !!(media && media.length > 0);
+  $("np-prog").hidden = $("gnp-prog").hidden = !tem;
+  if (!tem) return;
   const pos = Math.min(media.length, media.position + (media.status === "Playing" ? (performance.now() - mediaAt) / 1000 : 0));
-  document.getElementById("np-bar").style.width = (100 * pos / media.length) + "%";
-  document.getElementById("np-time").textContent = `${fmtMin(pos)} / ${fmtMin(media.length)}`;
+  $("np-bar").style.width = $("gnp-bar").style.width = (100 * pos / media.length) + "%";
+  $("np-time").textContent = `${fmtMin(pos)} / ${fmtMin(media.length)}`;
+  $("gnp-pos").textContent = fmtMin(pos);
+  $("gnp-len").textContent = fmtMin(media.length);
 }
 
 async function tick() {
@@ -1045,16 +1549,42 @@ async function tick() {
     const s = await r.json();
     if (s.cpu) render(s);
     document.getElementById("conn").classList.remove("show");
+    document.getElementById("conn-dot").classList.remove("off");
   } catch (e) {
     document.getElementById("conn").classList.add("show");
+    document.getElementById("conn-dot").classList.add("off");
   }
 }
 
 function clock() {
   const d = new Date();
-  document.getElementById("clock").textContent = d.toLocaleTimeString("pt-BR");
+  // Segundos num span proprio: o Grafite os mostra menores e apagados; no Atual nada muda
+  const hms = d.toLocaleTimeString("pt-BR");
+  document.getElementById("clock").innerHTML = `${hms.slice(0, 5)}<span class="seg">${hms.slice(5)}</span>`;
   document.getElementById("date").textContent = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
   mediaProgress();
+  contaVolta();
+}
+
+/* Icone de linha do tema Grafite, achado pelo emoji do atalhos.json (o emoji continua sendo o
+   icone do tema Atual). Emoji sem par aqui fica como esta, dentro do circulo. */
+const ATALHO_SVG = {
+  "🔇": "M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6",
+  "📸": "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  "⌨": "M4 17l6-6-6-6M12 19h8",
+  "📁": "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
+  "🎮": "M6 11h4M8 9v4M15 12h.01M18 10h.01M17.3 5H6.7a4 4 0 0 0-4 3.6l-.9 7.2a2.5 2.5 0 0 0 4.7 1.4L7.5 15h9l1 2.2a2.5 2.5 0 0 0 4.7-1.4l-.9-7.2a4 4 0 0 0-4-3.6z",
+  "💬": "M21 11.5a8.4 8.4 0 0 1-9 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z",
+  "📊": "M22 12h-4l-3 9L9 3l-3 9H2",
+  "☀": "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4",
+  "🔒": "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2zM7 11V7a5 5 0 0 1 10 0v4",
+};
+// O atalho de mudo acende enquanto o som esta mudo, como no mockup
+function marcaMudo(mudo) {
+  const b = document.querySelector("#shortcuts button[data-mudo]");
+  if (!b) return;
+  b.classList.toggle("on", !!mudo);
+  b.querySelector(".sb").textContent = mudo ? "som desligado" : b.dataset.sub;
 }
 
 let shortcutsSig = null;
@@ -1068,9 +1598,15 @@ async function loadShortcuts() {
     box.innerHTML = "";
     for (const it of items) {
       const b = document.createElement("button");
-      b.innerHTML = `<span class="ic"></span><span class="lb"></span>`;
-      b.querySelector(".ic").textContent = it.icon || "▶";
+      const em = it.icon || "▶", chave = em.replace(/\uFE0F/g, ""), d = ATALHO_SVG[chave];
+      b.innerHTML = `<span class="ic${d ? " tem-svg" : ""}"><span class="em"></span>` +
+        (d ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>` : "") +
+        `</span><span class="lb"></span><span class="sb"></span>`;
+      b.querySelector(".em").textContent = em;
       b.querySelector(".lb").textContent = it.label;
+      b.querySelector(".sb").textContent = b.dataset.sub = it.sub || "";
+      if (chave === "🔒") b.classList.add("perigo");
+      if (chave === "🔇") b.dataset.mudo = "1";
       b.addEventListener("click", async () => {
         let ok = false;
         try { ok = (await fetch("/api/run/" + encodeURIComponent(it.id), { method: "POST", headers: { "X-Dash": "1" } })).ok; } catch (e) {}
@@ -1092,6 +1628,19 @@ const LAYOUTS = {
   classico: { nome: "Clássico", icone: "▤", pagina: "page-dash" },
   agrupado: { nome: "Agrupado", icone: "◴", pagina: "page-dash-b" },
 };
+/* Temas: "atual" e o visual de sempre; os dois Grafite vem do mockup e trazem estrutura propria
+   (barra lateral, pilulas, o classico remontado). A escolha vale pro proximo boot e e aplicada
+   num <script> do <head>, antes do primeiro desenho. */
+const TEMAS = {
+  atual: { nome: "Atual", icone: "◐" },
+  grafite: { nome: "Grafite", icone: "●" },
+  "grafite-claro": { nome: "Grafite claro", icone: "○" },
+};
+const temaAtual = () => document.documentElement.dataset.tema || "atual";
+const grafite = () => document.documentElement.classList.contains("g");
+// No Grafite o layout classico e a pagina remontada; o agrupado e o mesmo nos dois temas
+const paginaDe = id => id === "classico" && grafite() ? "page-dash-g" : LAYOUTS[id].pagina;
+const PAGINAS_LAYOUT = ["page-dash", "page-dash-g", "page-dash-b"];
 let layout = LAYOUTS[localStorage.getItem("painel.layout")] ? localStorage.getItem("painel.layout") : "classico";
 
 // Registro de medidores: id -> { nome, grupo, col (de 12), montar(el), render(el, s) }
@@ -1295,13 +1844,13 @@ function renderDashB(s) {
 }
 // A pagina do layout inativo nao esta em PAGES, entao ninguem a esconde: e aqui que isso acontece
 function ocultaLayouts() {
-  for (const L of Object.values(LAYOUTS)) document.getElementById(L.pagina).hidden = L.pagina !== PAGES[0];
+  for (const id of PAGINAS_LAYOUT) document.getElementById(id).hidden = id !== PAGES[0];
 }
 function setLayout(id) {
   if (!LAYOUTS[id]) return;
   layout = id;
   try { localStorage.setItem("painel.layout", id); } catch (e) {}
-  PAGES[0] = LAYOUTS[id].pagina;
+  PAGES[0] = paginaDe(id);
   ocultaLayouts();
   renderPicks();
   showPage(0);
@@ -1360,6 +1909,25 @@ function menuNomePerfil(barra) {
     if (n) novoPerfil(n);
   });
   barra.appendChild(m);
+}
+
+// Trocar de tema recarrega: as cores do canvas sao lidas uma vez, e a pagina do layout muda
+function setTema(t) {
+  try { t === "atual" ? localStorage.removeItem("painel.tema") : localStorage.setItem("painel.tema", t); } catch (e) {}
+  location.reload();
+}
+function renderTemas() {
+  const box = document.getElementById("temas");
+  box.innerHTML = "";
+  for (const [id, T] of Object.entries(TEMAS)) {
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="ic"></span><span class="lb"></span>`;
+    b.querySelector(".ic").textContent = T.icone;
+    b.querySelector(".lb").textContent = T.nome;
+    if (id === temaAtual()) b.classList.add("sel");
+    b.addEventListener("click", () => { if (id !== temaAtual()) setTema(id); });
+    box.appendChild(b);
+  }
 }
 
 function renderPicks() {
@@ -1698,6 +2266,7 @@ function edAbre() {
   el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter");
   document.getElementById("mascot").hidden = true;  // sem chao conhecido nesta pagina
   clearTimeout(backTimer);
+  railMarca("editor");
   edCarrega(); edRender();
 }
 
@@ -2080,15 +2649,15 @@ function cbPuxa(d, i) {
    verdade fica entre 0,24 e 0,53 (teste solto do `texugo.py`), ou seja, passa folgado.
    Preferir esconder gosto fraco a inventar gosto: a matriz continua mostrando o peso cru. */
 const CB_PISO = 0.20;
-function cbPerfil(d, i) {
+// Todos os sensores do neuronio i, do que mais o distingue dos outros pro que menos
+function cbDifs(d, i) {
   const linha = (d.pesos || [])[i] || [], n = (d.pesos || []).length || 1;
   return (d.sensores || [])
-    .map((sv, j) => ({ rotulo: sv.rotulo,
+    .map((sv, j) => ({ nome: sv.nome, rotulo: sv.rotulo, peso: linha[j] || 0,
                        dif: (linha[j] || 0) - d.pesos.reduce((a, l) => a + (l[j] || 0), 0) / n }))
-    .filter(x => x.dif >= CB_PISO)
-    .sort((a, b) => b.dif - a.dif)
-    .slice(0, 2);
+    .sort((a, b) => b.dif - a.dif);
 }
+function cbPerfil(d, i) { return cbDifs(d, i).filter(x => x.dif >= CB_PISO).slice(0, 2); }
 
 /* O nome do comportamento e identificador: vai gravado no texugo-cerebro.json e e por ele que o
    mascote casa a animacao (`case "dancar"`). Entao o acento entra so na hora de mostrar. */
@@ -2192,6 +2761,78 @@ addEstilo("cerebro", {
       const sit = perfil.length ? perfil.map(x => x.rotulo).join(" · ") : "—";
       if (p.sit.textContent !== sit) p.sit.textContent = sit;
       p.sit.classList.toggle("vazio", !perfil.length);
+    });
+  },
+});
+
+/* Cards: o mockup "Cerebro e Agenda". A esquerda quem esta no comando, com a confianca e os
+   sensores que estao puxando agora (a mesma corrente de entrada do `cbPuxa`, em fracao do total);
+   a direita um card por comportamento, com a situacao preferida em frase e os tres sensores que
+   mais o distinguem dos outros (a conta do Perfis). Sensor abaixo do piso aparece apagado: o
+   peso esta ali, mas nao e gosto aprendido. Estrutura montada uma vez, como nos outros estilos. */
+const CB_FRASE = {
+  cpu: "a CPU trabalha", gpu: "a GPU trabalha", calor: "o PC esquenta", mem: "a memória enche",
+  rede: "a rede corre", disco: "o disco trabalha", musica: "tem música", volume: "o som está alto",
+  claude: "o Claude trabalha", noite: "é noite", pico_cpu: "a CPU dá pico", pico_rede: "a rede dá pico",
+  pico_disco: "o disco dá pico", troca_musica: "a música troca", agenda: "chega agenda", live: "a live está no ar",
+};
+addEstilo("cerebro", {
+  id: "cards", nome: "Cards", minW: 7, minH: 3,
+  montar(el) { cbMontaTopo(el); el.querySelector(".cb").classList.add("cb-cards"); },
+  render(el, s) {
+    const d = texugoData, cb = el.querySelector(".cb"), corpo = el.querySelector(".cb-corpo");
+    if (!d.neuronios) {
+      if (!cb._cd) corpo.innerHTML = '<div class="ag-vazio">Lendo o cérebro…</div>';
+      return;
+    }
+    if (!cb._cd) {
+      corpo.innerHTML = '<div class="cd"><div class="cd-cmd"><span class="cd-k">no comando agora</span>' +
+        '<span class="cd-nome"></span><div class="cd-conf"><span>confiança</span><b></b><span class="cd-bar"><i></i></span></div>' +
+        '<span class="cd-k">quem está puxando</span><div class="cd-puxa"></div></div>' +
+        d.neuronios.map(n => `<div class="cd-n"><div class="cd-cab"><b>${esc(cbNome(n.nome))}</b><span class="cd-fr"></span></div>` +
+          '<div class="cd-s"><span class="nm"></span><span class="cd-bar"><i></i></span><span class="vl"></span></div>'.repeat(3) +
+          "</div>").join("") + "</div>";
+      cb._cd = {
+        nome: corpo.querySelector(".cd-nome"), conf: corpo.querySelector(".cd-conf b"),
+        confBar: corpo.querySelector(".cd-conf i"), puxa: corpo.querySelector(".cd-puxa"),
+        ns: [...corpo.querySelectorAll(".cd-n")].map(c => ({
+          c, fr: c.querySelector(".cd-fr"),
+          ss: [...c.querySelectorAll(".cd-s")].map(r => ({ r, nm: r.querySelector(".nm"), bar: r.querySelector("i"), vl: r.querySelector(".vl") })),
+        })),
+      };
+    }
+    cbTopoRender(el, d);
+    const g = cb._cd, venc = d.neuronios.findIndex(n => n.nome === d.comportamento);
+    const troca = (e, t) => { if (e.textContent !== t) e.textContent = t; };
+    troca(g.nome, d.comportamento ? cbNome(d.comportamento) : "—");
+    const conf = d.modo === "cerebro" ? Math.round((d.confianca || 0) * 100) : null;
+    troca(g.conf, conf == null ? "instinto" : conf + "%");
+    g.confBar.style.width = (conf || 0) + "%";
+    let puxa = "";
+    if (venc >= 0) {
+      const linha = d.pesos[venc] || [];
+      const f = d.sensores.map((sv, j) => ({ r: sv.rotulo, v: (linha[j] || 0) * (sv.taxa || 0) }));
+      const tot = f.reduce((a, x) => a + x.v, 0);
+      if (tot > 0) puxa = f.filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 3)
+        .map(x => `<span class="cd-chip"><i></i>${esc(x.r)} <b>${fmtN(x.v / tot, 2)}</b></span>`).join("");
+    }
+    if (g.puxa._html !== puxa) {
+      g.puxa.innerHTML = puxa || '<span class="cd-k">ninguém — tudo calmo</span>';
+      g.puxa._html = puxa;
+    }
+    const maior = Math.max(0.01, ...d.pesos.flat());
+    d.neuronios.forEach((n, i) => {
+      const card = g.ns[i], difs = cbDifs(d, i), gosto = difs.filter(x => x.dif >= CB_PISO).slice(0, 2);
+      card.c.classList.toggle("on", i === venc);
+      troca(card.fr, gosto.length ? "quando " + gosto.map(x => CB_FRASE[x.nome] || x.rotulo).join(" e ") : "sem preferência clara");
+      card.ss.forEach((r, k) => {
+        const x = difs[k];
+        if (!x) return;
+        troca(r.nm, x.rotulo);
+        troca(r.vl, fmtN(x.peso, 2));
+        r.bar.style.width = (100 * x.peso / maior).toFixed(0) + "%";
+        r.r.classList.toggle("fraco", x.dif < CB_PISO);
+      });
     });
   },
 });
@@ -2310,7 +2951,7 @@ regWidget("agenda", {
 });
 
 /* ---------- Paginas: painel e atalhos ---------- */
-const PAGES = [LAYOUTS[layout].pagina, "page-redes", "page-atalhos"];
+const PAGES = [paginaDe(layout), "page-redes", "page-atalhos"];
 const ATALHOS = 2;
 // O botao mostra o icone da PROXIMA pagina
 const PAGER_ICONS = [
@@ -2331,14 +2972,39 @@ function showPage(i) {
     if (j === i) { el.classList.remove("enter"); void el.offsetWidth; el.classList.add("enter"); }
   });
   document.getElementById("pager").innerHTML = PAGER_ICONS[i];
+  railMarca(i);
   armBack();
   tick();
   if (PAGES[i] === "page-redes") renderRedes();
 }
+let voltaAte = 0;
 function armBack() {
   clearTimeout(backTimer);
-  if (page === ATALHOS) backTimer = setTimeout(() => showPage(0), BACK_AFTER);
+  voltaAte = 0;
+  if (page === ATALHOS) {
+    voltaAte = Date.now() + BACK_AFTER;
+    backTimer = setTimeout(() => showPage(0), BACK_AFTER);
+  }
+  contaVolta();
 }
+// "volta ao painel em 72 s" na pagina de atalhos (so o Grafite mostra)
+function contaVolta() {
+  if (!voltaAte) return;
+  const el = document.getElementById("volta"), resta = Math.max(0, voltaAte - Date.now());
+  el.querySelector("b").textContent = Math.ceil(resta / 1000) + " s";
+  el.querySelector("u").style.width = (100 * resta / BACK_AFTER).toFixed(1) + "%";
+}
+function railMarca(qual) {
+  document.querySelectorAll("#rail button[data-ir]").forEach(b => b.classList.toggle("on", b.dataset.ir === String(qual)));
+}
+document.getElementById("rail").addEventListener("click", ev => {
+  const b = ev.target.closest("button[data-ir]");
+  if (!b) return;
+  if (b.dataset.ir === "editor") return edAbre();
+  document.getElementById("page-editor").hidden = true;
+  document.getElementById("mascot").hidden = false;
+  showPage(+b.dataset.ir);
+});
 
 /* ---------- Redes sociais ---------- */
 const REDES = [
@@ -2451,6 +3117,7 @@ async function loadRedes() {
   if (aoVivo) document.getElementById("live-txt").innerHTML = `AO VIVO na ${aoVivo[0]} · <b>${fmtN(aoVivo[1].viewers)}</b> assistindo`;
   if (PAGES[page] === "page-redes") renderRedes();
   renderRedesMini();
+  renderRedesG();
 }
 
 /* Resumo compacto no painel principal, abaixo dos processos */
@@ -2568,10 +3235,12 @@ function analyse(now, dt) {
   if (audio.playing && bass > 0.35 && bass > bassAvg * 1.3 && now - audio.beat > 280) audio.beat = now;
 }
 
-const viz = document.getElementById("viz");
+const VIZES = [document.getElementById("viz"), document.getElementById("viz-g")];
 const css = getComputedStyle(document.documentElement);
 const C_ACCENT = css.getPropertyValue("--accent").trim(), C_MUTED = css.getPropertyValue("--muted").trim(), C_AXIS = css.getPropertyValue("--axis").trim();
-function drawViz() {
+// Desenha so o que esta na tela: canvas de pagina escondida tem largura 0 e sai no primeiro if
+function drawViz() { for (const cv of VIZES) desenhaViz(cv); }
+function desenhaViz(viz) {
   const w = viz.clientWidth, h = viz.clientHeight;
   if (!w || !h) return;
   const dpr = window.devicePixelRatio || 1;
@@ -2579,6 +3248,16 @@ function drawViz() {
   const ctx = viz.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
+  if (viz.dataset.centro) {
+    // Grafite: barras em pilula centradas na altura, as 64 bandas juntadas de duas em duas
+    const n = BARS / 2, band = w / n, bw = Math.max(3, Math.min(10, band - 3)), meio = h / 2;
+    ctx.fillStyle = C_ACCENT;
+    for (let i = 0; i < n; i++) {
+      const bh = Math.max(bw, (h - 4) * Math.max(barV[2 * i], barV[2 * i + 1]));
+      ctx.beginPath(); ctx.roundRect(i * band + (band - bw) / 2, meio - bh / 2, bw, bh, bw / 2); ctx.fill();
+    }
+    return;
+  }
   const base = h - 1, top = 6, band = w / BARS, bw = Math.min(16, band - 2);
   ctx.fillStyle = C_ACCENT;
   for (let i = 0; i < BARS; i++) {
@@ -2628,7 +3307,7 @@ const M = { x: 300, y: -MH, el: null, dir: 1, state: "fall", until: 0, jump: nul
 
 function platforms() {
   // Fileira de cima fica de fora: em cima dela o texugo cobre o cabecalho (volume, carga, uptime)
-  const sel = { "page-dash": "#page-dash .card:not(.tile)", "page-dash-b": "#page-dash-b .card", "page-redes": "#page-redes .card", "page-atalhos": "#page-atalhos .shortcuts button" }[PAGES[page]];
+  const sel = { "page-dash": "#page-dash .card:not(.tile)", "page-dash-g": "#page-dash-g .gd-baixo .card", "page-dash-b": "#page-dash-b .card", "page-redes": "#page-redes .card", "page-atalhos": "#page-atalhos .shortcuts button" }[PAGES[page]];
   return [...document.querySelectorAll(sel)].filter(el => el.getBoundingClientRect().width > MW + 24);
 }
 function spot(el) {
@@ -2773,7 +3452,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-ocultaLayouts(); montarDashB(); renderPicks(); renderPerfis(); renderConfig(); edLiga();
+ocultaLayouts(); montarDashB(); renderPicks(); renderTemas(); renderPerfis(); renderConfig(); edLiga();
 showPage(0);
 clock(); setInterval(clock, 1000);
 tick(); setInterval(tick, 1000);

@@ -87,6 +87,18 @@ def load_shortcuts():
         return DEFAULT_SHORTCUTS
 
 
+def shortcut_sub(s):
+    """Subtitulo do atalho no tema Grafite: o campo `sub`, ou o programa que ele roda."""
+    if s.get("sub"):
+        return str(s["sub"])
+    cmd = s.get("cmd") or []
+    if not cmd:
+        return ""
+    if os.path.basename(cmd[0]) == "xdg-open" and len(cmd) > 1:
+        return cmd[1].split("://", 1)[-1]
+    return os.path.basename(cmd[0])
+
+
 class GpuReader:
     """Mantem um nvidia-smi rodando em loop (-lms) em vez de abrir um processo por segundo."""
 
@@ -420,7 +432,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/stats":
             return self._send(200, json.dumps({**COLLECTOR.stats, "onedrive": ONEDRIVE.state}))
         if self.path == "/api/shortcuts":
-            items = [{k: s.get(k) for k in ("id", "label", "icon")} for s in load_shortcuts()]
+            items = [{**{k: s.get(k) for k in ("id", "label", "icon")}, "sub": shortcut_sub(s)}
+                     for s in load_shortcuts()]
             return self._send(200, json.dumps(items, ensure_ascii=False))
         if self.path == "/api/version":  # o painel se recarrega quando o index.html muda
             return self._send(200, json.dumps({"index": (BASE / "index.html").stat().st_mtime}))

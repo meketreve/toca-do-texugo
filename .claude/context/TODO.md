@@ -10,7 +10,9 @@ active: true
 
 Os perfis acabaram. O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
-- [ ] Escolher na parede qual estilo do Cérebro fica: Matriz, Perfis ou Rede
+- [ ] Tema Grafite na parede: toque na barra lateral e nas abas pelo Moonlight, claro no tablet
+- [ ] Escolher na parede qual estilo do Cérebro fica: Matriz, Perfis, Rede ou Cards
+- [ ] Juntar "Layout do painel" e "Perfil de medidores" numa linha só (perfil só vale no Agrupado)
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar `ETA_STDP` se ficar
       rápido ou lento demais; hoje é 0.004 por disparo)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo

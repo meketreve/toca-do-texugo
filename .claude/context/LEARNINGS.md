@@ -27,6 +27,8 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-16] [testes] print headless do clássico mostra "Uso por thread" por cima de "Temperaturas" — é métrica de fonte do Chrome headless, a versão antiga sai igual; na parede está certo. Pra print com tema/perfil: servir o `index.html` com `localStorage` injetado e repassar `/api` pro 8787
+- [2026-10-16] [shell] `pkill -f "<trecho>"` mata o próprio shell quando o trecho aparece na linha de comando — ancorar: `pkill -f "^python3 …"`
 
 - [2026-10-16] [front] o painel recarrega SOZINHO a cada save do `index.html`: um parêntese errado foi direto pra parede e, como o poll do `/api/version` morria junto, ela travou até reabrir o Chrome. O poll agora mora num `<script>` próprio; mesmo assim, conferir antes de salvar — extrair os `<script>` e `node --check`
 - [2026-10-16] [editor] células do canvas no fluxo automático da grade: o bloco empurrava as que cobre pra linhas extras e o canvas parecia ter o dobro das linhas — célula com `grid-area` fixo, e linha com a proporção da célula do painel (`edMedeCanvas`)
@@ -55,6 +57,8 @@ tier: 2
 
 ## Decisões e o porquê
 
+- [2026-10-16] [tema] [✓] Grafite é OPÇÃO (`painel.tema`), não substituto: cores em `data-tema`, estrutura só sob `.g` — o Atual fica byte a byte igual. Trocar de tema recarrega a página (cores do canvas lidas uma vez, página do layout muda)
+- [2026-10-16] [tema] [✓] no Grafite o clássico vira outra página (`page-dash-g`), não CSS por cima da antiga: o mockup junta 4 cards num só com abas e muda Redes de lugar — CSS não remonta isso
 
 - [2026-10-16] [texugo-snn] [✓] o perfil do Cérebro lê o peso MENOS a média da coluna (o mesmo sensor nos outros comportamentos), com piso 0,20 — peso cru faz todo comportamento "preferir" o sensor que se correlaciona com tudo, e sem piso um cérebro de 0 spike já exibe gosto por sorteio (medido: em 500 nascimentos o desvio máximo foi 0,186; gosto aprendido fica entre 0,24 e 0,53)
 - [2026-10-15] [texugo-snn] [✓] cérebro no Python (`texugo.py`, thread a 100 Hz), não no `index.html` — STDP precisa de passo de ~10 ms pra janela temporal significar algo (a 1×/s do Collector tudo seria simultâneo) e no servidor os pesos sobrevivem a recarregar a página

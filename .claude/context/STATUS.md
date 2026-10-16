@@ -18,13 +18,16 @@ Cérebro ganhou um 2º estilo, **Perfis**: a situação preferida de cada compor
 a surpresa (z) do neurônio agora e, no topo, qual sensor está puxando o comando. E os medidores
 viraram **perfis nomeados** (`painel.perfis`): "Jogo" e "Noite" com grades diferentes, trocando
 pela página de atalhos. `atualizar-painel.sh` traz tudo isso pra máquina do painel.
+**Tema Grafite** (2026-10-16, dos mockups em `~/Downloads/*-html.zip`): opção na página de
+atalhos (Atual / Grafite / Grafite claro, `painel.tema`). No Grafite entram barra lateral,
+cabeçalho em pílulas, o clássico remontado (`page-dash-g`), atalhos em blocos com contagem pra
+voltar, agenda com bolinha e o 4º estilo do Cérebro, **Cards**. O Atual ficou idêntico.
 
 ## Próxima fase
 
-O medidor Cérebro tem 3 estilos: Matriz (peso cru), Perfis (o que aprendeu, em palavras) e
-**Rede** (`index.html:2162`) — a representação clássica: 16 sensores à esquerda, 6 comportamentos
-à direita, 96 sinapses com grossura e opacidade do peso, e as ativações piscando em cima. São
-DUAS camadas, sem oculta. Julgar na parede qual dos três fica no layout.
+Na parede: ligar o Grafite (atalhos → Tema) e conferir pelo Moonlight — toque nos botões da
+barra lateral (48 px) e nas abas CPU/RAM/GPU/VRAM, leitura do claro no tablet. O Cérebro tem 4
+estilos (Matriz, Perfis, Rede, Cards — Cards pede 7×3): escolher qual fica.
 
 Depois disso, o que resta pede uso, não teclado:
 
@@ -38,7 +41,8 @@ Depois disso, o que resta pede uso, não teclado:
 
 Os 5 commits da nuvem já rodam na máquina do painel (`atualizar-painel.sh`, 2026-10-16). Na
 mesma sessão: o sensor `noite` estava invertido (pico às 15 h) — corrigido, mas as ~8 h de peso
-aprendido com ele trocado ficam até a rede reaprender ou alguém tocar em "esquecer".
+aprendido com ele trocado ficam até a rede reaprender ou alguém tocar em "esquecer". Por volta
+das 13h40 o cérebro zerou (idade foi a 0) sem restart nem POST meu — provável toque em "esquecer".
 
 ## Pendências e bloqueios
 
