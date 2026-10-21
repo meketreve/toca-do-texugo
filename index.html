@@ -3756,9 +3756,13 @@ regWidget("agenda", {
       box.innerHTML = '<div class="ag-vazio">Sem bot configurado em <b>agenda.json</b>.</div>';
       return;
     }
-    const itens = a.itens || [];
+    // O estado guarda as concluídas para a contagem do cabeçalho, mas a lista mostra só
+    // o que ainda está aberto. Marcar como feito remove o item da agenda na próxima renderização.
+    const todos = a.itens || [];
+    const itens = todos.filter(i => !i.feito);
     if (!itens.length) {
-      box.innerHTML = '<div class="ag-vazio">' + (a.erro ? esc(a.erro) : "Nada por enquanto. Mande uma mensagem pro bot.") + "</div>";
+      const vazio = todos.length ? "Tudo em dia." : "Nada por enquanto. Mande uma mensagem pro bot.";
+      box.innerHTML = '<div class="ag-vazio">' + (a.erro ? esc(a.erro) : vazio) + "</div>";
       return;
     }
     const agora = Date.now() / 1000;
