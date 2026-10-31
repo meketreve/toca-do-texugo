@@ -171,7 +171,14 @@ class PontaAPonta(unittest.TestCase):
         cfg.mkdir(parents=True)
         cls.porta = porta_livre()
         (cfg / "config.json").write_text(json.dumps({"porta": cls.porta, "pareamento_local": False, "escuta": "0.0.0.0"}))
-        env = {**os.environ, "HOME": str(home), "PATH": "/usr/bin:/bin"}
+        # O HOME vazio nao tira os programas de verdade do PATH: `onedrive --display-quota` sem token
+        # abre o login da Microsoft no navegador, e o notify-send mostraria um codigo falso na tela
+        falsos = home / "bin"
+        falsos.mkdir()
+        for nome in ("onedrive", "notify-send", "xdg-open"):
+            (falsos / nome).write_text("#!/bin/sh\nexit 0\n")
+            (falsos / nome).chmod(0o755)
+        env = {**os.environ, "HOME": str(home), "PATH": f"{falsos}:/usr/bin:/bin"}
         cls.proc = subprocess.Popen([sys.executable, str(REPO / "server.py")], env=env, cwd=home,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for _ in range(100):

@@ -33,6 +33,8 @@ tier: 2
 
 ## Erros a não repetir
 
+- [2026-10-31] [testes] `server.py` com HOME temporário ainda roda os programas da máquina: o `onedrive --display-quota` sem token abriu o login da Microsoft no Firefox (padrão de quem não tem `mimeapps.list`) a cada `teste-acesso.py`, e sobrava preso esperando o login. O teste põe `onedrive`, `notify-send` e `xdg-open` falsos no começo do PATH
+
 - [2026-10-31] [front] marca de "último evento" começando em 0 conta como recente no boot: `performance.now()` nasce perto de 0, então `now - sseAt < 2500` dizia "SSE vivo" nos primeiros 2,5 s e calava o polling — 2 renders em vez de 5 na bancada. Só o `desenho` do `monta-telas.py` (antes × depois) pegou. Começa em `-Infinity`
 
 - [2026-10-16] [front] `points` de `<polyline>` é lista de PARES de coordenadas, não `path`: com o "M" na frente a lista inteira é inválida, a polilinha fica sem geometria e **não desenha** — e nada avisa, porque a grade (feita de `<line>`) continua saindo. O traço do Uso ficou meses de fora assim que foi escrito; a bancada agora mede a altura do `getBBox()` das séries
