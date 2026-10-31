@@ -498,6 +498,10 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.startswith("/fontes/"):
             return self._send_fonte(self.path[len("/fontes/"):])
         # Pareamento: as unicas rotas abertas pra quem nao tem cookie
+        if rota == "/manifest.json":  # o navegador busca sem cookie; nao diz nada alem do nome
+            return self._send(200, json.dumps({"name": "Toca do Texugo", "short_name": "Toca", "start_url": "/",
+                                               "display": "fullscreen", "background_color": "#0d0d0d",
+                                               "theme_color": "#0d0d0d"}), "application/manifest+json")
         if rota == "/parear":
             return self._send(200, (BASE / "parear.html").read_bytes(), "text/html; charset=utf-8")
         if rota == "/api/parear":

@@ -264,6 +264,7 @@ Os dados chegam por `/api/eventos` (SSE, 1×/s) em vez de duas requisições por
 |---|---|
 | `GET /` | a página do painel (ou a de pareamento, pra aparelho não pareado) |
 | `GET /api/eventos` | SSE com `stats` e `texugo`, 1×/s |
+| `GET /manifest.json` | nome e modo de tela cheia do atalho na tela inicial (aberto, sem dado) |
 | `GET /parear`, `GET /api/parear` | tela e estado do pareamento (o código só vai pro próprio PC) |
 | `GET /aparelhos`, `GET /api/aparelhos`, `POST /api/aparelhos/revoga` | só no próprio PC: código vigente, aparelhos pareados, quem está conectado e revogar |
 | `POST /api/parear/pedir`, `POST /api/parear` | pede um código / troca o código pelo cookie (exigem `X-Dash: 1`) |

@@ -4,6 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Toca do Texugo</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<script>
+/* Longe do PC (o tablet) o painel e desenhado do tamanho da parede e o navegador encolhe a pagina
+   inteira pra caber: fonte, grade, mascote e toque seguem nas mesmas contas, sem zoom de CSS. A
+   base vem do `screen`, que nao muda com a escala -- o innerWidth mudaria e entraria em laco. Em
+   pe sao 1080 de largura; deitado, 1920 ou mais, pra altura nunca ficar abaixo de 1080. No navegador
+   de computador o meta nao tem efeito e a janela so redistribui a grade. No PC nada disso roda. */
+const PAREDE = /^(127\.|localhost$|\[::1\]$)/.test(location.hostname);
+if (!PAREDE) {
+  const ajustaViewport = () => {
+    const { width: w, height: h } = screen;
+    if (!w || !h) return;  // aba em segundo plano pode responder 0 x 0
+    const largura = h > w ? 1080 : Math.max(1920, Math.round(1080 * w / h));
+    const conteudo = `width=${largura}, user-scalable=no`;
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta.content !== conteudo) meta.content = conteudo;
+  };
+  ajustaViewport();
+  addEventListener("orientationchange", ajustaViewport);
+  addEventListener("resize", ajustaViewport);
+  // Tela cheia so pode nascer de um gesto: o toque seguinte liga, inclusive depois de sair dela
+  addEventListener("pointerup", () => {
+    if (document.fullscreenEnabled && !document.fullscreenElement && matchMedia("(pointer: coarse)").matches)
+      document.documentElement.requestFullscreen().catch(() => {});
+  });
+}
+</script>
 <script>
 /* Tema aplicado antes do primeiro desenho: depois, o painel piscaria no tema velho a cada boot */
 try {
@@ -84,7 +112,7 @@ try {
      que se ve, no lugar do botao discreto que existia so no Atual (que saiu). O Grafite e o Linha
      so trocam a moldura dela; o miolo (logo, botoes de 48 px, ponto de conexao) e o mesmo. */
   .app {
-    height: 100vh; padding: var(--gap);
+    height: 100%; padding: var(--gap);
     display: grid; gap: var(--gap);
     grid-template-columns: 76px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
@@ -2126,7 +2154,9 @@ function calcLinhas() {
   const box = document.getElementById("widgets-b");
   const alt = box.clientHeight || (window.innerHeight - 120);
   const gap = 16;
-  const n = Math.max(3, Math.min(10, Math.floor((alt + gap) / (LINHA_MIN + gap))));
+  let n = Math.max(3, Math.min(10, Math.floor((alt + gap) / (LINHA_MIN + gap))));
+  // Janela baixa fora da parede: aperta as linhas em vez de tirar medidor da tela
+  if (!PAREDE) n = Math.min(10, Math.max(n, ...layoutB().map(it => (it.y || 0) + it.h)));
   const mudou = n !== LINHAS;
   LINHAS = n;
   box.style.setProperty("--linhas", LINHAS);
@@ -4514,13 +4544,24 @@ loadShortcuts(); setInterval(loadShortcuts, 20000);
 loadRedes(); setInterval(loadRedes, 30000);
 loadAgenda(); setInterval(loadAgenda, 30000);
 loadTexugo(); setInterval(loadTexugo, 1000);
-window.addEventListener("resize", () => {
-  if (calcLinhas()) montarDashB();
-  // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
-  if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
-  tick(true);
-  if (PAGES[page] === "page-redes") renderRedes();
-});
+/* Observa o .app, nao a janela: girar o tablet, entrar em tela cheia e a barra do navegador sumir
+   mudam o tamanho depois do evento de resize, e o desenho medido antes ficaria com a medida velha */
+let redimensionando = 0, tamanhoApp = "";
+new ResizeObserver(([e]) => {
+  const tamanho = `${e.contentRect.width}x${e.contentRect.height}`;
+  if (tamanho === tamanhoApp) return;
+  const primeiro = !tamanhoApp;
+  tamanhoApp = tamanho;
+  if (primeiro) return;  // a primeira entrega e a medida do boot, que ja foi desenhada
+  cancelAnimationFrame(redimensionando);
+  redimensionando = requestAnimationFrame(() => {
+    if (calcLinhas()) montarDashB();
+    // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
+    if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
+    tick(true);
+    if (PAGES[page] === "page-redes") renderRedes();
+  });
+}).observe(document.querySelector(".app"));
 audioStream();
 eventos();
 requestAnimationFrame(frame);

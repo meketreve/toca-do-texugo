@@ -212,6 +212,7 @@ class PontaAPonta(unittest.TestCase):
         self.assertEqual(self.req("GET", "/api/stats")[0].status, 401)
         self.assertEqual(self.req("POST", "/api/run/mute")[0].status, 401)
         self.assertEqual(self.req("GET", "/fontes/nao-existe.woff2")[0].status, 404)  # fonte e aberta
+        self.assertEqual(json.loads(self.req("GET", "/manifest.json")[1])["display"], "fullscreen")  # aberto
 
         self.assertEqual(self.req("POST", "/api/parear/pedir", dash=False)[0].status, 403)  # sem X-Dash
         r, b = self.req("POST", "/api/parear/pedir")

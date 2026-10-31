@@ -28,6 +28,9 @@ tier: 2
 - [2026-10-31] [acesso] `ipaddress.is_private` NÃO cobre o Tailscale (`100.64.0.0/10` é CGNAT, `is_private` False) e cobre faixas de documentação (`192.0.2.0/24`) — o filtro de cliente lista o Tailscale à parte. IPv4 mapeado em IPv6 (`::ffff:a.b.c.d`) tem que ser desembrulhado antes
 - [2026-10-31] [acesso] rota com query string: `self.path` traz o `?`, então `self.path == "/"` falha em `/?fps=60` — a raiz é comparada pelo `urlsplit(...).path`
 
+- [2026-10-31] [tablet] Chrome 55 (de fábrica no tablet Android 6) não tem CSS Grid nem `??`: o painel não abre e o caminho é atualizar o Chrome, que vai até o 106 no Android 6. Tela cheia só nasce de gesto e funciona em HTTP
+- [2026-10-31] [tablet] [✓] escala pelo meta viewport (`width=1920`), não por CSS `zoom`: o `getBoundingClientRect` com zoom mudou no Chrome 128 e misturaria medidas com os px do mascote e do editor entre tablet e PC. O meta não tem efeito em navegador de computador
+
 ## Erros a não repetir
 
 - [2026-10-31] [front] marca de "último evento" começando em 0 conta como recente no boot: `performance.now()` nasce perto de 0, então `now - sseAt < 2500` dizia "SSE vivo" nos primeiros 2,5 s e calava o polling — 2 renders em vez de 5 na bancada. Só o `desenho` do `monta-telas.py` (antes × depois) pegou. Começa em `-Infinity`
