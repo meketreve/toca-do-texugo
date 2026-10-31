@@ -25,7 +25,12 @@ tier: 2
 - [2026-10-16] [front] dá pra testar o `index.html` sem a máquina do painel: copiar a página, injetar um roteiro no fim, servir por `http.server` e rodar o Chromium com `--headless=new --dump-dom`, lendo o relatório de dentro do DOM. Duas pegadinhas: o editor escuta `pointerdown`, e `setPointerCapture` com `pointerId` sintético estoura `NotFoundError` e mata o resto do handler (no teste, virar no-op)
 - [2026-09-28] [kick] `followers_count` vem como **string** e a hora da live em **UTC sem fuso** — os dois são convertidos no provider
 
+- [2026-10-31] [acesso] `ipaddress.is_private` NÃO cobre o Tailscale (`100.64.0.0/10` é CGNAT, `is_private` False) e cobre faixas de documentação (`192.0.2.0/24`) — o filtro de cliente lista o Tailscale à parte. IPv4 mapeado em IPv6 (`::ffff:a.b.c.d`) tem que ser desembrulhado antes
+- [2026-10-31] [acesso] rota com query string: `self.path` traz o `?`, então `self.path == "/"` falha em `/?fps=60` — a raiz é comparada pelo `urlsplit(...).path`
+
 ## Erros a não repetir
+
+- [2026-10-31] [front] marca de "último evento" começando em 0 conta como recente no boot: `performance.now()` nasce perto de 0, então `now - sseAt < 2500` dizia "SSE vivo" nos primeiros 2,5 s e calava o polling — 2 renders em vez de 5 na bancada. Só o `desenho` do `monta-telas.py` (antes × depois) pegou. Começa em `-Infinity`
 
 - [2026-10-16] [front] `points` de `<polyline>` é lista de PARES de coordenadas, não `path`: com o "M" na frente a lista inteira é inválida, a polilinha fica sem geometria e **não desenha** — e nada avisa, porque a grade (feita de `<line>`) continua saindo. O traço do Uso ficou meses de fora assim que foi escrito; a bancada agora mede a altura do `getBBox()` das séries
 - [2026-10-16] [medidores] classe curta dentro do desenho colide com a do número de fora: o knob do SVG usa `.vl` pro arco do valor e o número grande embaixo do desenho também é `.vl`, então o `querySelector(".vl")` do render achava o SVG primeiro e o número ficava em "—" pra sempre. Peças do desenho levam prefixo (`knob-vl`, `knob-pt`)
@@ -68,6 +73,10 @@ tier: 2
 - [2026-10-16] [mascote] plataforma que não cabe não é plataforma: o texugo em pé ocupa `MH` ACIMA das patas (o pé fica na borda de cima do cartão), então no tema Linha — que não tem cabeçalho e por isso tem a fileira de cima colada no alto — ele subia metade pra fora da tela. `platforms()` agora pede `rect.top >= MH + 4`; no Atual e no Grafite nada muda (a fileira de cima já começa abaixo do cabeçalho)
 
 ## Decisões e o porquê
+
+- [2026-10-31] [acesso] [✓] tablet direto no navegador como OPÇÃO (`escuta`), não no lugar do Moonlight: padrão segue `127.0.0.1` e nada muda na parede. Stdlib em vez de FastAPI (zero dependência, e SSE cabe no `ThreadingHTTPServer` com 1-3 clientes). O próprio PC (loopback) entra sem parear — senão a parede quebraria
+- [2026-10-31] [acesso] [✓] pareamento: código de 6 dígitos, 120 s, uso único, 5 erros/código, 10 erros/h no total travam 1 h; token de 256 bits em cookie `HttpOnly; SameSite=Strict`, só o sha256 no disco. O código só aparece no PC (notify-send, journal, `/parear` em loopback). Teto de tentativa: ~240/dia sob ataque contínuo → ~2,4e-4 de chance/dia; a trava global deixa um atacante na LAN bloquear o pareamento (DoS aceito, não invasão)
+- [2026-10-31] [acesso] [✗] refazer a Rede neural em canvas pro tablet: ela atualiza a 1 Hz (96 atributos de SVG por segundo), não por quadro. O custo por quadro é o laço do `requestAnimationFrame` (mascote, visualizador, FFT de 2048) — o teto de 30 fps fora do PC (`FPS`, `?fps=N`) é que resolve
 
 - [2026-10-16] [editor] [✓] estilo de medidor com o MESMO nome de outro medidor some na prática: o "Rede" do Cérebro (o grafo neural) parecia não existir, porque no catálogo "Rede" é o tráfego (grupo "Rede e disco") e estilo não aparece no catálogo — só no botão "▾" do bloco. Virou "Rede neural"; o id segue `rede` pra não quebrar layout salvo
 - [2026-10-16] [front] [✓] "Tela do painel" no lugar de "Layout do painel" + "Perfil de medidores": eram dois seletores que se atropelavam — o layout escolhe a PÁGINA (o clássico é uma página fixa, escrita à mão; o agrupado é a grade) e o perfil escolhe QUAIS medidores na grade, ou seja, o perfil não faz nada no clássico. A lista agora é de telas: "Clássico" + uma por perfil. Seguem sendo dois estados por baixo (`painel.layout` e `painel.perfil`), porque o clássico NÃO cabe num perfil: as peças dele (tela, tiles, processos, disco) não são medidores do registro — virá-los medidores mudaria o Atual, que é a referência de "não mexer"

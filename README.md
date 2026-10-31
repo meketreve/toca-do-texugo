@@ -74,7 +74,8 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 └─────────────────────────────────────────────┘           └────────────┘
 ```
 
-- `server.py` coleta as métricas numa thread (1×/s), serve a página e só escuta em `127.0.0.1`
+- `server.py` coleta as métricas numa thread (1×/s), serve a página e escuta em `127.0.0.1` — ou na LAN/Tailscale, com pareamento (ver [Abrir direto no tablet](#abrir-direto-no-tablet))
+- `acesso.py` filtra rede e `Host` e cuida do pareamento por código e dos aparelhos pareados
 - `index.html` é a página inteira (HTML, CSS e JS, sem dependências): gráficos em SVG, visualizador e mascote em canvas
 - `onedrive.py` acompanha o journal do serviço `onedrive` e lê a cota; nunca mexe no token do cliente
 - `redes.py` busca os números das redes em segundo plano, guarda o histórico diário e renova os tokens sozinho
@@ -123,6 +124,10 @@ Precisa de Python 3 com `psutil`, `google-chrome`, `wmctrl`, `xrandr`, `curl`, `
    | `rede` | interface de rede dos gráficos | a da rota padrão |
    | `discos` | lista de `{caminho, nome}` mostrados no card de discos | só `/` |
    | `cpu_tdp_w` | TDP da CPU pra barra de consumo | mostra só os watts |
+   | `escuta` | endereço onde o servidor escuta: `0.0.0.0` (todas as interfaces) ou o IP da LAN/Tailscale | `127.0.0.1` (só o PC) |
+   | `porta` | porta do servidor | `8787` |
+   | `hosts` | nomes aceitos no `Host` além de IP e `localhost` (ex.: o nome MagicDNS do Tailscale) | só IP e `localhost` |
+   | `pareamento_local` | `false` obriga o próprio PC a parear também | o PC entra direto |
 
 4. Atalhos: copie `atalhos.exemplo.json` pra `~/.config/toca-do-texugo/atalhos.json` e ajuste. Cada item é `{id, label, icon, cmd}`, e só os ids desse arquivo podem ser executados.
 
@@ -204,6 +209,26 @@ Pra ver a rede se organizando sem subir o painel (situações sintéticas, apren
 python3 texugo.py 12 6
 ```
 
+## Abrir direto no tablet
+
+O caminho de sempre é o monitor virtual + Sunshine/Moonlight. O outro é o tablet abrir a página no próprio navegador, sem vídeo no meio: menos latência, menos GPU no PC, e o painel desenha na resolução do tablet.
+
+1. No `config.json`, `"escuta": "0.0.0.0"` (ou só o IP do Tailscale, pra ficar fora do Wi-Fi) e `systemctl --user restart toca-do-texugo.service`.
+2. No tablet, `http://<ip-do-pc>:8787`. Aparece a tela de pareamento: **Pedir código**.
+3. O código de 6 dígitos aparece no PC (notificação, `journalctl --user -u toca-do-texugo` e `http://127.0.0.1:8787/parear`). Digite no tablet e pronto.
+
+Regras do pareamento: o código vale 120 s e uma vez só, aceita 5 erros e depois queima; 10 erros por hora no total travam o pareamento por 1 h. Quem acerta recebe um token de 256 bits num cookie `HttpOnly; SameSite=Strict` que vale um ano; no disco fica só o sha256 dele (`dispositivos.json`). Aparelhos pareados:
+
+```bash
+python3 acesso.py lista            # id, quando pareou, quando foi visto, navegador
+python3 acesso.py revoga <id>      # vale na hora, sem reiniciar
+python3 acesso.py revoga-todos
+```
+
+No tablet o painel desenha no máximo a **30 fps** (mascote, visualizador e FFT rodam por quadro); no próprio PC não tem teto. `?fps=60` na URL troca e fica gravado naquele navegador (`?fps=0` tira o teto). Tema, tela e perfis ficam no `localStorage` de cada navegador: o tablet tem a configuração dele, separada da parede.
+
+Os dados chegam por `/api/eventos` (SSE, 1×/s) em vez de duas requisições por segundo; se a conexão cair, o painel volta pro polling sozinho até ela voltar.
+
 ## Arquivos locais (nunca versionados)
 
 | Arquivo | O que é |
@@ -218,10 +243,13 @@ python3 texugo.py 12 6
 | `~/.config/toca-do-texugo/texugo-cerebro.json` | pesos, limiares e idade do cérebro do texugo |
 | `~/.config/toca-do-texugo/onedrive-cota.json` | última cota lida do OneDrive (cache de 1 h) |
 | `~/.config/toca-do-texugo/chrome/` | perfil do Chrome do painel |
+| `~/.config/toca-do-texugo/dispositivos.json` | aparelhos pareados (só o hash do token) |
 
 ## Segurança
 
-- O servidor só escuta em `127.0.0.1` e confere o cabeçalho `Host`. Os atalhos exigem o cabeçalho `X-Dash`, então outro site aberto no navegador não consegue disparar comandos.
+- Por padrão o servidor só escuta em `127.0.0.1`. Aberto pra rede (`escuta`), ele recusa cliente que não seja loopback, rede privada ou Tailscale (`100.64.0.0/10`, `fd7a:115c:a1e0::/48`), e só aceita `Host` com IP, `localhost` ou um nome de `hosts` — nome desconhecido é DNS rebinding. Fora do próprio PC, toda rota (inclusive o áudio e o SSE) exige o cookie do pareamento; só a tela de pareamento e as fontes ficam abertas.
+- Os atalhos e todo `POST` exigem o cabeçalho `X-Dash`, então outro site aberto no navegador não consegue disparar comandos (o cookie `SameSite=Strict` também não viaja nesse caso).
+- Em HTTP puro, quem estiver no mesmo Wi-Fi e farejar o tráfego vê o cookie. Pelo Tailscale o tráfego já vai cifrado: se o Wi-Fi não é só seu, prefira `escuta` com o IP do Tailscale.
 - Os erros das APIs mostram só a mensagem, nunca a URL, que pode conter a chave.
 - Do histórico do Claude o painel lê só as porcentagens e a hora da amostra. O identificador da organização, que está no mesmo arquivo, não é lido nem servido.
 - O hook `.githooks/pre-commit` bloqueia commit com arquivo privado, formato de chave conhecido ou o **valor real** de alguma credencial local, sem imprimir o valor. Num clone novo, ative com:
@@ -234,7 +262,10 @@ python3 texugo.py 12 6
 
 | Rota | Conteúdo |
 |---|---|
-| `GET /` | a página do painel |
+| `GET /` | a página do painel (ou a de pareamento, pra aparelho não pareado) |
+| `GET /api/eventos` | SSE com `stats` e `texugo`, 1×/s |
+| `GET /parear`, `GET /api/parear` | tela e estado do pareamento (o código só vai pro próprio PC) |
+| `POST /api/parear/pedir`, `POST /api/parear` | pede um código / troca o código pelo cookie (exigem `X-Dash: 1`) |
 | `GET /api/stats` | métricas do PC, música atual, status do OneDrive e limites do Claude (JSON, 1×/s) |
 | `GET /api/audio` | PCM s16le mono 24 kHz do som do PC (stream) |
 | `GET /api/redes` | números das redes, "+hoje" e histórico |

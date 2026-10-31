@@ -5,5 +5,9 @@
     { "caminho": "/", "nome": "Sistema" },
     { "caminho": "/home", "nome": "Home" }
   ],
-  "cpu_tdp_w": null
+  "cpu_tdp_w": null,
+  "escuta": "127.0.0.1",
+  "porta": 8787,
+  "hosts": [],
+  "pareamento_local": true
 }

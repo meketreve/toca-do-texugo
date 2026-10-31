@@ -34,6 +34,9 @@ editor, não no catálogo). Depois disso só resta o que pede uso:
 2. Decidir se `renderConfig` (a configuração por botões) sai, já que o editor de grade faz o mesmo.
 3. Página "cuidar do texugo" (tamagotchi): fome/sono viram SENSORES, nunca recompensa (2026-10-15).
 
+4. Tablet direto no navegador (sem Moonlight): ligar `"escuta": "0.0.0.0"` (ou o IP do
+   Tailscale), parear e ver se 30 fps segura no tablet — o código está no `main` desde 2026-10-31.
+
 ## Pendências e bloqueios
 
 - `docs/painel.png` é de antes (sem a linha do Claude, sem os temas novos, sem o cérebro): um print
@@ -44,6 +47,7 @@ editor, não no catálogo). Depois disso só resta o que pede uso:
 
 ## Concluído (recente)
 
+- Painel aberto direto no tablet: `escuta` na LAN/Tailscale, pareamento por código, SSE e teto de 30 fps fora do PC (2026-10-31)
 - Editor: Concluir volta pro painel; estilo Rede do Cérebro vira "Rede neural" (2026-10-16)
 - Tema Linha: os dois artboards como perfis, com dois medidores novos (Relógio, Tocando agora) (2026-10-16)
 - Barra lateral nos três temas, e a lista de telas no lugar do par layout+perfil (2026-10-16)
@@ -55,7 +59,7 @@ editor, não no catálogo). Depois disso só resta o que pede uso:
 - Agenda do Telegram ligada e editor de grade G1 a G4 (2026-10-12)
 
 <!-- auto:start -->
-data: 2026-10-16
+data: 2026-10-31
 
 ```
 f4396e7 Editor: Concluir volta pro painel, e o estilo Rede do Cérebro vira "Rede neural"

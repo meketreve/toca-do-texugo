@@ -46,6 +46,9 @@ texugo.py
 
 ## Onde fica cada coisa
 
+- `acesso.py` — filtro de cliente (`cliente_ok`), `host_ok`, `Pareamento` (código de 6 dígitos) e
+  `Dispositivos` (sha256 do token em `dispositivos.json`); CLI `python3 acesso.py lista|revoga`.
+  `parear.html` é a tela do tablet e, aberta no próprio PC, mostra o código.
 - `server.py` — HTTP + coleta (`Collector` 1×/s, `GpuReader`, `RaplReader`, `ClaudeUsage`), rotas no
   `Handler` e `_send_fonte` pra `/fontes/` (a única rota com cache).
 - `index.html` — a página inteira: `render(s)` despacha pelo `PAGES[0]`, e o mascote fica no fim.
@@ -70,7 +73,11 @@ texugo.py
 
 ## Fluxos principais
 
-- Painel: `GET /` → `index.html` → `/api/stats` 1×/s → `render(s)` (métricas: thread do `Collector`).
+- Painel: `GET /` → `index.html` → `/api/eventos` (SSE: `stats` + `texugo` 1×/s) → `render(s)`; o
+  polling de `/api/stats` e `/api/texugo` só age quando o SSE cala (`sseVivo()`).
+- Acesso: `_host_ok()` (cliente + Host) → rotas abertas (`/fontes/`, `/parear`, `/api/parear*`) →
+  `_autorizado()` (loopback livre ou cookie `toca`) → resto. Sem cookie, `GET /` serve `parear.html`
+  e o resto dá 401 (o poll do `/api/version` recarrega a página com 401).
 - Redes (`/api/redes`, 30 s), áudio (`/api/audio`, PCM mono 24 kHz → FFT), atalhos (`POST
   /api/run/<id>`, exige `X-Dash: 1`), agenda (bot → `/api/agenda`) e mascote (`/api/texugo` →
   `doCerebro()`; em `instinto`, `chooseNext()`).
@@ -78,6 +85,6 @@ texugo.py
 ## Fora do repo (`~/.config/toca-do-texugo/`)
 
 `config.json`, `redes.json` (credenciais), `redes-tokens.json`, `redes-historico.json`,
-`atalhos.json`, `agenda.json`, `agenda-itens.json`, `texugo-cerebro.json`, `onedrive-cota.json` e
+`atalhos.json`, `dispositivos.json`, `agenda.json`, `agenda-itens.json`, `texugo-cerebro.json`, `onedrive-cota.json` e
 `chrome/`. Mudou de pasta? Corrigir `systemd/user/…service`, `autostart/…desktop` e
 `applications/…desktop` + `daemon-reload`.

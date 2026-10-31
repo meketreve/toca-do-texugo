@@ -18,6 +18,7 @@ Nada disso roda no painel nem entra na página servida: é tudo cópia, em `test
 | `mede.py` | peso − média da coluna, no nascimento e depois de aprender |
 | `piso.py` | qual piso separa gosto aprendido de ruído de nascença (deu 0,20) |
 | `inib.py` | se a inibição lateral informa alguma coisa instante a instante |
+| `teste-acesso.py` | filtro de rede, `Host`, cookie e regras do código (relógio falso), e o caminho do tablet por HTTP contra um `server.py` de verdade com HOME temporário (precisa de `psutil`) |
 | `teste-atualizar.sh` | o `atualizar-painel.sh` contra remoto, `systemctl` e `curl` falsos |
 
 ## Como rodar
@@ -37,6 +38,7 @@ python3 testes/monta-telas.py index.html --real   # + as telas do Linha com o da
   --screenshot=/tmp/tela.png http://127.0.0.1:8799/teste-linha-1.html
 
 bash testes/teste-atualizar.sh atualizar-painel.sh
+python3 testes/teste-acesso.py
 ```
 
 `--screenshot=arquivo.png` no lugar do `--dump-dom` tira o print — foi o print que pegou dois

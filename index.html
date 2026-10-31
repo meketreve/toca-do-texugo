@@ -1251,7 +1251,9 @@ try {
   let version = null;
   setInterval(async () => {
     try {
-      const v = (await (await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json()).index;
+      const r = await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+      if (r.status === 401) return location.reload();  // aparelho revogado: o servidor manda pro pareamento
+      const v = (await r.json()).index;
       if (version != null && v !== version) location.reload();
       version = v;
     } catch (e) {}
@@ -1834,7 +1836,28 @@ function mediaProgress() {
   $("gnp-len").textContent = fmtMin(media.length);
 }
 
-async function tick() {
+/* Stats e cerebro chegam empurrados pelo /api/eventos (SSE). O polling de 1 s continua armado e
+   so age quando o empurrao para (servidor reiniciando, rede do tablet piscando). */
+let sseAt = -Infinity;  // 0 seria "vivo" nos primeiros 2,5 s da pagina e calaria o polling no boot
+function eventos() {
+  if (!window.EventSource) return;
+  const es = new EventSource("/api/eventos");
+  es.addEventListener("stats", ev => {
+    let s;
+    try { s = JSON.parse(ev.data); } catch (e) { return; }
+    sseAt = performance.now();
+    if (s.cpu) render(s);
+    document.getElementById("conn").classList.remove("show");
+    document.getElementById("conn-dot").classList.remove("off");
+  });
+  es.addEventListener("texugo", ev => {
+    try { texugoData = JSON.parse(ev.data); texugoT = performance.now(); } catch (e) {}
+  });
+}
+const sseVivo = () => performance.now() - sseAt < 2500;
+
+async function tick(forca) {
+  if (forca !== true && sseVivo()) return;
   try {
     const r = await fetch("/api/stats", { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const s = await r.json();
@@ -3406,6 +3429,7 @@ function fmtQuando(ts) {
    nao decide nada aqui, so pergunta e desenha -- e no modo "instinto" nem pergunta. */
 let texugoData = {}, texugoT = 0;
 async function loadTexugo() {
+  if (sseVivo()) return;
   try {
     texugoData = await (await fetch("/api/texugo", { cache: "no-store", signal: AbortSignal.timeout(4000) })).json();
     texugoT = performance.now();
@@ -4460,9 +4484,22 @@ function mascotStep(now, dt) {
   mascotEl.style.transform = `translate3d(${M.x.toFixed(1)}px, ${(M.y - MH - bob).toFixed(1)}px, 0)`;
 }
 
+/* Teto de quadros. No PC (o painel da parede) e o do monitor; longe dele -- o tablet -- 30 fps, que
+   segura bateria e calor (mascote, visualizador e a FFT de 2048 pontos rodam a cada quadro).
+   `?fps=N` na URL grava em `painel.fps` (0 = sem teto). */
+const FPS = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get("fps");
+    if (q != null) localStorage.setItem("painel.fps", q);
+    const v = localStorage.getItem("painel.fps");
+    if (v != null && v !== "" && isFinite(+v)) return Math.max(0, +v);
+  } catch (e) {}
+  return /^(127\.|localhost$|\[::1\]$)/.test(location.hostname) ? 0 : 30;
+})();
 let lastFrame = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - lastFrame) / 1000); lastFrame = now;
+  if (FPS && now - lastFrame < 1000 / FPS - 2) return requestAnimationFrame(frame);
+  const dt = Math.min(FPS ? Math.max(0.05, 1.5 / FPS) : 0.05, (now - lastFrame) / 1000); lastFrame = now;
   analyse(now, dt);
   if (page === 0) { drawViz(); giraPratos(dt); }  // giro continuo: so na pagina do painel
   mascotStep(now, dt);
@@ -4481,10 +4518,11 @@ window.addEventListener("resize", () => {
   if (calcLinhas()) montarDashB();
   // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
   if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
-  tick();
+  tick(true);
   if (PAGES[page] === "page-redes") renderRedes();
 });
 audioStream();
+eventos();
 requestAnimationFrame(frame);
 </script>
 </body>

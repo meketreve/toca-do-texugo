@@ -5,6 +5,7 @@ __pycache__/
 redes.json
 redes-tokens.json
 redes-historico.json
+dispositivos.json
 *.pem
 *.key
 .env*
