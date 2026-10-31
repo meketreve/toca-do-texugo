@@ -249,6 +249,7 @@ class PontaAPonta(unittest.TestCase):
                 vistos.add(linha[7:].strip())
             elif linha.startswith("data: "):
                 json.loads(linha[6:])
+        r.close()  # so o c.close() deixa o socket aberto pelo arquivo da resposta
         c.close()
         self.assertEqual(vistos, {"stats", "texugo"})
         self._confere_aparelhos(cookie)
@@ -278,6 +279,7 @@ class PontaAPonta(unittest.TestCase):
         self.assertEqual(self.req("POST", "/api/aparelhos/revoga", {})[0].status, 400)
         self.assertEqual(json.loads(self.req("POST", "/api/aparelhos/revoga", {"id": item["id"]})[1])["revogados"], 1)
         self.assertEqual(self.req("GET", "/api/version", cookie=cookie)[0].status, 401)  # vale na hora
+        r.close()
         c.close()
 
     def test_aparelhos_so_no_pc(self):
