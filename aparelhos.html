@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toca do Texugo · aparelhos</title>
+<style>
+  :root { --bg: #0d0d0d; --card: #171717; --line: #2a2a2a; --text: #f2f2f2; --muted: #8a8a8a; --accent: #e8b04a; --ok: #6fcf7c; --erro: #ff6b5e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { margin: 0 0 16px; font-size: 24px; }
+  h2 { margin: 28px 0 10px; font-size: 16px; color: var(--muted); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  #codigo { font: 700 44px/1.1 ui-monospace, monospace; letter-spacing: .15em; color: var(--accent); }
+  .linha { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .aparelho { margin-bottom: 10px; }
+  .nome { overflow-wrap: anywhere; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .ponto { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; background: var(--muted); }
+  .on .ponto { background: var(--ok); }
+  button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--text); font: 600 15px system-ui, sans-serif; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.perigo { color: var(--erro); }
+  #msg { min-height: 1.4em; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🦡 Aparelhos</h1>
+  <div class="card linha">
+    <div>
+      <div id="codigo">——————</div>
+      <div id="validade" style="color: var(--muted)"></div>
+    </div>
+    <button id="gerar">Gerar código</button>
+  </div>
+  <p id="msg"></p>
+  <div class="linha">
+    <h2 id="titulo">Pareados</h2>
+    <button id="todos" class="perigo" hidden>Revogar todos</button>
+  </div>
+  <div id="lista"></div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const post = (url, body) => fetch(url, { method: "POST", headers: { "X-Dash": "1", "Content-Type": "application/json" },
+                                         body: JSON.stringify(body || {}) });
+const dataHora = t => new Date(t * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const haQuanto = s => s < 90 ? `há ${Math.max(s, 0)} s` : s < 5400 ? `há ${Math.round(s / 60)} min` : `há ${Math.round(s / 3600)} h`;
+
+// Conectado: SSE aberto. Sem SSE mas pedindo algo ha pouco: a pagina abriu e nao chegou a assinar
+function situacao(a, agora) {
+  if (a.sse) return ["on", `Conectado (${a.sse} ${a.sse > 1 ? "conexões" : "conexão"})`];
+  if (agora - a.visto < 30) return ["", `Acessou ${haQuanto(agora - a.visto)}, sem transmissão aberta`];
+  return ["", `Visto ${haQuanto(agora - a.visto)}`];
+}
+
+function cartao(a, agora) {
+  const [cls, texto] = situacao(a, agora);
+  const el = document.createElement("div");
+  el.className = "card aparelho " + cls;
+  el.innerHTML = `<div class="linha"><div><span class="ponto"></span><b class="txt"></b></div><button class="perigo">Revogar</button></div>
+                  <div class="nome"></div>`;
+  el.querySelector(".txt").textContent = texto;
+  el.querySelector(".nome").textContent = `${a.id} · ${a.ip || "IP ainda não visto"} · pareado em ${dataHora(a.criado)} · ${a.nome}`;
+  el.querySelector("button").addEventListener("click", () => revoga({ id: a.id }, "Revogar este aparelho?"));
+  return el;
+}
+
+async function revoga(corpo, pergunta) {
+  if (!confirm(pergunta)) return;
+  const r = await (await post("/api/aparelhos/revoga", corpo)).json();
+  $("msg").textContent = `${r.revogados} revogado(s).`;
+  atualiza();
+}
+
+let assinatura = "";
+async function atualiza() {
+  let v;
+  try { v = await (await fetch("/api/aparelhos", { cache: "no-store" })).json(); }
+  catch (e) { $("msg").textContent = "Sem conexão com o servidor."; return; }
+  const p = v.pareamento;
+  $("codigo").textContent = p.codigo || "——————";
+  $("validade").textContent = p.travado ? `Pareamento travado por ${Math.ceil(p.travado / 60)} min (erros demais).`
+    : p.codigo ? `Vale por mais ${p.expira} s, uma vez só.` : "Nenhum código valendo agora.";
+  $("titulo").textContent = `Pareados (${v.aparelhos.length})`;
+  $("todos").hidden = !v.aparelhos.length;
+  // Refaz a lista so quando muda: senao o botao some debaixo do clique a cada segundo
+  const nova = JSON.stringify(v.aparelhos.map(a => [a, ...situacao(a, v.agora)].map(x => x.id ? [x.id, x.ip, x.nome, x.sse] : x)));
+  if (nova === assinatura) return;
+  assinatura = nova;
+  const lista = $("lista");
+  lista.textContent = "";
+  if (!v.aparelhos.length) lista.innerHTML = `<div class="card" style="color: var(--muted)">Nenhum aparelho pareado.</div>`;
+  v.aparelhos.forEach(a => lista.appendChild(cartao(a, v.agora)));
+}
+
+$("gerar").addEventListener("click", async () => {
+  const r = await (await post("/api/parear/pedir")).json();
+  $("msg").textContent = r.ok ? "" : r.erro === "espera" ? `Aguarde ${r.espera} s para gerar outro.` : "Pareamento travado.";
+  atualiza();
+});
+$("todos").addEventListener("click", () => revoga({ todos: true }, "Revogar TODOS os aparelhos?"));
+atualiza();
+setInterval(atualiza, 1000);
+</script>
+</body>
+</html>

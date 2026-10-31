@@ -265,6 +265,7 @@ Os dados chegam por `/api/eventos` (SSE, 1×/s) em vez de duas requisições por
 | `GET /` | a página do painel (ou a de pareamento, pra aparelho não pareado) |
 | `GET /api/eventos` | SSE com `stats` e `texugo`, 1×/s |
 | `GET /parear`, `GET /api/parear` | tela e estado do pareamento (o código só vai pro próprio PC) |
+| `GET /aparelhos`, `GET /api/aparelhos`, `POST /api/aparelhos/revoga` | só no próprio PC: código vigente, aparelhos pareados, quem está conectado e revogar |
 | `POST /api/parear/pedir`, `POST /api/parear` | pede um código / troca o código pelo cookie (exigem `X-Dash: 1`) |
 | `GET /api/stats` | métricas do PC, música atual, status do OneDrive e limites do Claude (JSON, 1×/s) |
 | `GET /api/audio` | PCM s16le mono 24 kHz do som do PC (stream) |

@@ -19,6 +19,9 @@ Linha de comando (nao sobe o servidor):
     python3 acesso.py revoga <id>      # tira um (o id e o comeco do hash, como a lista mostra)
     python3 acesso.py revoga-todos
 
+No proprio PC, a mesma coisa em tela: http://127.0.0.1:8787/aparelhos (codigo vigente, aparelhos,
+quem esta conectado agora e revogar). Essa rota so existe pra loopback.
+
 O servidor rele o arquivo quando ele muda: revogar vale na hora, sem reiniciar.
 """
 import hashlib
@@ -35,6 +38,7 @@ from pathlib import Path
 DISPOSITIVOS = Path.home() / ".config/toca-do-texugo/dispositivos.json"
 COOKIE = "toca"
 TOKEN_VIDA = 365 * 86400
+NOME_MAX = 200          # o User-Agent cortado antes disso perde a versao do navegador
 CODIGO_VALIDADE = 120   # s
 CODIGO_ERROS = 5        # erros num codigo e ele queima
 TRAVA_ERROS = 10        # erros no total, dentro da janela, e o pareamento trava
@@ -108,6 +112,7 @@ class Dispositivos:
         self.relogio = relogio
         self._lock = threading.Lock()
         self._itens, self._mtime, self._gravado = {}, None, 0
+        self._sse = {}  # sha256 do token: conexoes SSE abertas agora (so em memoria)
         self._le()
 
     def _le(self):
@@ -140,11 +145,12 @@ class Dispositivos:
         agora = int(self.relogio())
         with self._lock:
             self._le()
-            self._itens[_hash(token)] = {"nome": (nome or "?")[:80], "criado": agora, "visto": agora}
+            self._itens[_hash(token)] = {"nome": (nome or "?")[:NOME_MAX], "criado": agora, "visto": agora}
             self._grava()
         return token
 
-    def valido(self, token):
+    def valido(self, token, ip=None, nome=None):
+        """Confere o token e anota por onde o aparelho veio (`ip`, `nome`: o User-Agent de agora)."""
         if not token or len(token) > 100:
             return False
         h = _hash(token)
@@ -157,14 +163,31 @@ class Dispositivos:
             if agora - d.get("criado", 0) > TOKEN_VIDA:
                 return False
             d["visto"] = int(agora)
+            if ip:
+                d["ip"] = ip
+            if nome:
+                d["nome"] = nome[:NOME_MAX]
             if agora - self._gravado > VISTO_GRAVA:
                 self._grava()
             return True
 
+    def sse(self, token, delta):
+        """Conta as conexoes SSE abertas do aparelho (+1 ao abrir, -1 ao fechar)."""
+        if not token:
+            return
+        h = _hash(token)
+        with self._lock:
+            n = self._sse.get(h, 0) + delta
+            if n > 0:
+                self._sse[h] = n
+            else:
+                self._sse.pop(h, None)
+
     def lista(self):
         with self._lock:
             self._le()
-            return [{"id": h[:8], **d} for h, d in sorted(self._itens.items(), key=lambda x: x[1].get("criado", 0))]
+            return [{"id": h[:8], **d, "sse": self._sse.get(h, 0)}
+                    for h, d in sorted(self._itens.items(), key=lambda x: x[1].get("criado", 0))]
 
     def revoga(self, prefixo=None):
         """Tira um aparelho pelo comeco do hash (ou todos, sem prefixo). Devolve quantos sairam."""

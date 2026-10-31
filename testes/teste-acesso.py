@@ -170,7 +170,7 @@ class PontaAPonta(unittest.TestCase):
         cfg = home / ".config/toca-do-texugo"
         cfg.mkdir(parents=True)
         cls.porta = porta_livre()
-        (cfg / "config.json").write_text(json.dumps({"porta": cls.porta, "pareamento_local": False}))
+        (cfg / "config.json").write_text(json.dumps({"porta": cls.porta, "pareamento_local": False, "escuta": "0.0.0.0"}))
         env = {**os.environ, "HOME": str(home), "PATH": "/usr/bin:/bin"}
         cls.proc = subprocess.Popen([sys.executable, str(REPO / "server.py")], env=env, cwd=home,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -251,6 +251,52 @@ class PontaAPonta(unittest.TestCase):
                 json.loads(linha[6:])
         c.close()
         self.assertEqual(vistos, {"stats", "texugo"})
+        self._confere_aparelhos(cookie)
+
+    def _confere_aparelhos(self, cookie):
+        self.assertIn(b"aparelhos", self.req("GET", "/aparelhos")[1])
+        v = json.loads(self.req("GET", "/api/aparelhos")[1])
+        self.assertIn("codigo", v["pareamento"])
+        item = v["aparelhos"][-1]
+        self.assertEqual(item["ip"], "127.0.0.1")
+        self.assertNotIn("hash", item)
+
+        # SSE aberto aparece na lista, e fechado some
+        c = http.client.HTTPConnection("127.0.0.1", self.porta, timeout=5)
+        c.request("GET", "/api/eventos", headers={"Host": f"127.0.0.1:{self.porta}", "Cookie": cookie})
+        r = c.getresponse()
+        r.fp.readline()
+        achado = lambda: next(a for a in json.loads(self.req("GET", "/api/aparelhos")[1])["aparelhos"]
+                              if a["id"] == item["id"])
+        # (o SSE fechado antes so cai na proxima escrita do servidor, ate 1 s depois)
+        fim = time.time() + 3
+        while achado()["sse"] != 1 and time.time() < fim:
+            time.sleep(0.1)
+        self.assertEqual(achado()["sse"], 1)
+
+        self.assertEqual(self.req("POST", "/api/aparelhos/revoga", {"id": item["id"]}, dash=False)[0].status, 403)
+        self.assertEqual(self.req("POST", "/api/aparelhos/revoga", {})[0].status, 400)
+        self.assertEqual(json.loads(self.req("POST", "/api/aparelhos/revoga", {"id": item["id"]})[1])["revogados"], 1)
+        self.assertEqual(self.req("GET", "/api/version", cookie=cookie)[0].status, 401)  # vale na hora
+        c.close()
+
+    def test_aparelhos_so_no_pc(self):
+        """De fora do loopback a administracao nao existe, nem com o aparelho pareado."""
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            try:
+                s.connect(("10.255.255.255", 1))
+                ip = s.getsockname()[0]
+            except OSError:
+                self.skipTest("sem interface fora do loopback")
+        if ip.startswith("127."):
+            self.skipTest("sem interface fora do loopback")
+        h = {"Host": f"{ip}:{self.porta}", "X-Dash": "1", "Content-Type": "application/json"}
+        for metodo, rota, corpo in (("GET", "/aparelhos", None), ("GET", "/api/aparelhos", None),
+                                    ("POST", "/api/aparelhos/revoga", '{"todos":true}')):
+            c = http.client.HTTPConnection(ip, self.porta, timeout=5)
+            c.request(metodo, rota, corpo, h)
+            self.assertEqual(c.getresponse().status, 404, rota)
+            c.close()
 
     def test_host_estranho(self):
         self.assertEqual(self.req("GET", "/", host=f"evil.com:{self.porta}")[0].status, 403)

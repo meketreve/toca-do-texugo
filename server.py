@@ -446,7 +446,8 @@ class Handler(BaseHTTPRequestHandler):
     def _autorizado(self):
         if LOCAL_LIVRE and self._local():
             return True
-        return DISPOSITIVOS.valido(acesso.cookie_token(self.headers.get("Cookie")))
+        return DISPOSITIVOS.valido(acesso.cookie_token(self.headers.get("Cookie")),
+                                   self.client_address[0], self.headers.get("User-Agent"))
 
     def _json_corpo(self, limite=1024):
         tam = int(self.headers.get("Content-Length") or 0)
@@ -485,6 +486,15 @@ class Handler(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._send(403, '{"error":"host"}')
         rota = urllib.parse.urlsplit(self.path).path
+        # Administracao: so o proprio PC, com ou sem pareamento_local. De fora, a rota nao existe
+        if rota in ("/aparelhos", "/api/aparelhos"):
+            if not self._local():
+                return self._send(404, '{"error":"not found"}')
+            if rota == "/aparelhos":
+                return self._send(200, (BASE / "aparelhos.html").read_bytes(), "text/html; charset=utf-8")
+            return self._send(200, json.dumps({"pareamento": PAREAMENTO.estado(local=True),
+                                               "aparelhos": DISPOSITIVOS.lista(), "agora": int(time.time())},
+                                              ensure_ascii=False))
         if self.path.startswith("/fontes/"):
             return self._send_fonte(self.path[len("/fontes/"):])
         # Pareamento: as unicas rotas abertas pra quem nao tem cookie
@@ -528,6 +538,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
+        token = acesso.cookie_token(self.headers.get("Cookie"))
+        DISPOSITIVOS.sse(token, 1)
         try:
             self.wfile.write(b"retry: 3000\n\n")
             while self._autorizado():
@@ -538,6 +550,8 @@ class Handler(BaseHTTPRequestHandler):
                 time.sleep(1)
         except (BrokenPipeError, ConnectionResetError):
             pass
+        finally:
+            DISPOSITIVOS.sse(token, -1)
 
     def _tiktok_auth(self):
         """Autorizacao do TikTok (uma vez): /tiktok/login manda pro TikTok, que volta em /tiktok/callback/."""
@@ -598,6 +612,15 @@ class Handler(BaseHTTPRequestHandler):
         # navegador nao consegue disparar atalhos.
         if not self._host_ok() or self.headers.get("X-Dash") != "1":
             return self._send(403, '{"error":"forbidden"}')
+        if self.path == "/api/aparelhos/revoga":
+            if not self._local():
+                return self._send(404, '{"error":"not found"}')
+            corpo = self._json_corpo()
+            alvo = corpo.get("id") if isinstance(corpo, dict) else None
+            if not (isinstance(alvo, str) and alvo) and not (isinstance(corpo, dict) and corpo.get("todos") is True):
+                return self._send(400, '{"error":"id"}')
+            n = DISPOSITIVOS.revoga(alvo or None)
+            return self._send(200 if n >= 0 else 409, json.dumps({"revogados": max(n, 0)}))
         if self.path == "/api/parear/pedir":
             r = PAREAMENTO.pedir()
             return self._send(200 if r.get("ok") else 429, json.dumps(r))
