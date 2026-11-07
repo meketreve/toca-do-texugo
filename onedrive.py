@@ -49,7 +49,6 @@ class OneDrive:
         self._local = None
         self._active = None
         self._pedido = 0.0  # quando o painel pediu a ultima sync
-        self._sinal_ok = None  # o cliente instalado aceita SIGUSR1 em monitor? (lido na 1a vez)
         if subprocess.run(["which", "onedrive"], capture_output=True).returncode != 0:
             return
         self.state = {"installed": True}
@@ -99,34 +98,19 @@ class OneDrive:
         self._publish()
 
     # --- pedir uma sync agora ---
-    def _aceita_sinal(self):
-        """SIGUSR1 (sync na hora, em monitor) existe a partir do v2.5. Em versao mais velha o
-        sinal NAO tratado mataria o servico, entao la usamos reiniciar, que sincroniza ao subir."""
-        if self._sinal_ok is None:
-            try:
-                out = subprocess.run(["onedrive", "--version"], capture_output=True, text=True, timeout=15).stdout
-                m = re.search(r"v?(\d+)\.(\d+)", out)
-                self._sinal_ok = bool(m) and (int(m.group(1)), int(m.group(2))) >= (2, 5)
-            except (OSError, subprocess.SubprocessError):
-                return False  # nao decide: tenta de novo no proximo pedido
-        return self._sinal_ok
-
     def sync_now(self):
-        """Pede ao servico `onedrive` uma sincronizacao agora. Devolve (http, dict)."""
+        """Pede ao servico `onedrive` uma sincronizacao agora. Devolve (http, dict).
+
+        Reiniciar (ou subir, se parado) o servico: o cliente faz a sync inicial ao abrir. Nao
+        usar SIGUSR1: no v2.5.12 ele nao e tratado e derruba o servico (status=10/USR1)."""
         if not self.state.get("installed"):
             return 404, {"ok": False, "error": "cliente onedrive nao instalado"}
         now = time.time()
-        if now - self._pedido < PEDIDO_MIN:
-            return 200, {"ok": True, "how": "ja pedido"}
-        ativo = subprocess.run(["systemctl", "--user", "is-active", "onedrive"],
-                               capture_output=True, text=True).stdout.strip()
-        if ativo == "active" and self._aceita_sinal():
-            cmd, how = ["systemctl", "--user", "kill", "-s", "SIGUSR1", "onedrive"], "sinal"
-        else:
-            # parado ou cliente antigo: subir/reiniciar o servico faz a sync inicial
-            cmd, how = ["systemctl", "--user", "restart", "onedrive"], "reinicio"
+        if self._syncing_since or now - self._pedido < PEDIDO_MIN:
+            return 200, {"ok": True, "how": "ja sincronizando"}  # nao corta uma sync em andamento
         try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            r = subprocess.run(["systemctl", "--user", "restart", "onedrive"],
+                               capture_output=True, text=True, timeout=30)
         except (OSError, subprocess.SubprocessError) as exc:
             return 500, {"ok": False, "error": str(exc)[:160]}
         if r.returncode != 0:
@@ -134,7 +118,7 @@ class OneDrive:
         self._pedido = now
         self._active = "active"
         self._publish()
-        return 200, {"ok": True, "how": how}
+        return 200, {"ok": True, "how": "reinicio"}
 
     # --- servico, cota e pasta local ---
     def _poll(self):

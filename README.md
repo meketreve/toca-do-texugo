@@ -22,7 +22,7 @@ Dashboard em tela cheia que roda num **monitor virtual** do Linux e é transmiti
 - Estado da sincronização em tempo real (sincronizado há X, sincronizando, erro, sem conexão, serviço parado), lido do journal do serviço
 - Cota da nuvem (`onedrive --display-quota`, 1× por hora), tamanho e número de arquivos da pasta local
 - Últimos uploads, downloads e exclusões
-- Tocar no estado do OneDrive (no card, ou na caixa do Grafite) pede uma sincronização na hora: sinal `SIGUSR1` ao serviço (cliente 2.5 ou mais novo), ou reinício do serviço se estiver parado ou for mais antigo. O agendamento continua sendo o do próprio cliente (`monitor_interval`, 5 min por padrão)
+- Tocar no estado do OneDrive (no card, ou na caixa do Grafite) pede uma sincronização na hora: reinício do serviço `onedrive`, que sincroniza ao subir (sem `SIGUSR1`: no cliente 2.5.12 ele derruba o serviço). Não corta uma sync em andamento. O agendamento continua sendo o do próprio cliente (`monitor_interval`, 5 min por padrão)
 
 **Música**
 - **Tocando agora** pelo MPRIS (Spotify, navegador, VLC…): capa, título, artista e progresso
