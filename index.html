@@ -4,34 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Toca do Texugo</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<script>
-/* Longe do PC (o tablet) o painel e desenhado do tamanho da parede e o navegador encolhe a pagina
-   inteira pra caber: fonte, grade, mascote e toque seguem nas mesmas contas, sem zoom de CSS. A
-   base vem do `screen`, que nao muda com a escala -- o innerWidth mudaria e entraria em laco. Em
-   pe sao 1080 de largura; deitado, 1920 ou mais, pra altura nunca ficar abaixo de 1080. No navegador
-   de computador o meta nao tem efeito e a janela so redistribui a grade. No PC nada disso roda. */
-const PAREDE = /^(127\.|localhost$|\[::1\]$)/.test(location.hostname);
-if (!PAREDE) {
-  const ajustaViewport = () => {
-    const { width: w, height: h } = screen;
-    if (!w || !h) return;  // aba em segundo plano pode responder 0 x 0
-    const largura = h > w ? 1080 : Math.max(1920, Math.round(1080 * w / h));
-    const conteudo = `width=${largura}, user-scalable=no`;
-    const meta = document.querySelector('meta[name="viewport"]');
-    if (meta.content !== conteudo) meta.content = conteudo;
-  };
-  ajustaViewport();
-  addEventListener("orientationchange", ajustaViewport);
-  addEventListener("resize", ajustaViewport);
-  // Tela cheia so pode nascer de um gesto: o toque seguinte liga, inclusive depois de sair dela
-  addEventListener("pointerup", () => {
-    if (document.fullscreenEnabled && !document.fullscreenElement && matchMedia("(pointer: coarse)").matches)
-      document.documentElement.requestFullscreen().catch(() => {});
-  });
-}
-</script>
 <script>
 /* Tema aplicado antes do primeiro desenho: depois, o painel piscaria no tema velho a cada boot */
 try {
@@ -112,7 +84,7 @@ try {
      que se ve, no lugar do botao discreto que existia so no Atual (que saiu). O Grafite e o Linha
      so trocam a moldura dela; o miolo (logo, botoes de 48 px, ponto de conexao) e o mesmo. */
   .app {
-    height: 100%; padding: var(--gap);
+    height: 100vh; padding: var(--gap);
     display: grid; gap: var(--gap);
     grid-template-columns: 76px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
@@ -1279,9 +1251,7 @@ try {
   let version = null;
   setInterval(async () => {
     try {
-      const r = await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) });
-      if (r.status === 401) return location.reload();  // aparelho revogado: o servidor manda pro pareamento
-      const v = (await r.json()).index;
+      const v = (await (await fetch("/api/version", { cache: "no-store", signal: AbortSignal.timeout(8000) })).json()).index;
       if (version != null && v !== version) location.reload();
       version = v;
     } catch (e) {}
@@ -1864,28 +1834,7 @@ function mediaProgress() {
   $("gnp-len").textContent = fmtMin(media.length);
 }
 
-/* Stats e cerebro chegam empurrados pelo /api/eventos (SSE). O polling de 1 s continua armado e
-   so age quando o empurrao para (servidor reiniciando, rede do tablet piscando). */
-let sseAt = -Infinity;  // 0 seria "vivo" nos primeiros 2,5 s da pagina e calaria o polling no boot
-function eventos() {
-  if (!window.EventSource) return;
-  const es = new EventSource("/api/eventos");
-  es.addEventListener("stats", ev => {
-    let s;
-    try { s = JSON.parse(ev.data); } catch (e) { return; }
-    sseAt = performance.now();
-    if (s.cpu) render(s);
-    document.getElementById("conn").classList.remove("show");
-    document.getElementById("conn-dot").classList.remove("off");
-  });
-  es.addEventListener("texugo", ev => {
-    try { texugoData = JSON.parse(ev.data); texugoT = performance.now(); } catch (e) {}
-  });
-}
-const sseVivo = () => performance.now() - sseAt < 2500;
-
-async function tick(forca) {
-  if (forca !== true && sseVivo()) return;
+async function tick() {
   try {
     const r = await fetch("/api/stats", { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const s = await r.json();
@@ -2154,9 +2103,7 @@ function calcLinhas() {
   const box = document.getElementById("widgets-b");
   const alt = box.clientHeight || (window.innerHeight - 120);
   const gap = 16;
-  let n = Math.max(3, Math.min(10, Math.floor((alt + gap) / (LINHA_MIN + gap))));
-  // Janela baixa fora da parede: aperta as linhas em vez de tirar medidor da tela
-  if (!PAREDE) n = Math.min(10, Math.max(n, ...layoutB().map(it => (it.y || 0) + it.h)));
+  const n = Math.max(3, Math.min(10, Math.floor((alt + gap) / (LINHA_MIN + gap))));
   const mudou = n !== LINHAS;
   LINHAS = n;
   box.style.setProperty("--linhas", LINHAS);
@@ -3459,7 +3406,6 @@ function fmtQuando(ts) {
    nao decide nada aqui, so pergunta e desenha -- e no modo "instinto" nem pergunta. */
 let texugoData = {}, texugoT = 0;
 async function loadTexugo() {
-  if (sseVivo()) return;
   try {
     texugoData = await (await fetch("/api/texugo", { cache: "no-store", signal: AbortSignal.timeout(4000) })).json();
     texugoT = performance.now();
@@ -4514,22 +4460,9 @@ function mascotStep(now, dt) {
   mascotEl.style.transform = `translate3d(${M.x.toFixed(1)}px, ${(M.y - MH - bob).toFixed(1)}px, 0)`;
 }
 
-/* Teto de quadros. No PC (o painel da parede) e o do monitor; longe dele -- o tablet -- 30 fps, que
-   segura bateria e calor (mascote, visualizador e a FFT de 2048 pontos rodam a cada quadro).
-   `?fps=N` na URL grava em `painel.fps` (0 = sem teto). */
-const FPS = (() => {
-  try {
-    const q = new URLSearchParams(location.search).get("fps");
-    if (q != null) localStorage.setItem("painel.fps", q);
-    const v = localStorage.getItem("painel.fps");
-    if (v != null && v !== "" && isFinite(+v)) return Math.max(0, +v);
-  } catch (e) {}
-  return /^(127\.|localhost$|\[::1\]$)/.test(location.hostname) ? 0 : 30;
-})();
 let lastFrame = performance.now();
 function frame(now) {
-  if (FPS && now - lastFrame < 1000 / FPS - 2) return requestAnimationFrame(frame);
-  const dt = Math.min(FPS ? Math.max(0.05, 1.5 / FPS) : 0.05, (now - lastFrame) / 1000); lastFrame = now;
+  const dt = Math.min(0.05, (now - lastFrame) / 1000); lastFrame = now;
   analyse(now, dt);
   if (page === 0) { drawViz(); giraPratos(dt); }  // giro continuo: so na pagina do painel
   mascotStep(now, dt);
@@ -4544,26 +4477,14 @@ loadShortcuts(); setInterval(loadShortcuts, 20000);
 loadRedes(); setInterval(loadRedes, 30000);
 loadAgenda(); setInterval(loadAgenda, 30000);
 loadTexugo(); setInterval(loadTexugo, 1000);
-/* Observa o .app, nao a janela: girar o tablet, entrar em tela cheia e a barra do navegador sumir
-   mudam o tamanho depois do evento de resize, e o desenho medido antes ficaria com a medida velha */
-let redimensionando = 0, tamanhoApp = "";
-new ResizeObserver(([e]) => {
-  const tamanho = `${e.contentRect.width}x${e.contentRect.height}`;
-  if (tamanho === tamanhoApp) return;
-  const primeiro = !tamanhoApp;
-  tamanhoApp = tamanho;
-  if (primeiro) return;  // a primeira entrega e a medida do boot, que ja foi desenhada
-  cancelAnimationFrame(redimensionando);
-  redimensionando = requestAnimationFrame(() => {
-    if (calcLinhas()) montarDashB();
-    // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
-    if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
-    tick(true);
-    if (PAGES[page] === "page-redes") renderRedes();
-  });
-}).observe(document.querySelector(".app"));
+window.addEventListener("resize", () => {
+  if (calcLinhas()) montarDashB();
+  // Mesmo sem mudar o numero de linhas, a proporcao da celula muda com a janela
+  if (!document.getElementById("page-editor").hidden) { edCarrega(); edRender(); }
+  tick();
+  if (PAGES[page] === "page-redes") renderRedes();
+});
 audioStream();
-eventos();
 requestAnimationFrame(frame);
 </script>
 </body>
