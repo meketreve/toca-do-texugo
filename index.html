@@ -476,6 +476,7 @@ try {
   .od-local b { color: var(--text); font-weight: 600; }
   .od-status { font-size: 16px; color: var(--text); white-space: nowrap; }
   .od-status .i { margin-right: 6px; }
+  .od-status, .gd-od-t { cursor: pointer; }  /* toque = sincronizar agora (odSync) */
   .od-status .spin { display: inline-block; animation: spin 1.2s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .od-act { display: grid; gap: 4px; margin-top: 8px; align-content: start; min-height: 0; overflow: hidden; }
@@ -1734,6 +1735,12 @@ const OD_STATUS = {
   starting: () => '<span class="i" style="color:var(--muted)">…</span>iniciando',
 };
 const OD_ICON = { up: "↑", down: "↓", del: "✕", new: "+", move: "⇄" };
+// Toque no estado do OneDrive pede uma sync agora; o servidor ja mostra "sincronizando" no proximo /api/stats
+async function odSync() {
+  try { await fetch("/api/onedrive/sync", { method: "POST", headers: { "X-Dash": "1" } }); } catch (e) {}
+}
+document.getElementById("od-status").addEventListener("click", odSync);
+document.getElementById("gd-od").addEventListener("click", e => { if (e.target.closest(".gd-od-t")) odSync(); });
 // Limites do Claude: so aparece quando o app de desktop esta gravando o historico (ver ClaudeUsage)
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 

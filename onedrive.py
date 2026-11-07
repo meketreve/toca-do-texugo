@@ -16,6 +16,8 @@ CONFIG = Path.home() / ".config/onedrive/config"
 QUOTA_CACHE = Path.home() / ".config/toca-do-texugo/onedrive-cota.json"  # sobrevive a reinicios do painel
 QUOTA_EVERY = 3600  # --display-quota reescreve o token do cliente: pouca frequencia
 LOCAL_EVERY = 600
+PEDIDO_MIN = 15      # segundos entre dois pedidos de sync (toque repetido no painel nao empilha)
+PEDIDO_VISIVEL = 15  # quanto tempo o painel mostra "sincronizando" so por causa do pedido
 
 ACTIVITY = re.compile(
     r"^(?P<verb>Uploading new file|Uploading modified file|Uploading|Downloading file|Deleting item from Microsoft OneDrive|"
@@ -46,6 +48,7 @@ class OneDrive:
         self._quota = None
         self._local = None
         self._active = None
+        self._pedido = 0.0  # quando o painel pediu a ultima sync
         if subprocess.run(["which", "onedrive"], capture_output=True).returncode != 0:
             return
         self.state = {"installed": True}
@@ -93,6 +96,29 @@ class OneDrive:
             })
             del self._activity[5:]
         self._publish()
+
+    # --- pedir uma sync agora ---
+    def sync_now(self):
+        """Pede ao servico `onedrive` uma sincronizacao agora. Devolve (http, dict).
+
+        Reiniciar (ou subir, se parado) o servico: o cliente faz a sync inicial ao abrir. Nao
+        usar SIGUSR1: no v2.5.12 ele nao e tratado e derruba o servico (status=10/USR1)."""
+        if not self.state.get("installed"):
+            return 404, {"ok": False, "error": "cliente onedrive nao instalado"}
+        now = time.time()
+        if self._syncing_since or now - self._pedido < PEDIDO_MIN:
+            return 200, {"ok": True, "how": "ja sincronizando"}  # nao corta uma sync em andamento
+        try:
+            r = subprocess.run(["systemctl", "--user", "restart", "onedrive"],
+                               capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError) as exc:
+            return 500, {"ok": False, "error": str(exc)[:160]}
+        if r.returncode != 0:
+            return 500, {"ok": False, "error": (r.stderr.strip() or "systemctl falhou")[:160]}
+        self._pedido = now
+        self._active = "active"
+        self._publish()
+        return 200, {"ok": True, "how": "reinicio"}
 
     # --- servico, cota e pasta local ---
     def _poll(self):
@@ -150,7 +176,7 @@ class OneDrive:
             status = "stopped"
         elif self._offline:
             status = "offline"
-        elif self._syncing_since:
+        elif self._syncing_since or time.time() - self._pedido < PEDIDO_VISIVEL:
             status = "syncing"
         elif self._last_error and (not self._last_sync or self._last_error["t"] > self._last_sync):
             status = "error"

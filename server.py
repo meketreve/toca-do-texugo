@@ -2,7 +2,7 @@
 """Toca do Texugo: servidor local (127.0.0.1) com metricas do sistema e atalhos.
 
 Metricas: /api/stats (JSON, atualizado 1x/s por uma thread de coleta).
-OneDrive: campo "onedrive" do /api/stats (ver onedrive.py).
+OneDrive: campo "onedrive" do /api/stats e POST /api/onedrive/sync (ver onedrive.py).
 Redes:    /api/redes, contadores do YouTube/Twitch/... (ver redes.py).
 Audio:    /api/audio, PCM s16le mono 24 kHz do monitor da saida padrao (o navegador faz a FFT).
 Atalhos:  POST /api/run/<id>, somente ids definidos em ~/.config/toca-do-texugo/atalhos.json.
@@ -559,6 +559,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(400, json.dumps({"error": erro}, ensure_ascii=False))
             REDES.recarrega()
             return self._send(200, json.dumps(redes.config_publica(), ensure_ascii=False))
+        # OneDrive: pede uma sincronizacao agora (ver OneDrive.sync_now)
+        if self.path == "/api/onedrive/sync":
+            code, res = ONEDRIVE.sync_now()
+            return self._send(code, json.dumps(res, ensure_ascii=False))
         if self.path == "/api/texugo/esquecer":
             TEXUGO.esquecer()
             return self._send(200, '{"ok":true}')
