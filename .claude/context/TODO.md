@@ -17,7 +17,6 @@ O que sobrou aqui depende de rodar e olhar, não de escrever código.
 - [ ] Rodar o cérebro alguns dias e ver que personalidade aparece (ajustar o `ETA_STDP` — 0,004 —
       se ficar rápido ou lento demais)
 - [ ] Decidir se a tela de configuração por botões sai, agora que o editor de grade faz o mesmo
-- [ ] Ligar `escuta` e parear o tablet: conferir toque, 30 fps e o áudio pelo Wi-Fi (sem Moonlight)
 
 ## Depois
 
@@ -27,7 +26,6 @@ O que sobrou aqui depende de rodar e olhar, não de escrever código.
 
 ## Concluído
 
-- [x] ~~Painel direto no navegador do tablet: `acesso.py`, pareamento por código, SSE e teto de fps~~
 - [x] ~~"Tela do painel": layout e perfil numa lista só~~, e ~~carretel do Disco com giro suave~~
 - [x] ~~Tema Linha: os dois mockups como tema e dois perfis de medidores, Barlow vendorizada~~
 - [x] ~~Barra lateral nos três temas, no lugar do botão discreto de página~~

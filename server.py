@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Toca do Texugo: servidor local com metricas do sistema e atalhos.
-
-Escuta em 127.0.0.1 (padrao) ou na LAN/Tailscale (config.json -> "escuta"); de fora do PC so
-entra aparelho pareado por codigo (ver acesso.py).
+"""Toca do Texugo: servidor local (127.0.0.1) com metricas do sistema e atalhos.
 
 Metricas: /api/stats (JSON, atualizado 1x/s por uma thread de coleta).
 OneDrive: campo "onedrive" do /api/stats (ver onedrive.py).
@@ -10,13 +7,11 @@ Redes:    /api/redes, contadores do YouTube/Twitch/... (ver redes.py).
 Audio:    /api/audio, PCM s16le mono 24 kHz do monitor da saida padrao (o navegador faz a FFT).
 Atalhos:  POST /api/run/<id>, somente ids definidos em ~/.config/toca-do-texugo/atalhos.json.
 Texugo:   /api/texugo, rede de spike com STDP que escolhe o comportamento do mascote (ver texugo.py).
-Eventos:  /api/eventos, SSE com stats e texugo 1x/s (o painel cai no polling se a conexao cair).
 """
 import json
 import os
 import select
 import shutil
-import socket
 import subprocess
 import threading
 import time
@@ -26,16 +21,17 @@ from pathlib import Path
 
 import psutil
 
-import acesso
 from agenda import Agenda
 from onedrive import OneDrive
 import redes
 from redes import Redes
 from texugo import Texugo
 
+HOST, PORT = "127.0.0.1", 8787
 BASE = Path(__file__).resolve().parent
 CONFIG = Path.home() / ".config/toca-do-texugo/atalhos.json"
 SETTINGS_FILE = Path.home() / ".config/toca-do-texugo/config.json"  # coisas da maquina (ver config.exemplo.json)
+ALLOWED_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
 CLAUDE_USAGE = Path.home() / ".config/Claude/plan-usage-history.json"
 CLAUDE_WINDOWS = {"five_hour": ("fh", 5 * 3600), "week": ("sd", 7 * 86400)}
 CLAUDE_GAP = 3600  # buraco entre as duas amostras da virada: acima disso a estimativa nao vale
@@ -79,10 +75,6 @@ SETTINGS = load_settings()
 NET_IFACE = SETTINGS.get("rede") or default_iface()
 DISKS = [(d["caminho"], d["nome"]) for d in SETTINGS.get("discos", [])] or [("/", "Sistema")]
 CPU_TDP = SETTINGS.get("cpu_tdp_w")
-HOST = SETTINGS.get("escuta") or "127.0.0.1"  # "0.0.0.0" ou o IP da LAN/Tailscale abre pro tablet
-PORT = int(SETTINGS.get("porta") or 8787)
-HOSTS_EXTRA = [h for h in SETTINGS.get("hosts", []) if isinstance(h, str)]  # nome MagicDNS etc.
-LOCAL_LIVRE = SETTINGS.get("pareamento_local", True) is not False  # o proprio PC nao pareia
 
 
 def load_shortcuts():
@@ -412,21 +404,6 @@ def _sentidos():
 TEXUGO = Texugo(_sentidos)
 
 
-def _avisa_codigo(codigo):
-    """O codigo aparece no PC, nunca no tablet: notificacao, journal e /parear no proprio PC."""
-    print(f"pareamento: codigo {codigo} (vale {acesso.CODIGO_VALIDADE} s)", flush=True)
-    try:
-        subprocess.Popen(["notify-send", "-u", "critical", "Toca do Texugo",
-                          f"Código do tablet: {codigo} (vale 2 min)"],
-                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError:
-        pass
-
-
-DISPOSITIVOS = acesso.Dispositivos()
-PAREAMENTO = acesso.Pareamento(DISPOSITIVOS, _avisa_codigo)
-
-
 def monitor_source():
     sink = subprocess.run(["pactl", "get-default-sink"], capture_output=True, text=True, timeout=2).stdout.strip()
     return sink + ".monitor" if sink else "@DEFAULT_MONITOR@"
@@ -437,32 +414,11 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     def _host_ok(self):
-        return (acesso.cliente_ok(self.client_address[0])
-                and acesso.host_ok(self.headers.get("Host", ""), PORT, HOSTS_EXTRA))
+        return self.headers.get("Host", "") in ALLOWED_HOSTS
 
-    def _local(self):
-        return acesso.eh_local(self.client_address[0])
-
-    def _autorizado(self):
-        if LOCAL_LIVRE and self._local():
-            return True
-        return DISPOSITIVOS.valido(acesso.cookie_token(self.headers.get("Cookie")),
-                                   self.client_address[0], self.headers.get("User-Agent"))
-
-    def _json_corpo(self, limite=1024):
-        tam = int(self.headers.get("Content-Length") or 0)
-        if tam > limite:
-            return None
-        try:
-            return json.loads(self.rfile.read(tam).decode("utf-8")) if tam else {}
-        except (ValueError, UnicodeDecodeError):
-            return None
-
-    def _send(self, code, body, ctype="application/json; charset=utf-8", headers=()):
+    def _send(self, code, body, ctype="application/json; charset=utf-8"):
         data = body if isinstance(body, bytes) else body.encode()
         self.send_response(code)
-        for k, v in headers:
-            self.send_header(k, v)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
@@ -485,33 +441,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._host_ok():
             return self._send(403, '{"error":"host"}')
-        rota = urllib.parse.urlsplit(self.path).path
-        # Administracao: so o proprio PC, com ou sem pareamento_local. De fora, a rota nao existe
-        if rota in ("/aparelhos", "/api/aparelhos"):
-            if not self._local():
-                return self._send(404, '{"error":"not found"}')
-            if rota == "/aparelhos":
-                return self._send(200, (BASE / "aparelhos.html").read_bytes(), "text/html; charset=utf-8")
-            return self._send(200, json.dumps({"pareamento": PAREAMENTO.estado(local=True),
-                                               "aparelhos": DISPOSITIVOS.lista(), "agora": int(time.time())},
-                                              ensure_ascii=False))
+        if self.path in ("/", "/index.html"):
+            return self._send(200, (BASE / "index.html").read_bytes(), "text/html; charset=utf-8")
         if self.path.startswith("/fontes/"):
             return self._send_fonte(self.path[len("/fontes/"):])
-        # Pareamento: as unicas rotas abertas pra quem nao tem cookie
-        if rota == "/manifest.json":  # o navegador busca sem cookie; nao diz nada alem do nome
-            return self._send(200, json.dumps({"name": "Toca do Texugo", "short_name": "Toca", "start_url": "/",
-                                               "display": "fullscreen", "background_color": "#0d0d0d",
-                                               "theme_color": "#0d0d0d"}), "application/manifest+json")
-        if rota == "/parear":
-            return self._send(200, (BASE / "parear.html").read_bytes(), "text/html; charset=utf-8")
-        if rota == "/api/parear":
-            return self._send(200, json.dumps(PAREAMENTO.estado(local=self._local())))
-        if not self._autorizado():
-            if rota in ("/", "/index.html"):  # quem nao pareou ve a tela de pareamento no lugar
-                return self._send(200, (BASE / "parear.html").read_bytes(), "text/html; charset=utf-8")
-            return self._send(401, '{"error":"parear"}')
-        if rota in ("/", "/index.html"):
-            return self._send(200, (BASE / "index.html").read_bytes(), "text/html; charset=utf-8")
         if self.path == "/api/stats":
             return self._send(200, json.dumps({**COLLECTOR.stats, "onedrive": ONEDRIVE.state}))
         if self.path == "/api/shortcuts":
@@ -532,30 +465,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._tiktok_auth()
         if self.path == "/api/audio":
             return self._stream_audio()
-        if self.path == "/api/eventos":
-            return self._eventos()
         self._send(404, '{"error":"not found"}')
-
-    def _eventos(self):
-        """SSE: stats e texugo a cada segundo. Revogar o aparelho corta a conexao no passo seguinte."""
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        token = acesso.cookie_token(self.headers.get("Cookie"))
-        DISPOSITIVOS.sse(token, 1)
-        try:
-            self.wfile.write(b"retry: 3000\n\n")
-            while self._autorizado():
-                stats = json.dumps({**COLLECTOR.stats, "onedrive": ONEDRIVE.state}, ensure_ascii=False)
-                texugo = json.dumps(TEXUGO.state, ensure_ascii=False)
-                self.wfile.write(f"event: stats\ndata: {stats}\n\nevent: texugo\ndata: {texugo}\n\n".encode())
-                self.wfile.flush()
-                time.sleep(1)
-        except (BrokenPipeError, ConnectionResetError):
-            pass
-        finally:
-            DISPOSITIVOS.sse(token, -1)
 
     def _tiktok_auth(self):
         """Autorizacao do TikTok (uma vez): /tiktok/login manda pro TikTok, que volta em /tiktok/callback/."""
@@ -616,28 +526,6 @@ class Handler(BaseHTTPRequestHandler):
         # navegador nao consegue disparar atalhos.
         if not self._host_ok() or self.headers.get("X-Dash") != "1":
             return self._send(403, '{"error":"forbidden"}')
-        if self.path == "/api/aparelhos/revoga":
-            if not self._local():
-                return self._send(404, '{"error":"not found"}')
-            corpo = self._json_corpo()
-            alvo = corpo.get("id") if isinstance(corpo, dict) else None
-            if not (isinstance(alvo, str) and alvo) and not (isinstance(corpo, dict) and corpo.get("todos") is True):
-                return self._send(400, '{"error":"id"}')
-            n = DISPOSITIVOS.revoga(alvo or None)
-            return self._send(200 if n >= 0 else 409, json.dumps({"revogados": max(n, 0)}))
-        if self.path == "/api/parear/pedir":
-            r = PAREAMENTO.pedir()
-            return self._send(200 if r.get("ok") else 429, json.dumps(r))
-        if self.path == "/api/parear":
-            corpo = self._json_corpo()
-            if not isinstance(corpo, dict):
-                return self._send(400, '{"error":"json"}')
-            r = PAREAMENTO.tentar(corpo.get("codigo"), self.headers.get("User-Agent", ""))
-            if "token" in r:
-                return self._send(200, '{"ok":true}', headers=[("Set-Cookie", acesso.set_cookie(r["token"]))])
-            return self._send(429 if r["erro"] == "travado" else 403, json.dumps(r))
-        if not self._autorizado():
-            return self._send(401, '{"error":"parear"}')
         # Marcar item da agenda como feito: estado local, nada volta pro Telegram
         if self.path.startswith("/api/agenda/"):
             partes = self.path.split("/")
@@ -688,10 +576,6 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, '{"ok":true}')
 
 
-class Servidor(ThreadingHTTPServer):
-    address_family = socket.AF_INET6 if ":" in HOST else socket.AF_INET
-
-
 if __name__ == "__main__":
     load_shortcuts()
-    Servidor((HOST, PORT), Handler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

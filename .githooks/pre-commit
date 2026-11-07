@@ -7,7 +7,7 @@ fail=0
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 
 # 1) Arquivos que nunca entram no repo
-bad_names=$(printf '%s\n' "$staged" | grep -E '(^|/)(redes|redes-tokens|redes-historico|dispositivos|sunshine_state)\.json$|\.pem$|\.key$|(^|/)\.env|(^|/)credentials/' || true)
+bad_names=$(printf '%s\n' "$staged" | grep -E '(^|/)(redes|redes-tokens|redes-historico|sunshine_state)\.json$|\.pem$|\.key$|(^|/)\.env|(^|/)credentials/' || true)
 if [[ -n "$bad_names" ]]; then
   echo "✋ Arquivo privado no commit:"; printf '   %s\n' $bad_names; fail=1
 fi
